@@ -27,7 +27,7 @@ export async function GET(request, context) {
     return NextResponse.json({ error: 'Module not found' }, { status: 404 });
   }
 
-  return NextResponse.json(result);
+  return NextResponse.json({ success: true, ...result });
 }
 
 export async function POST(request, context) {

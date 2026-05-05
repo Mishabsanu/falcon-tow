@@ -96,8 +96,8 @@ export default function Sidebar() {
       const res = await fetch("/api/notifications");
       const data = await res.json();
       if (data.success) {
-        const unread = data.data.filter((n: any) => !n.isRead).length;
-        setNotificationCount(unread);
+        const unreadCount = data.data.filter((n: any) => n.unread).length;
+        setNotificationCount(unreadCount);
       }
     } catch {
       console.error("Alert sync failure");

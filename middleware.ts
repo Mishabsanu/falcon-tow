@@ -1,16 +1,25 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// Simple JWT payload decoder for Edge Runtime
+// Robust JWT payload decoder for Edge Runtime
 function getJwtPayload(token: string) {
   try {
-    const base64Url = token.split('.')[1];
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    
+    const base64Url = parts[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
+    
+    // Modern Edge Runtime decoding
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    const jsonPayload = new TextDecoder().decode(bytes);
     return JSON.parse(jsonPayload);
   } catch (e) {
+    console.error('Middleware JWT Decode Error:', e);
     return null;
   }
 }
@@ -28,7 +37,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   '/dashboard/notifications': ['ADMIN', 'MANAGER', 'DISPATCHER', 'WORKER'],
 };
 
-export function middleware(request: NextRequest) {
+export default function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value
   const { pathname } = request.nextUrl
 
@@ -63,6 +72,7 @@ export function middleware(request: NextRequest) {
 
     const userRole = payload.role;
 
+    // Check specific route permissions
     for (const [route, allowedRoles] of Object.entries(ROLE_PERMISSIONS)) {
       if (pathname.startsWith(route)) {
         if (!allowedRoles.includes(userRole)) {
