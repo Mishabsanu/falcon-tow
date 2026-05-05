@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Falcon Tow",
-  description: "Next-Gen Fleet Management",
+  title: "FALCON PLUS | Fleet Command",
+  description: "Next-Gen Fleet Management & Operational Intelligence",
 };
 
 import { Toaster } from "sonner";

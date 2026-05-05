@@ -82,17 +82,21 @@ export const moduleData = {
     nameField: 'id',
     records: [],
     fields: [
-      { name: 'customer', label: 'Customer Name', type: 'select', module: 'customers' },
+      { name: 'id', label: 'Reference ID', type: 'text', readOnly: true, span: 4, section: 'Client & Logistics' },
+      { name: 'customer', label: 'Customer Name', type: 'select', module: 'customers', span: 8, section: 'Client & Logistics' },
       { name: 'customerId', label: 'Customer Mongo ID', type: 'text', hidden: true, required: false },
-      { name: 'driver', label: 'Assigned Driver', type: 'select', module: 'users' },
+      
+      { name: 'pickup', label: 'Pickup Location', type: 'text', span: 6, section: 'Client & Logistics' },
+      { name: 'dropoff', label: 'Drop-off Location', type: 'text', span: 6, section: 'Client & Logistics' },
+      
+      { name: 'driver', label: 'Assigned Driver', type: 'select', module: 'users', span: 4, section: 'Quotation Details' },
       { name: 'driverId', label: 'Worker Mongo ID', type: 'text', hidden: true, required: false },
-      { name: 'vehicle', label: 'Vehicle', type: 'select', module: 'vehicles' },
+      { name: 'vehicle', label: 'Operational Vehicle', type: 'select', module: 'vehicles', span: 4, section: 'Quotation Details' },
       { name: 'vehicleId', label: 'Vehicle Mongo ID', type: 'text', hidden: true, required: false },
-      { name: 'pickup', label: 'Pickup Location', type: 'text' },
-      { name: 'dropoff', label: 'Drop-off Location', type: 'text' },
-      { name: 'date', label: 'Estimated Date', type: 'date' },
-      { name: 'amount', label: 'Quoted Amount (QAR)', type: 'number' },
-      { name: 'status', label: 'Quote Status', type: 'select', options: ['Draft', 'Sent', 'Approved', 'Rejected'], hidden: true, defaultValue: 'Draft' },
+      { name: 'date', label: 'Estimated Date', type: 'date', span: 4, section: 'Quotation Details' },
+      
+      { name: 'amount', label: 'Quoted Amount (QAR)', type: 'number', span: 6, section: 'Quotation Details' },
+      { name: 'status', label: 'Quote Status', type: 'select', options: ['Draft', 'Sent', 'Approved', 'Rejected'], defaultValue: 'Draft', span: 6, section: 'Quotation Details' },
     ],
   },
   tows: {

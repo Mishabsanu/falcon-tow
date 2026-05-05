@@ -5,6 +5,28 @@ import { Printer, Download, ArrowLeft, ShieldCheck, Landmark, User, FileCheck } 
 import { apiService } from '@/services/apiService';
 import styles from './InvoiceView.module.css';
 
+// Standard Hex Colors to avoid OKLCH issues with html2pdf
+const COLORS = {
+  emerald950: '#022c22',
+  emerald900: '#064e3b',
+  emerald800: '#065f46',
+  emerald700: '#047857',
+  emerald600: '#059669',
+  emerald500: '#10b981',
+  emerald50: '#ecfdf5',
+  slate500: '#64748b',
+  slate400: '#94a3b8',
+  slate200: '#e2e8f0',
+  slate100: '#f1f5f9',
+  slate50: '#f8fafc',
+  rose900: '#450a0a',
+  rose600: '#e11d48',
+  rose400: '#fb7185',
+  amber600: '#d97706',
+  white: '#ffffff',
+  black: '#000000'
+};
+
 export default function SalarySlipView({ id, hideToolbar = false }) {
   const [salary, setSalary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,7 +56,7 @@ export default function SalarySlipView({ id, hideToolbar = false }) {
   const handleDownload = async () => {
     const element = document.getElementById('salary-slip-content');
     const opt = {
-      margin: [0, 0, 0, 0], // Remove margins as the paper itself has padding
+      margin: [0, 0, 0, 0],
       filename: `SalarySlip_${salary.worker}_${salary.month}_${salary.year}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { 
@@ -43,7 +65,7 @@ export default function SalarySlipView({ id, hideToolbar = false }) {
         letterRendering: true,
         scrollX: 0,
         scrollY: 0,
-        windowWidth: 794 // Approx 210mm in pixels at 96dpi
+        windowWidth: 794
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: 'avoid-all' }
@@ -64,8 +86,8 @@ export default function SalarySlipView({ id, hideToolbar = false }) {
     return num.toString();
   };
 
-  if (loading) return <div className="p-20 text-center font-black text-emerald-900 animate-pulse uppercase tracking-[0.2em] text-[10px]">Generating Premium Settlement Document...</div>;
-  if (!salary) return <div className="p-20 text-center font-black text-rose-600 uppercase tracking-[0.2em] text-[10px]">Salary record not found.</div>;
+  if (loading) return <div style={{ padding: '80px', textAlign: 'center', fontWeight: '900', color: COLORS.emerald900, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: '10px' }}>Generating Premium Settlement Document...</div>;
+  if (!salary) return <div style={{ padding: '80px', textAlign: 'center', fontWeight: '900', color: COLORS.rose600, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: '10px' }}>Salary record not found.</div>;
 
   return (
     <div className={styles.container}>
@@ -88,152 +110,152 @@ export default function SalarySlipView({ id, hideToolbar = false }) {
         </div>
       )}
 
-      <div className={styles.paper} id="salary-slip-content">
-        <header className="flex justify-between items-start border-b-4 border-emerald-900 pb-8 mb-10">
-          <div className="space-y-4">
-             <img src="/logo-1.png" alt="Falcon Plus Garage" className="h-16 w-auto" />
-             <div className="space-y-1">
-                <h1 className="text-2xl font-black text-emerald-950 tracking-tighter">FALCON PLUS <span className="text-emerald-600">GROUP</span></h1>
-                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Premium Fleet Management & Recovery Services</p>
+      <div className={styles.paper} id="salary-slip-content" style={{ background: COLORS.white, padding: '15mm', color: COLORS.emerald950 }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: `4px solid ${COLORS.emerald900}`, paddingBottom: '32px', marginBottom: '40px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+             <img src="/logo-1.png" alt="Falcon Plus Garage" style={{ height: '64px', width: 'auto' }} />
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <h1 style={{ fontSize: '24px', fontWeight: '900', color: COLORS.emerald950, letterSpacing: '-0.02em', margin: 0 }}>FALCON PLUS <span style={{ color: COLORS.emerald600 }}>GROUP</span></h1>
+                <p style={{ fontSize: '9px', fontWeight: '700', color: COLORS.slate500, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Premium Fleet Management & Recovery Services</p>
              </div>
           </div>
-          <div className="text-right space-y-2">
-             <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-950 text-white rounded-lg">
-                <FileCheck size={14} className="text-emerald-400" />
-                <span className="text-[9px] font-black uppercase tracking-widest">Official Settlement Slip</span>
+          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 12px', background: COLORS.emerald950, color: COLORS.white, borderRadius: '8px' }}>
+                <FileCheck size={14} style={{ color: COLORS.emerald400 }} />
+                <span style={{ fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Official Settlement Slip</span>
              </div>
-             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Document ID: {salary.id}</p>
+             <p style={{ fontSize: '10px', fontWeight: '700', color: COLORS.slate400, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Document ID: {salary.id}</p>
           </div>
         </header>
 
-        <div className="grid grid-cols-2 gap-12 mb-12">
-          <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
-             <div className="flex items-center gap-3 mb-4">
-                <User size={16} className="text-emerald-600" />
-                <span className="text-[10px] font-black text-emerald-900 uppercase tracking-[0.2em]">Employee Profile</span>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px', marginBottom: '48px' }}>
+          <div style={{ padding: '24px', background: COLORS.slate50, borderRadius: '16px', border: `1px solid ${COLORS.slate100}` }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <User size={16} style={{ color: COLORS.emerald600 }} />
+                <span style={{ fontSize: '10px', fontWeight: '900', color: COLORS.emerald900, textTransform: 'uppercase', letterSpacing: '0.2em' }}>Employee Profile</span>
              </div>
-             <div className="space-y-3">
-                <div className="flex justify-between border-b border-slate-200 pb-2">
-                   <span className="text-[10px] font-bold text-slate-400 uppercase">Name</span>
-                   <span className="text-[11px] font-black text-emerald-950 uppercase">{salary.worker}</span>
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid ${COLORS.slate200}`, paddingBottom: '8px' }}>
+                   <span style={{ fontSize: '10px', fontWeight: '700', color: COLORS.slate400, textTransform: 'uppercase' }}>Name</span>
+                   <span style={{ fontSize: '11px', fontWeight: '900', color: COLORS.emerald950, textTransform: 'uppercase' }}>{salary.worker}</span>
                 </div>
-                <div className="flex justify-between border-b border-slate-200 pb-2">
-                   <span className="text-[10px] font-bold text-slate-400 uppercase">ID No.</span>
-                   <span className="text-[11px] font-black text-emerald-950">{salary.workerId || 'N/A'}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid ${COLORS.slate200}`, paddingBottom: '8px' }}>
+                   <span style={{ fontSize: '10px', fontWeight: '700', color: COLORS.slate400, textTransform: 'uppercase' }}>ID No.</span>
+                   <span style={{ fontSize: '11px', fontWeight: '900', color: COLORS.emerald950 }}>{salary.workerId || 'N/A'}</span>
                 </div>
-                <div className="flex justify-between">
-                   <span className="text-[10px] font-bold text-slate-400 uppercase">Role</span>
-                   <span className="text-[11px] font-black text-emerald-950">Operational Driver</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                   <span style={{ fontSize: '10px', fontWeight: '700', color: COLORS.slate400, textTransform: 'uppercase' }}>Role</span>
+                   <span style={{ fontSize: '11px', fontWeight: '900', color: COLORS.emerald950 }}>Operational Driver</span>
                 </div>
              </div>
           </div>
 
-          <div className="p-6 bg-emerald-50/20 rounded-2xl border border-emerald-100/30">
-             <div className="flex items-center gap-3 mb-4">
-                <Landmark size={16} className="text-emerald-600" />
-                <span className="text-[10px] font-black text-emerald-900 uppercase tracking-[0.2em]">Settlement Period</span>
+          <div style={{ padding: '24px', background: 'rgba(236, 253, 245, 0.2)', borderRadius: '16px', border: `1px solid rgba(209, 250, 229, 0.3)` }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <Landmark size={16} style={{ color: COLORS.emerald600 }} />
+                <span style={{ fontSize: '10px', fontWeight: '900', color: COLORS.emerald900, textTransform: 'uppercase', letterSpacing: '0.2em' }}>Settlement Period</span>
              </div>
-             <div className="space-y-3">
-                <div className="flex justify-between border-b border-emerald-100/30 pb-2">
-                   <span className="text-[10px] font-bold text-slate-500 uppercase">Fiscal Year</span>
-                   <span className="text-[11px] font-black text-emerald-950">{salary.year}</span>
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid rgba(209, 250, 229, 0.3)`, paddingBottom: '8px' }}>
+                   <span style={{ fontSize: '10px', fontWeight: '700', color: COLORS.slate500, textTransform: 'uppercase' }}>Fiscal Year</span>
+                   <span style={{ fontSize: '11px', fontWeight: '900', color: COLORS.emerald950 }}>{salary.year}</span>
                 </div>
-                <div className="flex justify-between border-b border-emerald-100/30 pb-2">
-                   <span className="text-[10px] font-bold text-slate-500 uppercase">Settlement Month</span>
-                   <span className="text-[11px] font-black text-emerald-950">{salary.month}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid rgba(209, 250, 229, 0.3)`, paddingBottom: '8px' }}>
+                   <span style={{ fontSize: '10px', fontWeight: '700', color: COLORS.slate500, textTransform: 'uppercase' }}>Settlement Month</span>
+                   <span style={{ fontSize: '11px', fontWeight: '900', color: COLORS.emerald950 }}>{salary.month}</span>
                 </div>
-                <div className="flex justify-between">
-                   <span className="text-[10px] font-bold text-slate-500 uppercase">Payment Status</span>
-                   <span className={`text-[11px] font-black uppercase ${salary.status === 'Paid' ? 'text-emerald-600' : 'text-amber-600'}`}>{salary.status}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                   <span style={{ fontSize: '10px', fontWeight: '700', color: COLORS.slate500, textTransform: 'uppercase' }}>Payment Status</span>
+                   <span style={{ fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', color: salary.status === 'Paid' ? COLORS.emerald600 : COLORS.amber600 }}>{salary.status}</span>
                 </div>
              </div>
           </div>
         </div>
 
-        <table className="w-full mb-12">
+        <table style={{ width: '100%', marginBottom: '48px', borderCollapse: 'collapse' }}>
           <thead>
-            <tr className="bg-emerald-950 text-white">
-              <th className="py-4 px-6 text-left text-[10px] font-black uppercase tracking-widest rounded-tl-2xl">Description</th>
-              <th className="py-4 px-6 text-right text-[10px] font-black uppercase tracking-widest rounded-tr-2xl">Amount (QAR)</th>
+            <tr style={{ background: COLORS.emerald950, color: COLORS.white }}>
+              <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Description</th>
+              <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Amount (QAR)</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 border-x border-slate-100">
-            <tr>
-              <td className="py-5 px-6">
-                 <p className="text-[11px] font-black text-emerald-950 uppercase">Basic Monthly Salary</p>
-                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Fixed contractual base amount</p>
+          <tbody style={{ borderLeft: `1px solid ${COLORS.slate100}`, borderRight: `1px solid ${COLORS.slate100}` }}>
+            <tr style={{ borderBottom: `1px solid ${COLORS.slate100}` }}>
+              <td style={{ padding: '20px 24px' }}>
+                 <p style={{ fontSize: '11px', fontWeight: '900', color: COLORS.emerald950, textTransform: 'uppercase', margin: 0 }}>Basic Monthly Salary</p>
+                 <p style={{ fontSize: '9px', fontWeight: '700', color: COLORS.slate400, textTransform: 'uppercase', margin: '4px 0 0 0' }}>Fixed contractual base amount</p>
               </td>
-              <td className="py-5 px-6 text-right font-black text-emerald-950">{Number(salary.baseSalary || 0).toLocaleString()}</td>
+              <td style={{ padding: '20px 24px', textAlign: 'right', fontWeight: '900', color: COLORS.emerald950 }}>{Number(salary.baseSalary || 0).toLocaleString()}</td>
             </tr>
-            <tr>
-              <td className="py-5 px-6">
-                 <p className="text-[11px] font-black text-emerald-950 uppercase">Performance Commission (10%)</p>
-                 <p className="text-[9px] font-bold text-emerald-600/60 uppercase tracking-tighter">Calculated from completed cash services</p>
+            <tr style={{ borderBottom: `1px solid ${COLORS.slate100}` }}>
+              <td style={{ padding: '20px 24px' }}>
+                 <p style={{ fontSize: '11px', fontWeight: '900', color: COLORS.emerald950, textTransform: 'uppercase', margin: 0 }}>Performance Commission (10%)</p>
+                 <p style={{ fontSize: '9px', fontWeight: '700', color: COLORS.emerald600, opacity: 0.6, textTransform: 'uppercase', margin: '4px 0 0 0' }}>Calculated from completed cash services</p>
               </td>
-              <td className="py-5 px-6 text-right font-black text-emerald-600">+{Number(salary.retention || 0).toLocaleString()}</td>
+              <td style={{ padding: '20px 24px', textAlign: 'right', fontWeight: '900', color: COLORS.emerald600 }}>+{Number(salary.retention || 0).toLocaleString()}</td>
             </tr>
-            <tr>
-              <td className="py-5 px-6">
-                 <p className="text-[11px] font-black text-rose-900 uppercase">Cash Deduction (90%)</p>
-                 <p className="text-[9px] font-bold text-rose-400 uppercase tracking-tighter">Cash collected on-site (Company share)</p>
+            <tr style={{ borderBottom: `1px solid ${COLORS.slate100}` }}>
+              <td style={{ padding: '20px 24px' }}>
+                 <p style={{ fontSize: '11px', fontWeight: '900', color: COLORS.rose900, textTransform: 'uppercase', margin: 0 }}>Cash Deduction (90%)</p>
+                 <p style={{ fontSize: '9px', fontWeight: '700', color: COLORS.rose400, textTransform: 'uppercase', margin: '4px 0 0 0' }}>Cash collected on-site (Company share)</p>
               </td>
-              <td className="py-5 px-6 text-right font-black text-rose-600">-{Number(salary.cashDeduction90 || 0).toLocaleString()}</td>
+              <td style={{ padding: '20px 24px', textAlign: 'right', fontWeight: '900', color: COLORS.rose600 }}>-{Number(salary.cashDeduction90 || 0).toLocaleString()}</td>
             </tr>
-            <tr>
-              <td className="py-5 px-6">
-                 <p className="text-[11px] font-black text-rose-900 uppercase">Operational Expenses / Advances</p>
-                 <p className="text-[9px] font-bold text-rose-400 uppercase tracking-tighter">Reimbursed or advanced payments</p>
+            <tr style={{ borderBottom: `1px solid ${COLORS.slate100}` }}>
+              <td style={{ padding: '20px 24px' }}>
+                 <p style={{ fontSize: '11px', fontWeight: '900', color: COLORS.rose900, textTransform: 'uppercase', margin: 0 }}>Operational Expenses / Advances</p>
+                 <p style={{ fontSize: '9px', fontWeight: '700', color: COLORS.rose400, textTransform: 'uppercase', margin: '4px 0 0 0' }}>Reimbursed or advanced payments</p>
               </td>
-              <td className="py-5 px-6 text-right font-black text-rose-600">-{Number(salary.expenses || 0).toLocaleString()}</td>
+              <td style={{ padding: '20px 24px', textAlign: 'right', fontWeight: '900', color: COLORS.rose600 }}>-{Number(salary.expenses || 0).toLocaleString()}</td>
             </tr>
           </tbody>
           <tfoot>
-             <tr className="bg-emerald-50">
-                <td className="py-6 px-6 rounded-bl-2xl">
-                   <p className="text-[11px] font-black text-emerald-950 uppercase">Total Net Payable</p>
-                   <p className="text-[9px] font-bold text-emerald-600/60 uppercase tracking-widest mt-1">
+             <tr style={{ background: COLORS.emerald50 }}>
+                <td style={{ padding: '24px' }}>
+                   <p style={{ fontSize: '11px', fontWeight: '900', color: COLORS.emerald950, textTransform: 'uppercase', margin: 0 }}>Total Net Payable</p>
+                   <p style={{ fontSize: '9px', fontWeight: '700', color: COLORS.emerald600, opacity: 0.6, textTransform: 'uppercase', margin: '4px 0 0 0' }}>
                       Qatari Riyal {amountInWords(Math.round(salary.amount || 0))} Only
                    </p>
                 </td>
-                <td className="py-6 px-6 text-right rounded-br-2xl">
-                   <p className="text-2xl font-black text-emerald-950 tracking-tighter italic">QAR {Number(salary.amount || 0).toLocaleString()}</p>
+                <td style={{ padding: '24px', textAlign: 'right' }}>
+                   <p style={{ fontSize: '24px', fontWeight: '900', color: COLORS.emerald950, fontStyle: 'italic', margin: 0 }}>QAR {Number(salary.amount || 0).toLocaleString()}</p>
                 </td>
              </tr>
           </tfoot>
         </table>
 
-        <div className="grid grid-cols-2 gap-20 mt-20">
-          <div className="space-y-12">
-             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Employee Acknowledgement</p>
-             <div className="border-t-2 border-slate-200 pt-4 flex flex-col items-start gap-1">
-                <span className="text-[11px] font-black text-emerald-950 uppercase">{salary.worker}</span>
-                <span className="text-[9px] font-bold text-slate-400 uppercase">Driver Signature</span>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', marginTop: '80px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
+             <p style={{ fontSize: '10px', fontWeight: '700', color: COLORS.slate400, textTransform: 'uppercase', letterSpacing: '0.3em', margin: 0 }}>Employee Acknowledgement</p>
+             <div style={{ borderTop: `2px solid ${COLORS.slate200}`, paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '900', color: COLORS.emerald950, textTransform: 'uppercase' }}>{salary.worker}</span>
+                <span style={{ fontSize: '9px', fontWeight: '700', color: COLORS.slate400, textTransform: 'uppercase' }}>Driver Signature</span>
              </div>
           </div>
-          <div className="space-y-12">
-             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] text-right">Authorized By</p>
-             <div className="border-t-2 border-slate-200 pt-4 flex flex-col items-end gap-1">
-                <div className="flex items-center gap-2">
-                   <ShieldCheck size={14} className="text-emerald-600" />
-                   <span className="text-[11px] font-black text-emerald-950 uppercase">MANAGEMENT</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
+             <p style={{ fontSize: '10px', fontWeight: '700', color: COLORS.slate400, textTransform: 'uppercase', letterSpacing: '0.3em', textAlign: 'right', margin: 0 }}>Authorized By</p>
+             <div style={{ borderTop: `2px solid ${COLORS.slate200}`, paddingTop: '16px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                   <ShieldCheck size={14} style={{ color: COLORS.emerald600 }} />
+                   <span style={{ fontSize: '11px', fontWeight: '900', color: COLORS.emerald950, textTransform: 'uppercase' }}>MANAGEMENT</span>
                 </div>
-                <span className="text-[9px] font-bold text-slate-400 uppercase">Falcon Plus Group</span>
+                <span style={{ fontSize: '9px', fontWeight: '700', color: COLORS.slate400, textTransform: 'uppercase' }}>Falcon Plus Group</span>
              </div>
           </div>
         </div>
 
-        <footer className="mt-32 pt-8 border-t border-slate-100 flex justify-between items-end">
-           <div className="space-y-1">
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Contact Information</p>
-              <p className="text-[10px] font-black text-emerald-950 tracking-tight">Mob: +974 3074 0770 | info@falconplusqa.com</p>
-              <p className="text-[10px] font-black text-emerald-950 tracking-tight">CR No. 210580 | Doha, Qatar</p>
+        <footer style={{ marginTop: '128px', paddingTop: '32px', borderTop: `1px solid ${COLORS.slate100}`, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <p style={{ fontSize: '9px', fontWeight: '700', color: COLORS.slate400, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Contact Information</p>
+              <p style={{ fontSize: '10px', fontWeight: '900', color: COLORS.emerald950, margin: 0 }}>Mob: +974 3074 0770 | info@falconplusqa.com</p>
+              <p style={{ fontSize: '10px', fontWeight: '900', color: COLORS.emerald950, margin: 0 }}>CR No. 210580 | Doha, Qatar</p>
            </div>
-           <div className="text-right">
-              <div className="flex items-center gap-2 justify-end mb-1">
-                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                 <p className="text-[9px] font-black text-emerald-950 uppercase tracking-[0.2em]">Verified Secure</p>
+           <div style={{ textAlign: 'right' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end', marginBottom: '4px' }}>
+                 <div style={{ width: '6px', height: '6px', background: COLORS.emerald500, borderRadius: '50%' }}></div>
+                 <p style={{ fontSize: '9px', fontWeight: '900', color: COLORS.emerald950, textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>Verified Secure</p>
               </div>
-              <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Document Generated: {new Date(salary.createdAt).toLocaleDateString()}</p>
+              <p style={{ fontSize: '8px', fontWeight: '700', color: COLORS.slate400, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Document Generated: {new Date(salary.createdAt).toLocaleDateString()}</p>
            </div>
         </footer>
       </div>

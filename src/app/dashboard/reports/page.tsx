@@ -46,7 +46,7 @@ export default function ReportsPage() {
 
   const fetchWorkers = async () => {
     try {
-      const res = await fetch("/api/workers?limit=1000");
+      const res = await fetch("/api/users?role=Worker&limit=1000");
       const json = await res.json();
       setWorkers(json.data || (Array.isArray(json) ? json : []));
     } catch (err) {
@@ -65,19 +65,34 @@ export default function ReportsPage() {
   };
 
   const exportToCSV = (data: any[], filename: string) => {
-    if (data.length === 0) return;
+    if (data.length === 0) {
+      toast.error("No data found for the selected filters.");
+      return;
+    }
+    
+    // Get headers from first object
     const headers = Object.keys(data[0]).join(",");
+    
+    // Create rows
     const rows = data.map(obj =>
-      Object.values(obj).map(val => `"${val}"`).join(",")
+      Object.values(obj).map(val => {
+        // Escape quotes and wrap in quotes
+        const stringVal = String(val || '').replace(/"/g, '""');
+        return `"${stringVal}"`;
+      }).join(",")
     ).join("\n");
-    const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + rows;
-    const encodedUri = encodeURI(csvContent);
+    
+    const csvContent = headers + "\n" + rows;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", url);
     link.setAttribute("download", `falcon_tow_${filename}_report.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const exportToPDF = async (data: any[], moduleName: string) => {
@@ -186,12 +201,16 @@ export default function ReportsPage() {
               <button
                 key={item.id}
                 onClick={() => setSelectedModule(item.id)}
-                className={`flex items-center gap-4 p-5 rounded-2xl border transition-all duration-300 text-left ${
+                className={`flex items-center gap-4 p-5 rounded-2xl border transition-all duration-300 text-left relative overflow-hidden group ${
                   selectedModule === item.id 
                     ? 'bg-emerald-950 border-emerald-600 shadow-xl shadow-emerald-900/10 -translate-y-1' 
                     : 'bg-white border-emerald-100 hover:border-emerald-300'
                 }`}
               >
+                {/* Decorative background logo */}
+                <div className="absolute -right-4 -bottom-4 w-20 h-20 opacity-[0.03] grayscale brightness-0 group-hover:opacity-10 transition-opacity">
+                   <img src="/logo-1.png" alt="" className="w-full h-full object-contain" />
+                </div>
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${selectedModule === item.id ? 'bg-emerald-800 text-emerald-400' : `${item.bg} ${item.color}`}`}>
                   <item.icon size={22} />
                 </div>
@@ -314,17 +333,17 @@ export default function ReportsPage() {
       </div>
 
       {/* Hidden Export Content for PDF Generation */}
-      <div id="export-content" className="hidden">
-        <div className="p-20 bg-white">
-          <h1 id="export-title" className="text-4xl font-bold uppercase mb-10 text-emerald-950"></h1>
-          <div className="flex justify-between border-b-4 border-emerald-950 pb-6 mb-10">
+      <div id="export-content" className="hidden" style={{ background: '#ffffff', color: '#022c22', fontFamily: 'sans-serif' }}>
+        <div style={{ padding: '40px' }}>
+          <h1 id="export-title" style={{ fontSize: '24px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '30px', color: '#022c22' }}></h1>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '4px solid #022c22', paddingBottom: '20px', marginBottom: '30px' }}>
             <div>
-              <p className="text-sm font-bold uppercase tracking-widest text-emerald-800/40">Company</p>
-              <p className="text-xl font-bold text-emerald-950">Falcon Tow Management</p>
+              <p style={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#64748b', marginBottom: '4px' }}>Company</p>
+              <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#022c22' }}>Falcon Tow Management</p>
             </div>
-            <div className="text-right">
-              <p className="text-sm font-bold uppercase tracking-widest text-emerald-800/40">Report Date</p>
-              <p className="text-xl font-bold text-emerald-950">{new Date().toLocaleDateString()}</p>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#64748b', marginBottom: '4px' }}>Report Date</p>
+              <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#022c22' }}>{new Date().toLocaleDateString()}</p>
             </div>
           </div>
           <div id="export-table-container"></div>

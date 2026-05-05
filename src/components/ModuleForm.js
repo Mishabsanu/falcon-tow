@@ -558,7 +558,21 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
                   )}
                   <div className={section.title === 'Financial Split' ? "flex items-start gap-4 -mx-6 bg-emerald-50/10 p-6 rounded-2xl border border-emerald-100/20" : `grid grid-cols-12 ${isModal ? 'gap-4' : 'gap-4 sm:gap-8 md:gap-10'}`}>
                     {section.fields.map((field) => {
-                      const colSpan = section.title === 'Financial Split' ? "flex-1" : `col-span-${field.span || 4}`;
+                      const spanMap = {
+                        1: 'col-span-1',
+                        2: 'col-span-2',
+                        3: 'col-span-3',
+                        4: 'col-span-4',
+                        5: 'col-span-5',
+                        6: 'col-span-6',
+                        7: 'col-span-7',
+                        8: 'col-span-8',
+                        9: 'col-span-9',
+                        10: 'col-span-10',
+                        11: 'col-span-11',
+                        12: 'col-span-12',
+                      };
+                      const colSpan = section.title === 'Financial Split' ? "flex-1" : (spanMap[field.span] || 'col-span-4');
                       return (
                         <div key={field.name} className={`space-y-4 ${colSpan}`}>
                           <div className="flex items-center justify-between">
