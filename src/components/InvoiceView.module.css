@@ -271,7 +271,7 @@
     max-width: none;
   }
   
-  :global(.no-print) {
+  .container :global(.no-print) {
     display: none !important;
   }
   
