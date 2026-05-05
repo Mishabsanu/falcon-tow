@@ -1,0 +1,76 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--foreground);
+}
+
+.subtitle {
+  color: var(--text-muted);
+}
+
+.expId {
+  font-weight: 700;
+  color: var(--primary);
+  font-family: var(--font-outfit);
+}
+
+.descriptionText {
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.workerCell, .vehicleCell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.amountText {
+  font-weight: 800;
+  color: var(--danger);
+}
+
+.actionCell {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.editBtn, .deleteBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.editBtn {
+  background: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary);
+}
+
+.editBtn:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.deleteBtn {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.deleteBtn:hover {
+  background: #ef4444;
+  color: white;
+}

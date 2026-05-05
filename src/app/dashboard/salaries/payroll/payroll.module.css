@@ -1,0 +1,172 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.backBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.backBtn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--foreground);
+}
+
+.subtitle {
+  color: var(--text-muted);
+}
+
+.controls {
+  display: flex;
+  gap: 1rem;
+}
+
+.select {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: white;
+  font-weight: 600;
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.statCard {
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.statCard label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.statCard h3 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--foreground);
+}
+
+.workerInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  background: var(--primary);
+  color: white;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.875rem;
+}
+
+.nameText {
+  display: block;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.subtext {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.boldAmount {
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.deduction {
+  color: #ef4444;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.netAmount {
+  font-weight: 800;
+  color: var(--success);
+  font-family: var(--font-outfit);
+}
+
+.actionCell {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.payBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+
+.payBtn:hover {
+  background: #10b981;
+  color: white;
+}
+
+.viewBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.viewBtn:hover {
+  background: var(--primary);
+  color: white;
+}

@@ -1,0 +1,144 @@
+.header {
+  align-items: flex-end;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.title {
+  color: var(--foreground);
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.subtitle {
+  color: var(--text-muted);
+}
+
+.form {
+  width: 100%;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sectionTitle {
+  grid-column: 1 / -1;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(16, 185, 129, 0.15);
+}
+
+.field label,
+.detailLabel {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.field input,
+.field select {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.8rem 1.25rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--primary);
+  background: white;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.08);
+}
+
+.field input::placeholder {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.actions {
+  border-top: 1px solid rgba(226, 232, 240, 0.78);
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 3rem;
+  padding-top: 2rem;
+}
+
+.secondaryBtn {
+  align-items: center;
+  background: white;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: var(--radius-md);
+  color: #64748b;
+  display: inline-flex;
+  font-weight: 700;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.2s;
+}
+
+.secondaryBtn:hover {
+  background: #f8fafc;
+  color: var(--foreground);
+  border-color: #cbd5e1;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+  gap: 1rem;
+  max-width: 980px;
+}
+
+.detailItem {
+  background: rgba(248, 250, 252, 0.72);
+  border: 1px solid rgba(226, 232, 240, 0.82);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.detailValue {
+  color: var(--foreground);
+  display: block;
+  font-size: 1rem;
+  font-weight: 800;
+  margin-top: 0.35rem;
+}
+
+@media (max-width: 760px) {
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .grid,
+  .detailGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,172 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2.5rem;
+}
+
+.title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  color: var(--foreground);
+}
+
+.subtitle {
+  color: var(--text-muted);
+}
+
+.headerActions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.btnSecondary {
+  padding: 0.75rem 1.25rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+.listHeader {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  max-width: 800px;
+}
+
+.searchWrapper {
+  position: relative;
+  flex: 1;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+}
+
+.searchInput {
+  width: 100%;
+  padding-left: 2.75rem;
+}
+
+.filterBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1.25rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.notifList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 800px;
+}
+
+.notifItem {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  position: relative;
+  transition: all 0.3s;
+  border: 1px solid #f1f5f9;
+}
+
+.notifItem:hover {
+  transform: scale(1.01);
+  box-shadow: var(--shadow-md);
+}
+
+.unread {
+  border-left: 4px solid var(--primary);
+  background: rgba(16, 185, 129, 0.02);
+}
+
+.iconBox {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.content {
+  flex: 1;
+}
+
+.notifHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.notifTitle {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--foreground);
+}
+
+.time {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.message {
+  color: #64748b;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.actionCell {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.iconBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-muted);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.iconBtn:hover {
+  background: rgba(240, 253, 250, 0.9);
+  color: var(--primary);
+  border-color: rgba(13, 148, 136, 0.22);
+}
+
+.unreadDot {
+  width: 10px;
+  height: 10px;
+  background: var(--primary);
+  border-radius: 50%;
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  border: 2px solid white;
+}

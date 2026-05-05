@@ -1,0 +1,140 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  color: var(--foreground);
+}
+
+.subtitle {
+  color: var(--text-muted);
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.summaryLabel,
+.subtext {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.summaryValue {
+  display: block;
+  color: var(--foreground);
+  font-family: var(--font-outfit), var(--font-inter), system-ui, sans-serif;
+  font-size: 1.75rem;
+  margin-top: 0.35rem;
+}
+
+.statusSelect {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+.jobCell,
+.customerCell,
+.dateCell,
+.routeCell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.iconBox {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(13, 148, 136, 0.1);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.towId {
+  color: var(--primary);
+  display: block;
+  font-family: var(--font-outfit), var(--font-inter), system-ui, sans-serif;
+  font-weight: 800;
+}
+
+.nameText,
+.amountText {
+  color: var(--foreground);
+  font-weight: 800;
+}
+
+.routeCell {
+  max-width: 260px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.actionCell {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.viewBtn,
+.moreBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-muted);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.viewBtn:hover,
+.moreBtn:hover,
+.invoiceBtn:hover {
+  background: rgba(240, 253, 250, 0.9);
+  color: var(--primary);
+  border-color: rgba(13, 148, 136, 0.22);
+}
+
+.invoiceBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 148, 136, 0.1);
+  color: var(--primary);
+  border: 1px solid rgba(13, 148, 136, 0.22);
+}
+
+@media (max-width: 900px) {
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+}

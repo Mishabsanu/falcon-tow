@@ -1,0 +1,106 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2.5rem;
+}
+
+.title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  color: var(--foreground);
+}
+
+.subtitle {
+  color: var(--text-muted);
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.btnSecondary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  background: var(--secondary);
+  border: 1px solid var(--sidebar-border);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.btnSecondary:hover {
+  background: rgba(241, 245, 249, 0.9);
+}
+
+.invId {
+  font-weight: 700;
+  color: var(--primary);
+  font-family: var(--font-outfit);
+}
+
+.nameText {
+  font-weight: 600;
+}
+
+.typeCell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.amountText {
+  font-weight: 700;
+}
+
+.paidText {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.balanceText {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.actionCell {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.editBtn, .deleteBtn, .payBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-muted);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.editBtn:hover {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--primary);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.deleteBtn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.payBtn:hover {
+  background: rgba(20, 184, 166, 0.1);
+  color: var(--accent);
+  border-color: rgba(20, 184, 166, 0.2);
+}

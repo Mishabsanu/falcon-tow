@@ -1,0 +1,97 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2.5rem;
+}
+
+.title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  color: var(--foreground);
+}
+
+.subtitle {
+  color: var(--text-muted);
+}
+
+.vehicleCell {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.iconBox {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(13, 148, 136, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+.nameText {
+  font-weight: 600;
+}
+
+.plateBadge {
+  font-family: monospace;
+  background: var(--secondary);
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--sidebar-border);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.actionCell {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.editBtn, .deleteBtn, .serviceBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-muted);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.editBtn:hover {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+.deleteBtn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.serviceBtn:hover {
+  background: rgba(241, 245, 249, 0.85);
+  color: var(--foreground);
+}
+
+.statusSelect {
+  background: none;
+  border: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 0.5rem;
+  outline: none;
+  appearance: none;
+}

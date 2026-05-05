@@ -1,0 +1,282 @@
+.container {
+  max-width: 1000px; /* Better for on-screen viewing */
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.backBtn,
+.actionBtn,
+.editBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: 1px solid #cbd5e1;
+  background: white;
+  color: #475569;
+}
+
+.actionBtn {
+  background: linear-gradient(135deg, #334155 0%, #0f172a 100%);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.3);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+}
+
+.actionBtn:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(15, 23, 42, 0.4);
+  background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+}
+
+.actionBtn:active {
+  transform: translateY(-1px);
+}
+
+.pdfBtn {
+  background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(255, 65, 108, 0.4);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+}
+
+.pdfBtn:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(255, 65, 108, 0.6);
+  background: linear-gradient(135deg, #ff4b2b 0%, #ff416c 100%);
+}
+
+.pdfBtn:active {
+  transform: translateY(-1px);
+}
+
+.paper {
+  background: white;
+  width: 210mm;
+  height: 297mm; /* Full A4 Height */
+  padding: 0;
+  margin: 0 auto;
+  font-family: 'Inter', sans-serif;
+  color: #1e293b;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* To make it look like paper on screen */
+}
+
+.paperHeader {
+  background: #1e293b;
+  padding: 20px; /* Reduced from 30px */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.logoImg {
+  height: 120px; /* Increased from 90px */
+  width: auto;
+}
+
+.brandArabic {
+  color: #facc15;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 10px 0 0 0;
+}
+
+.invoiceTitleSection {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.mainInvoiceTitle {
+  font-size: 1.5rem;
+  font-weight: 900;
+  text-decoration: underline;
+  letter-spacing: 0.2em;
+  color: #1e293b;
+}
+
+.detailsSection {
+  padding: 30px 40px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.leftDetails {
+  flex: 1;
+}
+
+.rightDetails {
+  text-align: right;
+  width: 250px;
+}
+
+.sectionTitle {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: #94a3b8;
+  font-weight: 800;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.detailRow {
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+.metaGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metaItem {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.metaItem span:first-child {
+  color: #64748b;
+}
+
+.metaItem span:last-child {
+  font-weight: 700;
+}
+
+.invoiceTableWrapper {
+  padding: 0 40px;
+  flex: 1;
+}
+
+.invoiceTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 40px;
+  border: 1px solid #1e293b;
+}
+
+.invoiceTable th {
+  background: #f8fafc;
+  padding: 10px;
+  border: 1px solid #1e293b;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.invoiceTable td {
+  padding: 12px 10px;
+  border: 1px solid #1e293b;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.invoiceTable td:nth-child(2) {
+  text-align: left;
+}
+
+.totalLabelCell {
+  text-align: right !important;
+  font-weight: 800;
+  background: #f8fafc;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+.totalAmountCell {
+  font-weight: 900;
+  font-size: 1rem;
+  background: #f8fafc;
+  color: #1e293b;
+}
+
+.summarySection {
+  padding: 0 40px 20px 40px;
+}
+
+.wordsBox {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #64748b;
+  margin-bottom: 20px;
+}
+
+.disclaimer {
+  padding: 0 40px 20px 40px;
+  font-size: 0.7rem;
+  text-align: center;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.signatureSection {
+  padding: 0 40px 60px 40px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.signBox {
+  width: 200px;
+  border-top: 1px solid #1e293b;
+  padding-top: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.paperFooter {
+  background: #1e293b;
+  color: white;
+  padding: 20px 40px;
+  text-align: center;
+  font-size: 0.75rem;
+}
+
+@media print {
+  .container {
+    padding: 0;
+    max-width: none;
+  }
+  
+  :global(.no-print) {
+    display: none !important;
+  }
+  
+  .paper {
+    border: none;
+    width: 100%;
+  }
+}
