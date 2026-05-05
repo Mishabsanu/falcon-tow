@@ -12,7 +12,10 @@ import {
   FileText,
   Calendar,
   Filter,
-  Download
+  Download,
+  ArrowRight,
+  Target,
+  Layers
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -118,14 +121,15 @@ export default function ReportsPage() {
     const opt = {
       margin: 10,
       filename: `falcon_tow_${moduleName}_report.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
+      image: { type: 'jpeg' as const, quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      jsPDF: { unit: 'mm', format: 'a4' as const, orientation: 'landscape' as const }
     };
 
-    content?.classList.remove('hidden');
+    if (!content) return;
+    content.classList.remove('hidden');
     await html2pdf().set(opt).from(content).save();
-    content?.classList.add('hidden');
+    content.classList.add('hidden');
   };
 
   const handleExport = async (format: 'pdf' | 'excel') => {
