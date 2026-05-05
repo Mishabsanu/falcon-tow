@@ -155,7 +155,6 @@ export default function Sidebar() {
       {/* NAVIGATION */}
       <nav className="flex-1 space-y-8 overflow-y-auto px-5 py-8 hide-scrollbar">
         {menuGroups.map((group) => {
-          if (group.isAdminOnly && userRole !== "ADMIN" && userRole !== "ADMINISTRATOR") return null;
           const visibleItems = group.items.filter((item) => isVisible(item.path));
           if (visibleItems.length === 0) return null;
 

@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "FALCON PLUS | Fleet Command",
   description: "Next-Gen Fleet Management & Operational Intelligence",
+  icons:"/logo.jpeg",
 };
 
 import { Toaster } from "sonner";
