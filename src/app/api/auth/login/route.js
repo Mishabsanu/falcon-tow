@@ -14,24 +14,39 @@ export async function POST(request) {
     // Fetch users from the 'users' collection
     const result = await listRecords('users', { limit: 1000 });
 
+
     if (!result || !result.data || result.data.length === 0) {
       return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
     }
 
-    // Match strictly by email or name
-    const user = result.data.find(u => 
-      u.email?.toLowerCase() === identifier.toLowerCase() || 
-      u.name?.toLowerCase() === identifier.toLowerCase()
+    // Match strictly by email or employee ID, ensuring we pick the record with a password
+    const user = result.data.find(u =>
+      (u.email?.toLowerCase() === identifier.toLowerCase() ||
+        u.id?.toLowerCase() === identifier.toLowerCase()) &&
+      u.password
     );
 
-    if (user && await bcrypt.compare(password, user.password)) {
+
+
+    if (!user) {
+
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    }
+
+
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+
+    if (isMatch) {
+
       const { password: _, ...safeUser } = user;
-      
+
       // 1. Create JWT Token
-      const token = await new SignJWT({ 
-        id: user.id, 
+      const token = await new SignJWT({
+        id: user.id,
         role: user.role,
-        name: user.name 
+        name: user.name
       })
         .setProtectedHeader({ alg: 'HS256' })
         .setIssuedAt()

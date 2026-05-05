@@ -4,18 +4,18 @@ import { listRecords } from "@/lib/store";
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
-    const module = searchParams.get("module");
+    const moduleKey = searchParams.get("module");
     const start = searchParams.get("start");
     const end = searchParams.get("end");
     const customer = searchParams.get("customer");
     const worker = searchParams.get("worker");
     const vehicle = searchParams.get("vehicle");
 
-    if (!module) {
+    if (!moduleKey) {
       return NextResponse.json({ success: false, message: "Module is required" }, { status: 400 });
     }
 
-    const result = await listRecords(module, { limit: 10000 });
+    const result = await listRecords(moduleKey, { limit: 10000 });
     let data = result?.data || [];
 
     // Apply filtering

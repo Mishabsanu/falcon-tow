@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import styles from './page.module.css';
 import Modal from '@/components/Modal';
+import WorkerSalaryDashboard from '@/components/WorkerSalaryDashboard';
 
 // For PDF generation
 const exportToPDF = () => {
@@ -131,6 +132,20 @@ export default function Salaries() {
   const handlePageChange = (newPage) => {
     setPagination(prev => ({ ...prev, page: newPage }));
   };
+
+  if (isWorker) {
+    return (
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-black text-emerald-950 tracking-tight">Your <span className="text-emerald-600">Earnings</span></h1>
+            <p className="text-slate-500 text-sm font-medium">Access your monthly settlement archive and download payroll slips.</p>
+          </div>
+        </header>
+        <WorkerSalaryDashboard user={user} />
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in">

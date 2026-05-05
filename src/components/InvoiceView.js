@@ -184,7 +184,7 @@ export default function InvoiceView({ id }) {
       </div>
 
         <div className={styles.signatureSection}>
-          <div className={styles.signBox}>Receiver's Signature</div>
+          <div className={styles.signBox}>Receiver&apos;s Signature</div>
           <div className={styles.signBox}>Authorized Signature</div>
         </div>
 

@@ -19,9 +19,9 @@ export const apiService = {
     
     const extraParams = { ...options.extraParams };
     if (isWorker) {
-      // Role-based filtering: Workers only see their OWN data
-      if (moduleKey === 'tows') extraParams.driverId = user.id;
-      if (['expenses', 'salaries'].includes(moduleKey)) extraParams.workerId = user.id;
+      // Role-based filtering: Workers only see their OWN data (linked via native _id)
+      if (moduleKey === 'tows') extraParams.driverId = user._id;
+      if (['expenses', 'salaries'].includes(moduleKey)) extraParams.workerId = user._id;
     }
 
     const params = new URLSearchParams({
@@ -47,8 +47,8 @@ export const apiService = {
     
     let url = `${API_BASE}/${moduleKey}?limit=1000`;
     if (isWorker) {
-      if (moduleKey === 'tows') url += `&driverId=${user.id}`;
-      if (['expenses', 'salaries'].includes(moduleKey)) url += `&workerId=${user.id}`;
+      if (moduleKey === 'tows') url += `&driverId=${user._id}`;
+      if (['expenses', 'salaries'].includes(moduleKey)) url += `&workerId=${user._id}`;
     }
 
     const response = await fetch(url);
@@ -87,12 +87,18 @@ export const apiService = {
        }
     }
 
+    // Administrative tracking
+    payload.createdBy = user?.name || "System";
+
     const response = await fetch(`${API_BASE}/${moduleKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    if (!response.ok) throw new Error(`Failed to create ${moduleKey} record`);
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || `Failed to create ${moduleKey} record`);
+    }
     const result = await response.json();
     return result.data;
   },
@@ -106,7 +112,10 @@ export const apiService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error(`Failed to update ${moduleKey} record`);
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || `Failed to update ${moduleKey} record`);
+    }
     const result = await response.json();
     return result.data;
   },
@@ -124,7 +133,10 @@ export const apiService = {
     const response = await fetch(`${API_BASE}/${moduleKey}/${id}`, {
       method: 'DELETE',
     });
-    if (!response.ok) throw new Error(`Failed to delete ${moduleKey} record`);
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || `Failed to delete ${moduleKey} record`);
+    }
     const result = await response.json();
     return result.success;
   },
@@ -142,7 +154,7 @@ export const apiService = {
     
     let url = `${API_BASE}/dashboard/stats`;
     if (isWorker) {
-      url += `?workerId=${user.id}`;
+      url += `?workerId=${user._id}`;
     }
 
     const response = await fetch(url);

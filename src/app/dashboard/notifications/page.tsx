@@ -90,33 +90,40 @@ export default function NotificationsPage() {
 
   const getTypeStyles = (type: string) => {
     switch (type) {
-      case 'LOW_STOCK': return { 
-        icon: <Package size={18} />, 
-        color: 'text-rose-600', 
-        bg: 'bg-rose-50', 
-        border: 'border-rose-100',
-        label: 'Stock Alert'
-      };
-      case 'JOB_ASSIGNED': return { 
+      case 'tow': return { 
         icon: <Wrench size={18} />, 
         color: 'text-emerald-600', 
         bg: 'bg-emerald-50', 
         border: 'border-emerald-100',
-        label: 'Workforce'
+        label: 'Tow Job'
       };
-      case 'SYSTEM': return { 
-        icon: <Zap size={18} />, 
+      case 'payment': return { 
+        icon: <RefreshCw size={18} />, 
         color: 'text-amber-600', 
         bg: 'bg-amber-50', 
         border: 'border-amber-100',
-        label: 'System'
+        label: 'Finance'
+      };
+      case 'alert': return { 
+        icon: <ShieldAlert size={18} />, 
+        color: 'text-rose-600', 
+        bg: 'bg-rose-50', 
+        border: 'border-rose-100',
+        label: 'System Alert'
+      };
+      case 'status': return { 
+        icon: <Zap size={18} />, 
+        color: 'text-sky-600', 
+        bg: 'bg-sky-50', 
+        border: 'border-sky-100',
+        label: 'Status Update'
       };
       default: return { 
         icon: <Bell size={18} />, 
-        color: 'text-emerald-700', 
-        bg: 'bg-emerald-50', 
-        border: 'border-emerald-100',
-        label: 'Notification'
+        color: 'text-slate-600', 
+        bg: 'bg-slate-50', 
+        border: 'border-slate-100',
+        label: 'General'
       };
     }
   };
@@ -181,10 +188,11 @@ export default function NotificationsPage() {
               </label>
               <div className="flex flex-col gap-2">
                  {[
-                   { id: 'ALL', label: 'All Clusters', icon: <Inbox size={14} />, count: notifications.length },
-                   { id: 'LOW_STOCK', label: 'Inventory', icon: <Package size={14} />, count: notifications.filter(n => n.type === 'LOW_STOCK').length },
-                   { id: 'JOB_ASSIGNED', label: 'Personnel', icon: <Wrench size={14} />, count: notifications.filter(n => n.type === 'JOB_ASSIGNED').length },
-                   { id: 'SYSTEM', label: 'Core System', icon: <Zap size={14} />, count: notifications.filter(n => n.type === 'SYSTEM').length },
+                    { id: 'ALL', label: 'All Clusters', icon: <Inbox size={14} />, count: notifications.length },
+                    { id: 'tow', label: 'Tow Jobs', icon: <Wrench size={14} />, count: notifications.filter(n => n.type === 'tow').length },
+                    { id: 'payment', label: 'Financials', icon: <RefreshCw size={14} />, count: notifications.filter(n => n.type === 'payment').length },
+                    { id: 'status', label: 'Operations', icon: <Zap size={14} />, count: notifications.filter(n => n.type === 'status').length },
+                    { id: 'alert', label: 'Security', icon: <ShieldAlert size={14} />, count: notifications.filter(n => n.type === 'alert').length },
                  ].map((filter) => (
                    <button
                      key={filter.id}

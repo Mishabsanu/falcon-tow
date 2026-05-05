@@ -11,6 +11,7 @@ import {
   Terminal,
   Truck,
   Users,
+  Receipt,
   Wallet
 } from "lucide-react";
 import Link from "next/link";
@@ -26,55 +27,47 @@ import { useCallback, useEffect, useState } from "react";
  * - STORE_MANAGER: Inventory, Procurement, and Vendor nodes.
  */
 const ROLE_VISIBILITY: Record<string, string[]> = {
-  "/dashboard": ["ADMIN", "MANAGER", "WORKER"],
-  "/dashboard/notifications": ["ADMIN", "MANAGER", "DISPATCHER"],
-  "/dashboard/quotations": ["ADMIN", "MANAGER", "DISPATCHER"],
-  "/dashboard/tows": ["ADMIN", "MANAGER", "DISPATCHER", "WORKER"],
-  "/dashboard/invoices": ["ADMIN", "MANAGER", "ACCOUNTANT"],
-  "/dashboard/customers": ["ADMIN", "MANAGER", "DISPATCHER"],
-  "/dashboard/vehicles": ["ADMIN", "MANAGER"],
-  "/dashboard/users": ["ADMIN", "MANAGER"],
-  "/dashboard/salaries": ["ADMIN", "MANAGER", "ACCOUNTANT", "WORKER"],
-  "/dashboard/expenses": ["ADMIN", "MANAGER", "ACCOUNTANT", "WORKER"],
-  "/dashboard/reports": ["ADMIN", "MANAGER", "ACCOUNTANT"],
+  "/dashboard": ["Administrator", "Worker", "Manager"],
+  "/dashboard/notifications": ["Administrator", "Manager"],
+  "/dashboard/quotations": ["Administrator", "Manager"],
+  "/dashboard/tows": ["Administrator", "Worker", "Manager"],
+  "/dashboard/invoices": ["Administrator", "Manager", "Accountant"],
+  "/dashboard/customers": ["Administrator", "Manager"],
+  "/dashboard/vehicles": ["Administrator", "Manager"],
+  "/dashboard/users": ["Administrator", "Manager"],
+  "/dashboard/salaries": ["Administrator", "Worker", "Accountant"],
+  "/dashboard/expenses": ["Administrator", "Worker", "Accountant"],
+  "/dashboard/reports": ["Administrator", "Manager", "Accountant"],
 };
 
 const menuGroups = [
   {
-    label: "Dashboard",
+    label: "Command",
     items: [
-      { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-      { name: "Notifications", path: "/dashboard/notifications", icon: Bell },
+      { name: "Overview", path: "/dashboard", icon: LayoutDashboard },
+      { name: "Reports", path: "/dashboard/reports", icon: ClipboardList },
+      { name: "Alerts", path: "/dashboard/notifications", icon: Bell },
     ],
   },
   {
     label: "Operations",
     items: [
-      { name: "Quotations", path: "/dashboard/quotations", icon: FileText },
       { name: "Tow Jobs", path: "/dashboard/tows", icon: Truck },
+      { name: "Quotations", path: "/dashboard/quotations", icon: FileText },
       { name: "Invoices", path: "/dashboard/invoices", icon: Wallet },
-      { name: "Reports", path: "/dashboard/reports", icon: ClipboardList },
-    ],
-  },
-  {
-    label: "Fleet & People",
-    items: [
       { name: "Customers", path: "/dashboard/customers", icon: Users },
-      { name: "Vehicles", path: "/dashboard/vehicles", icon: Activity },
-      { name: "User Management", path: "/dashboard/users", icon: Terminal },
     ],
   },
   {
-    label: "Admin Panel",
-    isAdminOnly: false, // Changed to false to allow worker visibility if path is allowed
+    label: "Management",
     items: [
       { name: "Salaries", path: "/dashboard/salaries", icon: Banknote },
       { name: "Expenses", path: "/dashboard/expenses", icon: Receipt },
+      { name: "Vehicles", path: "/dashboard/vehicles", icon: Activity },
+      { name: "Users", path: "/dashboard/users", icon: Terminal },
     ],
   },
 ];
-
-import { Receipt } from "lucide-react";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -127,13 +120,14 @@ export default function Sidebar() {
 
   const isVisible = (path: string) => {
     if (!userRole) return true;
-    if (userRole === "ADMIN" || userRole === "ADMINISTRATOR") return true; // ADMIN SEES EVERYTHING
+    const normalizedRole = userRole.charAt(0).toUpperCase() + userRole.slice(1).toLowerCase();
+    if (normalizedRole === "Administrator" || normalizedRole === "Admin") return true; // Administrator SEES EVERYTHING
 
     const restrictedPaths = Object.keys(ROLE_VISIBILITY).sort((a, b) => b.length - a.length);
     const matchedPath = restrictedPaths.find(p => path.startsWith(p));
 
     if (!matchedPath) return true;
-    return ROLE_VISIBILITY[matchedPath].includes(userRole);
+    return ROLE_VISIBILITY[matchedPath].some(r => r.toLowerCase() === normalizedRole.toLowerCase());
   };
 
   return (
@@ -142,11 +136,11 @@ export default function Sidebar() {
       <div className="relative px-6 py-10 flex flex-col items-center border-b border-emerald-800 bg-emerald-900 overflow-hidden">
         {/* THEME GRADIENT OVERLAY */}
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 opacity-95"></div>
-        
+
         {/* PREMIUM GLOWS & TEXTURE */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-400/20 blur-3xl rounded-full"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-500/10 blur-2xl rounded-full"></div>
-        
+
         <Link href="/dashboard" className="relative z-10 w-full group">
           <div className="h-16 w-full transition-all duration-500 group-hover:scale-105 flex items-center justify-center">
             <img src="/logo-1.png" alt="Falcon Tow" className="h-full w-full object-contain brightness-0 invert" />
@@ -181,11 +175,10 @@ export default function Sidebar() {
                     <li key={item.path}>
                       <Link
                         href={item.path}
-                        className={`group flex items-center justify-between rounded-xl px-4 py-3.5 transition-all duration-300 ${
-                          isActive
-                            ? "bg-emerald-600 text-white shadow-lg shadow-emerald-900/20"
-                            : "text-slate-500 hover:bg-emerald-50 hover:text-emerald-700"
-                        }`}
+                        className={`group flex items-center justify-between rounded-xl px-4 py-3.5 transition-all duration-300 ${isActive
+                          ? "bg-emerald-600 text-white shadow-lg shadow-emerald-900/20"
+                          : "text-slate-500 hover:bg-emerald-50 hover:text-emerald-700"
+                          }`}
                       >
                         <div className="flex items-center gap-4">
                           <Icon size={18} className={isActive ? "text-white" : "text-emerald-400 group-hover:text-emerald-700"} strokeWidth={isActive ? 2.5 : 2} />
@@ -195,9 +188,8 @@ export default function Sidebar() {
                         </div>
                         <div className="flex items-center gap-2">
                           {item.name === "Notifications" && notificationCount > 0 && (
-                            <span className={`flex h-5 min-w-[20px] items-center justify-center rounded-lg px-1.5 text-[10px] font-bold ${
-                              isActive ? "bg-white text-emerald-600" : "bg-emerald-100 text-emerald-700"
-                            }`}>
+                            <span className={`flex h-5 min-w-[20px] items-center justify-center rounded-lg px-1.5 text-[10px] font-bold ${isActive ? "bg-white text-emerald-600" : "bg-emerald-100 text-emerald-700"
+                              }`}>
                               {notificationCount}
                             </span>
                           )}
@@ -217,11 +209,11 @@ export default function Sidebar() {
 
       {/* FOOTER AREA */}
       <div className="mt-auto border-t border-emerald-100 bg-emerald-50/30 p-6">
-        <button 
+        <button
           onClick={handleLogout}
           className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-emerald-200 text-emerald-700 hover:bg-emerald-600 hover:text-white transition-all font-bold text-[10px] uppercase tracking-widest shadow-sm active:scale-95"
         >
-          Terminate Session
+          Logout Session
         </button>
       </div>
     </aside>

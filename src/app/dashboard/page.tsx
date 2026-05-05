@@ -213,9 +213,11 @@ export default function DashboardPage() {
                        </div>
                        <Gauge size={32} className="text-emerald-500" />
                     </div>
-                    <button className="w-full py-4 bg-emerald-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/10">
-                       Analyze Reports
-                    </button>
+                    {!isWorker && (
+                       <button className="w-full py-4 bg-emerald-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/10">
+                          Analyze Reports
+                       </button>
+                    )}
                  </div>
               </div>
            </div>

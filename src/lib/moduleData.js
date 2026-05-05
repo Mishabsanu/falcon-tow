@@ -9,7 +9,7 @@ export const moduleData = {
       { name: 'email', label: 'Email Address', type: 'email' },
       { name: 'phone', label: 'Contact Number', type: 'tel' },
       { name: 'address', label: 'Street Address', type: 'text' },
-      { name: 'status', label: 'Account Status', type: 'select', options: ['Active', 'Inactive'] },
+      { name: 'status', label: 'Account Status', type: 'select', options: ['Active', 'Inactive'], hidden: true, defaultValue: 'Active' },
     ],
   },
   vehicles: {
@@ -24,7 +24,7 @@ export const moduleData = {
       { name: 'year', label: 'Year of Manufacture', type: 'text' },
       { name: 'engineRef', label: 'Engine Reference', type: 'text' },
       { name: 'chassisRef', label: 'Chassis Reference', type: 'text' },
-      { name: 'status', label: 'Operational Status', type: 'select', options: ['Available', 'In Use', 'Maintenance'] },
+      { name: 'status', label: 'Operational Status', type: 'select', options: ['Available', 'In Use', 'Maintenance'], hidden: true, defaultValue: 'Available' },
 
       // Compliance Section
       { name: 'insuranceExpiry', label: 'Insurance Expiry Date', type: 'date', section: 'Compliance & Legal' },
@@ -37,14 +37,19 @@ export const moduleData = {
     nameField: 'id',
     records: [],
     fields: [
-      { name: 'date', label: 'Transaction Date', type: 'date' },
-      { name: 'amount', label: 'Expense Amount (QAR)', type: 'number' },
-      { name: 'description', label: 'Expense Description', type: 'text' },
-      { name: 'worker', label: 'Assigned Worker', type: 'select', module: 'users' },
+      { name: 'date', label: 'Transaction Date', type: 'date', span: 6 },
+      { name: 'amount', label: 'Amount (QAR)', type: 'number', span: 6 },
+      { name: 'description', label: 'Description', type: 'text', span: 12 },
+      { name: 'worker', label: 'Assigned Worker', type: 'select', module: 'users', span: 6 },
       { name: 'workerId', label: 'Worker Mongo ID', type: 'text', hidden: true, required: false },
-      { name: 'vehicle', label: 'Associated Vehicle', type: 'select', module: 'vehicles' },
+      { name: 'vehicle', label: 'Associated Vehicle', type: 'select', module: 'vehicles', span: 6 },
       { name: 'vehicleId', label: 'Vehicle Mongo ID', type: 'text', hidden: true, required: false },
+      { name: 'createdBy', label: 'Registered By', type: 'text', readOnly: true, section: 'Administrative Audit', hidden: true },
     ],
+    joins: [
+      { from: 'users', localField: 'workerId', foreignField: '_id', as: 'workerData' },
+      { from: 'vehicles', localField: 'vehicleId', foreignField: '_id', as: 'vehicleData' },
+    ]
   },
   invoices: {
     title: 'Invoice',
@@ -52,20 +57,24 @@ export const moduleData = {
     nameField: 'id',
     records: [],
     fields: [
-      { name: 'jobId', label: 'Job ID', type: 'select', module: 'tows', required: true },
+      { name: 'jobId', label: 'Job ID', type: 'select', module: 'tows', required: true, span: 12 },
       { name: 'towId', label: 'Tow Mongo ID', type: 'text', hidden: true, required: false },
-      { name: 'customer', label: 'Customer Name', type: 'text', readOnly: true },
+      { name: 'customer', label: 'Customer', type: 'text', readOnly: true, span: 4 },
       { name: 'customerId', label: 'Customer Mongo ID', type: 'text', hidden: true, required: false },
-      { name: 'worker', label: 'Assigned Worker', type: 'text', readOnly: true },
+      { name: 'worker', label: 'Worker', type: 'text', readOnly: true, span: 4 },
       { name: 'workerId', label: 'Worker Mongo ID', type: 'text', hidden: true, required: false },
-      { name: 'vehicle', label: 'Vehicle Used', type: 'text', readOnly: true },
+      { name: 'vehicle', label: 'Vehicle', type: 'text', readOnly: true, span: 4 },
       { name: 'vehicleId', label: 'Vehicle Mongo ID', type: 'text', hidden: true, required: false },
-      { name: 'date', label: 'Billing Date', type: 'date' },
-      { name: 'type', label: 'Payment Type', type: 'select', options: ['Cash', 'Card', 'Bank Transfer', 'Credit'], defaultValue: 'Credit' },
-      { name: 'total', label: 'Total Billed Amount (QAR)', type: 'number', defaultValue: 0 },
-      { name: 'paid', label: 'Total Paid Amount (QAR)', type: 'number', defaultValue: 0 },
-      { name: 'status', label: 'Payment Status', type: 'text', readOnly: true, defaultValue: 'Unpaid' },
+      { name: 'date', label: 'Billing Date', type: 'date', span: 6 },
+      { name: 'type', label: 'Payment Type', type: 'select', options: ['Cash', 'Card', 'Bank Transfer', 'Credit'], defaultValue: 'Credit', span: 6 },
+      { name: 'total', label: 'Total Billed (QAR)', type: 'number', defaultValue: 0, span: 6 },
+      { name: 'paid', label: 'Total Paid (QAR)', type: 'number', defaultValue: 0, span: 6 },
+      { name: 'status', label: 'Payment Status', type: 'text', readOnly: true, defaultValue: 'Unpaid', hidden: true },
     ],
+    joins: [
+      { from: 'tows', localField: 'towId', foreignField: '_id', as: 'towData' },
+      { from: 'customers', localField: 'customerId', foreignField: '_id', as: 'customerData' },
+    ]
   },
   quotations: {
     title: 'Quotation',
@@ -92,23 +101,33 @@ export const moduleData = {
     nameField: 'id',
     records: [],
     fields: [
-      { name: 'customer', label: 'Customer Name', type: 'select', module: 'customers', allowQuickAdd: true },
-      { name: 'customerId', label: 'Customer Mongo ID', type: 'text', hidden: true, required: false },
-      { name: 'vehicle', label: 'Vehicle', type: 'select', module: 'vehicles' },
-      { name: 'vehicleId', label: 'Vehicle Mongo ID', type: 'text', hidden: true, required: false },
-      { name: 'driver', label: 'Worker', type: 'select', module: 'users' },
+      { name: 'date', label: 'Service Date', type: 'date', span: 4 },
+      { name: 'driver', label: 'Worker', type: 'select', module: 'users', span: 4 },
       { name: 'driverId', label: 'Worker Mongo ID', type: 'text', hidden: true, required: false },
-      { name: 'pickup', label: 'Pickup Location / Address', type: 'text' },
-      { name: 'pickupPhoto', label: 'Pickup Photo (Proof of Condition)', type: 'file' },
-      { name: 'dropoff', label: 'Drop-off Location / Address', type: 'text' },
-      { name: 'dropoffPhoto', label: 'Drop-off Photo (Proof of Condition)', type: 'file' },
-      { name: 'date', label: 'Service Date', type: 'date' },
-      { name: 'paymentMethod', label: 'Payment Method', type: 'select', options: ['Cash', 'Card', 'Bank Transfer'] },
-      { name: 'amount', label: 'Service Charges (QAR)', type: 'number' },
-      { name: 'driverShare', label: 'Driver Share (10%)', type: 'number', readOnly: true, section: 'Internal Split' },
-      { name: 'companyShare', label: 'Company Share (90%)', type: 'number', readOnly: true, section: 'Internal Split' },
-      { name: 'status', label: 'Job Status', type: 'select', options: ['Pending', 'In Progress', 'Completed', 'Cancelled'] },
+      { name: 'vehicle', label: 'Operational Truck', type: 'select', module: 'vehicles', span: 4 },
+      { name: 'vehicleId', label: 'Vehicle Mongo ID', type: 'text', hidden: true, required: false },
+      { name: 'customer', label: 'Customer', type: 'select', module: 'customers', allowQuickAdd: true, span: 4, section: 'Towed Vehicle Details' },
+      { name: 'customerVehicle', label: "Customer's Vehicle Name", type: 'text', span: 4, section: 'Towed Vehicle Details' },
+      { name: 'customerPlate', label: "Customer's Vehicle Plate Number", type: 'text', span: 4, section: 'Towed Vehicle Details' },
+      { name: 'paymentMethod', label: 'Payment Method', type: 'select', options: ['Cash', 'Credit'], span: 3, section: 'Financial Split' },
+      { name: 'amount', label: 'Charges (QAR)', type: 'number', span: 3, section: 'Financial Split' },
+      { name: 'driverShare', label: 'Driver (10%)', type: 'number', readOnly: true, span: 3, section: 'Financial Split' },
+      { name: 'companyShare', label: 'Company (90%)', type: 'number', readOnly: true, span: 3, section: 'Financial Split' },
+
+
+      { name: 'pickup', label: 'Pickup Address', type: 'text', span: 6, section: 'Service Path' },
+      { name: 'dropoff', label: 'Drop-off Address', type: 'text', span: 6, section: 'Service Path' },
+
+      { name: 'pickupPhoto', label: 'Pickup Proof', type: 'file', span: 6, section: 'Service Path' },
+      { name: 'dropoffPhoto', label: 'Drop-off Proof', type: 'file', span: 6, section: 'Service Path' },
+      { name: 'status', label: 'Job Status', type: 'select', options: ['Pending', 'In Progress', 'Completed', 'Cancelled'], defaultValue: 'Completed', hidden: true },
+      { name: 'createdBy', label: 'Registered By', type: 'text', readOnly: true, section: 'Administrative Audit', hidden: true },
     ],
+    joins: [
+      { from: 'customers', localField: 'customerId', foreignField: '_id', as: 'customerData' },
+      { from: 'users', localField: 'driverId', foreignField: '_id', as: 'driverData' },
+      { from: 'vehicles', localField: 'vehicleId', foreignField: '_id', as: 'vehicleData' },
+    ]
   },
 
   salaries: {
@@ -127,8 +146,11 @@ export const moduleData = {
       { name: 'cashDeduction90', label: 'Cash Deduction (90%)', type: 'number', readOnly: true, defaultValue: 0 },
       { name: 'expenses', label: 'Expense Deductions (QAR)', type: 'number', readOnly: true, defaultValue: 0 },
       { name: 'amount', label: 'Net Payable Amount (QAR)', type: 'number', readOnly: true, defaultValue: 0 },
-      { name: 'status', label: 'Payment Status', type: 'select', options: ['Paid', 'Pending'] },
+      { name: 'status', label: 'Payment Status', type: 'select', options: ['Paid', 'Pending'], hidden: true, defaultValue: 'Pending' },
     ],
+    joins: [
+      { from: 'users', localField: 'workerId', foreignField: '_id', as: 'workerData' },
+    ]
   },
 
   notifications: {
@@ -149,17 +171,17 @@ export const moduleData = {
     listPath: '/dashboard/users',
     nameField: 'name',
     records: [
-      { id: 'USR-001', name: 'System Admin', password: 'admin123', email: 'admin@falcon.com', role: 'Administrator' }
+      { id: 'EMP-001', name: 'System Admin', password: 'admin123', email: 'admin@falcon.com', role: 'Administrator' }
     ],
     fields: [
-      { name: 'id', label: 'Employee ID', type: 'text' },
+      { name: 'id', label: 'Employee ID', type: 'text', readOnly: true },
       { name: 'name', label: 'Full Name', type: 'text' },
       { name: 'password', label: 'Password', type: 'password' },
       { name: 'email', label: 'Email Address', type: 'email' },
       { name: 'phone', label: 'Mobile Number', type: 'tel' },
       { name: 'role', label: 'User Role', type: 'select', options: ['Administrator', 'Worker'] },
       { name: 'salary', label: 'Monthly Base Salary (QAR)', type: 'number', defaultValue: 0 },
-      { name: 'status', label: 'Employment Status', type: 'select', options: ['Active', 'On Leave', 'Inactive'] },
+      { name: 'status', label: 'Employment Status', type: 'select', options: ['Active', 'On Leave', 'Inactive'], hidden: true, defaultValue: 'Active' },
     ],
   },
 };

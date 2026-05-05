@@ -1,7 +1,7 @@
 import { MongoClient } from 'mongodb';
 
-const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017';
-const dbName = process.env.MONGODB_DB || 'tow_admin';
+const uri = process.env.MONGODB_URI;
+const dbName = process.env.MONGODB_DB;
 
 let clientPromise;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Command, Search, Settings, Wrench, ShieldCheck, Zap, LogOut, ChevronDown } from "lucide-react";
+import { Bell, Command, Search, Settings, Wrench, ShieldCheck, Zap, LogOut, ChevronDown, Activity, Globe } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
@@ -28,6 +28,7 @@ export default function Header() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [isLive, setIsLive] = useState(true);
 
   const fetchNotificationCount = useCallback(async () => {
     try {
@@ -46,9 +47,14 @@ export default function Header() {
   useEffect(() => {
     const initialSync = window.setTimeout(fetchNotificationCount, 0);
     const interval = setInterval(fetchNotificationCount, 30000);
+    
+    // Subtle "heartbeat" for the live indicator
+    const heartbeat = setInterval(() => setIsLive(prev => !prev), 2000);
+
     return () => {
       window.clearTimeout(initialSync);
       clearInterval(interval);
+      clearInterval(heartbeat);
     };
   }, [fetchNotificationCount]);
 
@@ -57,136 +63,184 @@ export default function Header() {
       await fetch("/api/auth/logout", { method: "POST" });
       document.cookie = "role=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
       document.cookie = "name=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
+      localStorage.removeItem("user");
+      localStorage.removeItem("isLogind");
       toast.success("Session Purged Successfully");
-      router.push("/login");
+      window.location.href = "/login";
     } catch (error) {
-      router.push("/login");
+      window.location.href = "/login";
     }
   };
 
   const getPageTitle = () => {
     const parts = pathname.split("/").filter(Boolean);
-    if (parts.length <= 1) return "Workshop Overview";
-    const lastPart = parts[parts.length - 1];
-    return lastPart.charAt(0).toUpperCase() + lastPart.slice(1).replace(/-/g, ' ');
+    if (parts.length <= 1) return { main: "Workshop", sub: "Overview" };
+    const lastPart = parts[parts.length - 1].replace(/-/g, ' ');
+    const titleParts = lastPart.split(' ');
+    
+    if (titleParts.length > 1) {
+      const sub = titleParts.pop() || '';
+      const main = titleParts.join(' ');
+      return { main, sub };
+    }
+    
+    return { main: lastPart, sub: "" };
   };
 
+  const pageTitle = getPageTitle();
+
   return (
-    <header className="sticky top-0 z-40 flex h-[5.25rem] items-center justify-between border-b border-emerald-100 bg-white/80 px-8 shadow-sm backdrop-blur-xl">
+    <header className={`sticky top-0 z-40 flex h-[5.5rem] items-center justify-between border-b border-emerald-100/30 bg-white/70 px-8 shadow-sm backdrop-blur-2xl transition-all duration-500 ${userRole === 'Worker' ? 'hidden md:flex' : 'flex'}`}>
       {/* LEFT: BRANDING & TITLE */}
-      <div className="flex min-w-0 items-center gap-8">
-        <div className="flex items-center gap-4">
-           <img src="/logo-1.png" alt="Falcon Tow" className="h-11 w-auto" />
-           <div className="h-9 w-px bg-emerald-100 hidden md:block"></div>
-           <div className="hidden md:block">
-              <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-950">Falcon <span className="text-emerald-600">Tow</span></h2>
-              <p className="text-[8px] font-bold uppercase text-slate-400 leading-none mt-1.5 tracking-widest">Intelligence Hub</p>
+      <div className="flex min-w-0 items-center gap-10">
+        <div className="flex items-center gap-5">
+           <div className="relative flex items-center justify-center h-12 w-12 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-900 shadow-lg shadow-emerald-900/20">
+              <Zap size={24} className="text-white fill-emerald-100" />
+              <div className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-emerald-400"></div>
+           </div>
+           <div className="hidden lg:block space-y-1">
+              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-emerald-950 flex items-center gap-2">
+                Falcon <span className="text-emerald-600">Tow</span>
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              </h2>
+              <p className="text-[9px] font-bold uppercase text-slate-400 leading-none tracking-widest flex items-center gap-2">
+                <Globe size={10} className="text-emerald-300" /> Real-time Nodes
+              </p>
            </div>
         </div>
 
+        <div className="h-10 w-px bg-emerald-100/50 hidden md:block"></div>
+
         <div className="flex flex-col">
-          <h1 className="truncate text-xl font-bold tracking-tight text-emerald-950">{getPageTitle()}</h1>
-          <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-emerald-800/40 mt-0.5">
-            Node Control / {pathname.replace('/dashboard/', '').toUpperCase()}
+          <div className="flex items-center gap-3">
+             <h1 className="truncate text-2xl font-black tracking-tight text-emerald-950">
+               {pageTitle.main} <span className="text-emerald-600">{pageTitle.sub}</span>
+             </h1>
+             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100/50">
+                <div className={`h-1.5 w-1.5 rounded-full bg-emerald-500 transition-opacity duration-1000 ${isLive ? 'opacity-100' : 'opacity-40'}`}></div>
+                <span className="text-[8px] font-black uppercase tracking-widest text-emerald-700">Live</span>
+             </div>
+          </div>
+          <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-emerald-800/40 mt-1">
+            System Alpha / <span className="text-emerald-600/60 font-black">{pathname.replace('/dashboard/', '').toUpperCase() || 'CORE'}</span>
           </p>
         </div>
       </div>
 
       {/* CENTER & RIGHT ACTIONS */}
-      <div className="flex items-center gap-6">
-        {/* SEARCH HUB (HIDDEN ON MOBILE) */}
-        <div className="hidden w-72 items-center rounded-xl border border-emerald-100/50 bg-emerald-50/30 px-4 py-2.5 transition-all duration-300 group focus-within:border-emerald-500/50 focus-within:bg-white lg:flex shadow-inner">
-          <Search size={14} className="text-emerald-600/40 group-focus-within:text-emerald-600 transition-colors" />
+      <div className="flex items-center gap-8">
+        {/* SEARCH HUB (MODERN COMMAND STYLE) */}
+        <div className="hidden w-80 items-center rounded-2xl border border-emerald-100/40 bg-emerald-50/20 px-5 py-3 transition-all duration-500 group focus-within:border-emerald-400/50 focus-within:bg-white lg:flex shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] hover:bg-emerald-50/40">
+          <Search size={14} className="text-emerald-600/30 group-focus-within:text-emerald-600 transition-all duration-300 transform group-focus-within:scale-110" />
           <input
             type="text"
-            placeholder="Global Telemetery Search..."
-            className="ml-3 w-full border-none bg-transparent text-[10px] font-bold uppercase tracking-widest text-emerald-950 placeholder:text-emerald-800/30 focus:outline-none"
+            placeholder="Global Protocol Search..."
+            className="ml-4 w-full border-none bg-transparent text-[11px] font-bold uppercase tracking-widest text-emerald-950 placeholder:text-emerald-800/20 focus:outline-none"
           />
+          <div className="flex items-center gap-1 ml-2 px-2 py-0.5 rounded-md bg-emerald-100/30 border border-emerald-200/40">
+            <Command size={10} className="text-emerald-600/40" />
+            <span className="text-[9px] font-bold text-emerald-600/40">K</span>
+          </div>
         </div>
 
         {/* NOTIFICATIONS & SETTINGS */}
-        <div className="flex items-center gap-3 relative">
+        <div className="flex items-center gap-4 relative">
           <button
             onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-            className={`group relative flex h-11 w-11 items-center justify-center rounded-xl border transition-all duration-300 ${isNotificationOpen ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'bg-white border-emerald-100 text-emerald-900 hover:bg-emerald-50 hover:border-emerald-200 shadow-sm'}`}
+            className={`group relative flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-500 ${isNotificationOpen ? 'bg-emerald-950 border-emerald-950 text-white shadow-2xl shadow-emerald-950/40' : 'bg-white border-emerald-100 text-emerald-900 hover:bg-emerald-50 hover:border-emerald-300 shadow-sm'}`}
           >
-            <Bell size={18} className={isNotificationOpen ? "" : "text-emerald-700/60"} />
+            <Bell size={20} className={isNotificationOpen ? "animate-bounce" : "text-emerald-700/60 group-hover:text-emerald-600 transition-colors"} />
             {notificationCount > 0 && (
-              <span className={`absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-black shadow-sm ${isNotificationOpen ? 'bg-white text-emerald-600' : 'bg-emerald-600 text-white'}`}>
+              <span className={`absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-black border-2 border-white shadow-lg ${isNotificationOpen ? 'bg-emerald-400 text-emerald-950' : 'bg-emerald-600 text-white'}`}>
                 {notificationCount}
               </span>
             )}
           </button>
 
           {isNotificationOpen && (
-            <div className="absolute right-0 top-14 w-80 bg-white border border-emerald-100 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
-               <div className="bg-emerald-950 px-6 py-4 flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white">Operational Alerts</span>
+            <div className="absolute right-0 top-16 w-80 bg-white border border-emerald-100 rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
+               <div className="bg-emerald-950 px-8 py-6 flex items-center justify-between relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/20 to-transparent opacity-50"></div>
+                <span className="relative z-10 text-[10px] font-black uppercase tracking-[0.25em] text-white">Security Intelligence</span>
+                <span className="relative z-10 text-[8px] font-bold text-emerald-400 uppercase tracking-widest">{notificationCount} New Alerts</span>
               </div>
-              <div className="max-h-72 overflow-y-auto divide-y divide-emerald-50">
+              <div className="max-h-80 overflow-y-auto divide-y divide-emerald-50">
                 {notifications.length === 0 ? (
-                  <div className="p-10 text-center flex flex-col items-center gap-3">
-                    <ShieldCheck size={24} className="text-emerald-100" />
-                    <p className="text-[9px] font-bold text-emerald-800/30 uppercase tracking-widest">Protocol Nominal</p>
+                  <div className="p-12 text-center flex flex-col items-center gap-4">
+                    <div className="h-16 w-16 rounded-full bg-emerald-50 flex items-center justify-center">
+                      <ShieldCheck size={32} className="text-emerald-100" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-emerald-950 uppercase tracking-widest">Protocol Nominal</p>
+                      <p className="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-widest">No Active Threats Detected</p>
+                    </div>
                   </div>
                 ) : notifications.map(n => (
-                  <div key={n._id} className="px-6 py-4 hover:bg-emerald-50/50 transition-colors cursor-pointer group">
-                    <p className="text-[10px] font-bold text-emerald-950 uppercase tracking-tight group-hover:text-emerald-600 transition-colors">{n.title}</p>
-                    <p className="text-[9px] text-slate-500 mt-1 line-clamp-1 font-medium">{n.message}</p>
+                  <div key={n._id} className="px-8 py-5 hover:bg-emerald-50/50 transition-all cursor-pointer group relative">
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-600 scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-300"></div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-black text-emerald-950 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">{n.title}</p>
+                      <Activity size={12} className="text-emerald-100 group-hover:text-emerald-400 transition-colors" />
+                    </div>
+                    <p className="text-[9px] text-slate-500 mt-2 line-clamp-2 font-medium leading-relaxed uppercase tracking-wider">{n.message}</p>
                   </div>
                 ))}
               </div>
-              <Link href="/dashboard/notifications" className="block w-full py-3 bg-emerald-50 text-center text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-700 hover:bg-emerald-100 transition-all">
-                View All Intelligence
+              <Link href="/dashboard/notifications" className="block w-full py-4 bg-emerald-50 text-center text-[10px] font-black uppercase tracking-[0.3em] text-emerald-700 hover:bg-emerald-100 transition-all border-t border-emerald-100">
+                Sync Global Ledger
               </Link>
             </div>
           )}
-
-          <Link href="/dashboard/settings" className="flex h-11 w-11 items-center justify-center rounded-xl border border-emerald-100 bg-white text-emerald-800/40 hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50 transition-all shadow-sm">
-            <Settings size={18} />
-          </Link>
         </div>
 
-        <div className="mx-2 h-9 w-px bg-emerald-100/60"></div>
+        <div className="mx-2 h-10 w-px bg-emerald-100/40"></div>
 
-        {/* USER PROFILE & LOGOUT DROPDOWN */}
+        {/* USER PROFILE DROPDOWN */}
         <div className="relative profile-node">
           <button 
             onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className={`group flex items-center gap-4 rounded-xl border py-1.5 pl-5 pr-2 transition-all duration-300 ${isProfileOpen ? 'bg-emerald-950 border-emerald-950 shadow-xl shadow-emerald-900/40' : 'bg-white border-emerald-100 hover:border-emerald-300 shadow-sm'}`}
+            className={`group flex items-center gap-5 rounded-2xl border py-2 pl-6 pr-2 transition-all duration-500 ${isProfileOpen ? 'bg-emerald-950 border-emerald-950 shadow-2xl shadow-emerald-950/40' : 'bg-white border-emerald-100 hover:border-emerald-300 hover:shadow-lg shadow-sm'}`}
           >
-            <div className="text-right hidden sm:block">
-              <p className={`max-w-[120px] truncate text-[11px] font-bold tracking-tight ${isProfileOpen ? 'text-white' : 'text-emerald-950'}`}>
+            <div className="text-right hidden sm:block space-y-1">
+              <p className={`max-w-[140px] truncate text-[11px] font-black tracking-[0.05em] uppercase ${isProfileOpen ? 'text-white' : 'text-emerald-950'}`}>
                 {userName || "Operator"}
               </p>
-              <div className="mt-0.5 flex items-center gap-1.5 justify-end">
-                 <ShieldCheck size={9} className="text-emerald-500/60" />
-                 <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-emerald-500">{userRole}</p>
+              <div className="flex items-center gap-2 justify-end">
+                 <ShieldCheck size={10} className={`${isProfileOpen ? 'text-emerald-400' : 'text-emerald-600/40'}`} />
+                 <p className={`text-[8px] font-black uppercase tracking-[0.25em] ${isProfileOpen ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                    {userRole} Node
+                 </p>
               </div>
             </div>
-            <div className={`flex h-10 w-10 items-center justify-center rounded-lg border-2 transition-all duration-500 ${isProfileOpen ? 'bg-white border-white text-emerald-950' : 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-900/10'} text-sm font-bold`}>
-              {userName ? userName.charAt(0) : "U"}
+            <div className="relative">
+              <div className={`flex h-11 w-11 items-center justify-center rounded-xl border-2 transition-all duration-700 ${isProfileOpen ? 'bg-white border-emerald-400 text-emerald-950 rotate-6 scale-110' : 'bg-gradient-to-br from-emerald-500 to-emerald-700 border-emerald-100 text-white shadow-lg shadow-emerald-900/20'} text-sm font-black`}>
+                {userName ? userName.charAt(0) : "U"}
+              </div>
+              <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white bg-emerald-500"></div>
             </div>
-            <ChevronDown size={14} className={`transition-transform duration-300 ${isProfileOpen ? 'rotate-180 text-white' : 'text-emerald-800/40'}`} />
+            <ChevronDown size={14} className={`transition-transform duration-500 ${isProfileOpen ? 'rotate-180 text-white' : 'text-emerald-800/40'}`} />
           </button>
 
           {isProfileOpen && (
-            <div className="absolute right-0 top-16 w-60 bg-white border border-emerald-100 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
-               <div className="p-5 bg-emerald-50/50 border-b border-emerald-100">
-                  <p className="text-[9px] font-bold text-emerald-800/40 uppercase tracking-[0.2em]">Active Credentials</p>
-                  <p className="text-sm font-bold text-emerald-950 mt-1">{userName}</p>
-                  <p className="text-[8px] font-bold text-emerald-600 uppercase mt-1 tracking-widest">{userRole} AUTHENTICATED</p>
+            <div className="absolute right-0 top-20 w-64 bg-white border border-emerald-100 rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
+               <div className="p-8 bg-emerald-50/30 border-b border-emerald-100 flex flex-col items-center text-center">
+                  <div className="h-16 w-16 rounded-2xl bg-emerald-950 flex items-center justify-center text-white text-xl font-black mb-4 shadow-xl">
+                    {userName?.charAt(0)}
+                  </div>
+                  <p className="text-[10px] font-black text-emerald-800/40 uppercase tracking-[0.3em]">Authorized Node</p>
+                  <p className="text-base font-black text-emerald-950 mt-2 tracking-tight">{userName}</p>
+                  <p className="text-[9px] font-black text-emerald-600 uppercase mt-1 tracking-[0.2em] px-3 py-1 rounded-full bg-emerald-100/50">{userRole}</p>
                </div>
-               <div className="p-2.5">
-                  <Link href="/dashboard/settings" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest text-emerald-950 hover:bg-emerald-50 transition-all group">
-                     <Settings size={14} className="text-emerald-800/30 group-hover:text-emerald-600 transition-colors" /> Parameters
+               <div className="p-4 space-y-1">
+                  <Link href="/dashboard/settings" className="flex items-center gap-4 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.25em] text-emerald-950 hover:bg-emerald-50 transition-all group">
+                     <Settings size={16} className="text-emerald-600/30 group-hover:text-emerald-600 transition-colors" /> Parameters
                   </Link>
-                  <div className="my-1 border-t border-emerald-50"></div>
-                  <button 
+                  <div className="my-2 border-t border-emerald-50 mx-4"></div>
+                   <button 
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest text-rose-500 hover:bg-rose-50 transition-all"
+                    className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.25em] text-rose-500 hover:bg-rose-50 transition-all group"
                   >
-                     <LogOut size={14} /> Terminate Session
+                     <LogOut size={16} className="group-hover:translate-x-1 transition-transform" /> Sync Terminate
                   </button>
                </div>
             </div>

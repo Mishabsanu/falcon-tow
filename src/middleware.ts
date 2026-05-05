@@ -1,88 +1,69 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { jwtVerify } from 'jose'
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { jwtVerify } from 'jose';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'falcon_secret_key_luxury'
-)
+);
 
+// Define which roles can access which paths
 const ROLE_PERMISSIONS: Record<string, string[]> = {
-  '/dashboard/users': ['ADMIN', 'ADMINISTRATOR'],
-  '/dashboard/customers': ['ADMIN', 'ADMINISTRATOR', 'MANAGER'],
-  '/dashboard/vehicles': ['ADMIN', 'ADMINISTRATOR', 'MANAGER'],
-  '/dashboard/invoices': ['ADMIN', 'ADMINISTRATOR', 'MANAGER', 'ACCOUNTANT'],
-  '/dashboard/reports': ['ADMIN', 'ADMINISTRATOR', 'MANAGER', 'ACCOUNTANT'],
-  '/dashboard/quotations': ['ADMIN', 'ADMINISTRATOR', 'MANAGER', 'DISPATCHER'],
-  '/dashboard/tows': ['ADMIN', 'ADMINISTRATOR', 'MANAGER', 'DISPATCHER', 'WORKER'],
-  '/dashboard/expenses': ['ADMIN', 'ADMINISTRATOR', 'MANAGER', 'ACCOUNTANT', 'WORKER'],
-  '/dashboard/salaries': ['ADMIN', 'ADMINISTRATOR', 'MANAGER', 'ACCOUNTANT', 'WORKER'],
-  '/dashboard/notifications': ['ADMIN', 'ADMINISTRATOR', 'MANAGER', 'DISPATCHER', 'WORKER'],
+  '/dashboard/users': ['Administrator'],
+  '/dashboard/customers': ['Administrator'],
+  '/dashboard/vehicles': ['Administrator'],
+  '/dashboard/quotations': ['Administrator'],
+  '/dashboard/invoices': ['Administrator'],
+  '/dashboard/reports': ['Administrator'],
+  '/dashboard/notifications': ['Administrator'],
+  // Workers and Admins can access:
+  '/dashboard/tows': ['Administrator', 'Worker'],
+  '/dashboard/expenses': ['Administrator', 'Worker'],
+  '/dashboard/salaries': ['Administrator', 'Worker'],
 };
 
-export default async function middleware(request: NextRequest) {
-  const token = request.cookies.get('token')?.value
-  const { pathname } = request.nextUrl
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-  // Handle root redirect
-  if (pathname === '/') {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+  // 1. Skip non-dashboard routes
+  if (!pathname.startsWith('/dashboard')) {
+    return NextResponse.next();
   }
 
-  const isAuthPage = pathname === '/login' || pathname === '/register'
-  const isDashboardPage = pathname.startsWith('/dashboard')
+  const token = request.cookies.get('token')?.value;
 
-  // Redirect authenticated users away from auth pages
-  if (isAuthPage && token) {
-    try {
-      await jwtVerify(token, JWT_SECRET);
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    } catch (e) {
-      // Token invalid, allow access to auth pages
-    }
+  // 2. If no token, redirect to login
+  if (!token) {
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Redirect unauthenticated users away from dashboard
-  if (isDashboardPage && !token) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
+  try {
+    // 3. Verify JWT
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const userRole = payload.role as string;
+    const normalizedRole = userRole.charAt(0).toUpperCase() + userRole.slice(1).toLowerCase();
 
-  // Role-Based Access Control
-  if (token && isDashboardPage) {
-    try {
-      const { payload } = await jwtVerify(token, JWT_SECRET);
-      
-      if (!payload || !payload.role) {
-         throw new Error('Invalid payload');
+    // 4. Check permissions
+    // Sort paths by length (descending) to match the most specific route first
+    const restrictedPaths = Object.keys(ROLE_PERMISSIONS).sort((a, b) => b.length - a.length);
+    const matchedPath = restrictedPaths.find(p => pathname.startsWith(p));
+
+    if (matchedPath) {
+      const allowedRoles = ROLE_PERMISSIONS[matchedPath];
+      if (!allowedRoles.includes(normalizedRole) && normalizedRole !== 'Administrator') {
+        // If role not allowed and not Administrator, redirect to dashboard home
+        return NextResponse.redirect(new URL('/dashboard', request.url));
       }
-
-      const userRole = (payload.role as string).toUpperCase();
-
-      // Check specific route permissions
-      for (const [route, allowedRoles] of Object.entries(ROLE_PERMISSIONS)) {
-        if (pathname.startsWith(route)) {
-          if (!allowedRoles.includes(userRole)) {
-            return NextResponse.redirect(new URL('/dashboard?error=unauthorized', request.url))
-          }
-        }
-      }
-    } catch (e) {
-      // Token verification failed
-      const response = NextResponse.redirect(new URL('/login', request.url));
-      response.cookies.delete('token');
-      response.cookies.delete('role');
-      response.cookies.delete('name');
-      return response;
     }
-  }
 
-  return NextResponse.next()
+    return NextResponse.next();
+  } catch (error) {
+    // 5. If token invalid, redirect to login
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    response.cookies.set('token', '', { expires: new Date(0) });
+    return response;
+  }
 }
 
 export const config = {
-  matcher: [
-    '/',
-    '/login',
-    '/register',
-    '/dashboard/:path*',
-  ],
-}
+  matcher: ['/dashboard/:path*'],
+};

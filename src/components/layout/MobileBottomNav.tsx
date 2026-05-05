@@ -21,7 +21,7 @@ export default function MobileBottomNav() {
   }, []);
 
   const handleLogout = async () => {
-    if (!confirm("Terminate session and logout?")) return;
+    if (!confirm("Are you sure you want to logout?")) return;
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       document.cookie = "role=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
@@ -80,7 +80,7 @@ export default function MobileBottomNav() {
             <LogOut size={18} strokeWidth={2.5} />
           </div>
           <span className="text-[9px] font-bold uppercase tracking-tighter opacity-100">
-            Exit
+            Logout
           </span>
         </button>
       </div>

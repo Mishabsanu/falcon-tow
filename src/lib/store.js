@@ -1,19 +1,43 @@
 import { getDb } from './mongodb';
 import { moduleData } from './moduleData';
 import bcrypt from 'bcryptjs';
+import { ObjectId } from 'mongodb';
 
 function cloneRecord(record) {
   if (!record) return null;
-  const { ...rest } = record;
-  // Ensure _id is a string if it's an object
-  if (rest._id && typeof rest._id === 'object' && rest._id.toString) {
+  const rest = { ...record };
+  
+  // Recursively convert ObjectIds to strings
+  Object.keys(rest).forEach(key => {
+    if (rest[key] instanceof ObjectId) {
+      rest[key] = rest[key].toString();
+    }
+  });
+
+  if (rest._id && typeof rest._id === 'object') {
     rest._id = rest._id.toString();
   }
+  
   return rest;
 }
 
 function getConfig(moduleKey) {
   return moduleData[moduleKey] ?? null;
+}
+
+function processPayload(payload) {
+  const processed = { ...payload };
+  Object.keys(processed).forEach(key => {
+    // If key ends in 'Id' and is a 24-char hex string, convert to ObjectId
+    if (key.endsWith('Id') && typeof processed[key] === 'string' && /^[0-9a-fA-F]{24}$/.test(processed[key])) {
+      try {
+        processed[key] = new ObjectId(processed[key]);
+      } catch (e) {
+        // Not a valid ObjectId format, ignore
+      }
+    }
+  });
+  return processed;
 }
 
 function makeId(moduleKey) {
@@ -59,7 +83,23 @@ async function getCollection(moduleKey) {
       await collection.insertMany(seededRecords);
     }
 
-    await collection.createIndex({ id: 1 }, { unique: true });
+    // Ensure all records have an 'id' before creating the unique index
+    const recordsWithoutId = await collection.find({ $or: [{ id: { $exists: false } }, { id: null }] }).toArray();
+    if (recordsWithoutId.length > 0) {
+      console.log(`[MIGRATION] Fixing ${recordsWithoutId.length} records missing IDs in ${moduleKey}...`);
+      for (const doc of recordsWithoutId) {
+        const newId = makeId(moduleKey);
+        await collection.updateOne({ _id: doc._id }, { $set: { id: newId } });
+        // Small delay to ensure unique timestamps if multiple
+        await new Promise(r => setTimeout(r, 1));
+      }
+    }
+
+    try {
+      await collection.createIndex({ id: 1 }, { unique: true });
+    } catch (indexErr) {
+      console.warn(`[INDEX_WARNING] Could not create unique index on ${moduleKey}. Data may have duplicates.`);
+    }
     
     // Performance Indexes
     if (moduleKey === 'tows') {
@@ -119,21 +159,55 @@ export async function listRecords(moduleKey, options = {}) {
   // Handle Filters
   Object.keys(filters).forEach(key => {
     if (filters[key] && filters[key] !== 'All') {
-      // Basic match for now, could be improved
-      query[key] = filters[key];
+      let val = filters[key];
+      // Convert ID strings to ObjectIds for correct database matching
+      if (key.endsWith('Id') && typeof val === 'string' && /^[0-9a-fA-F]{24}$/.test(val)) {
+        try {
+          val = new ObjectId(val);
+        } catch (e) {
+          // Fallback to original value if conversion fails
+        }
+      }
+      query[key] = val;
     }
   });
 
+  const config = getConfig(moduleKey);
+  const pipeline = [];
+  
+  // 1. Initial Match
+  pipeline.push({ $match: query });
+
+  // 2. Add Joins (Lookups)
+  if (config?.joins) {
+    config.joins.forEach(join => {
+      pipeline.push({
+        $lookup: {
+          from: join.from,
+          localField: join.localField,
+          foreignField: join.foreignField,
+          as: join.as
+        }
+      });
+      pipeline.push({
+        $unwind: { path: `$${join.as}`, preserveNullAndEmptyArrays: true }
+      });
+    });
+  }
+
+  // 3. Sort, Skip, Limit
+  pipeline.push({ $sort: { id: -1 } });
+  
   const pageNum = Math.max(1, parseInt(page));
   const limitNum = Math.max(1, parseInt(limit));
   const skip = (pageNum - 1) * limitNum;
 
   const total = await collection.countDocuments(query);
-  const records = await collection.find(query)
-    .sort({ id: -1 })
-    .skip(skip)
-    .limit(limitNum)
-    .toArray();
+  
+  pipeline.push({ $skip: skip });
+  pipeline.push({ $limit: limitNum });
+
+  const records = await collection.aggregate(pipeline).toArray();
 
   return {
     data: records.map(cloneRecord),
@@ -171,7 +245,11 @@ export async function createRecord(moduleKey, payload) {
     return null;
   }
 
-  const record = { id: payload.id || makeId(moduleKey), ...payload };
+  const record = { 
+    id: payload.id || makeId(moduleKey), 
+    ...processPayload(payload),
+    createdAt: new Date().toISOString()
+  };
 
   // Hash password for users
   if (moduleKey === 'users' && record.password) {
@@ -188,7 +266,7 @@ export async function createRecord(moduleKey, payload) {
   if (moduleKey !== 'notifications') {
     const title = `New ${moduleKey.slice(0, -1)} Created`;
     const message = `${moduleKey.charAt(0).toUpperCase() + moduleKey.slice(1, -1)} ${record.id} has been added to the system.`;
-    const type = moduleKey === 'tows' ? 'tow' : (moduleKey === 'invoices' ? 'payment' : 'status');
+    const type = moduleKey === 'tows' ? 'tow' : (['invoices', 'salaries', 'expenses'].includes(moduleKey) ? 'payment' : 'status');
     await createAutoNotification(title, message, type);
   }
 
@@ -212,7 +290,7 @@ export async function updateRecord(moduleKey, id, payload) {
 
   const result = await collection.findOneAndUpdate(
     { id },
-    { $set: { ...safePayload, id } },
+    { $set: { ...processPayload(safePayload), id } },
     { returnDocument: 'after' }
   );
 

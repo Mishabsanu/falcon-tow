@@ -58,7 +58,7 @@ export default function LoginPage() {
       <div className="hidden lg:flex lg:w-[45%] bg-emerald-900 items-center justify-center relative overflow-hidden p-16 border-r border-emerald-800">
         {/* THEME GRADIENT OVERLAY */}
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 opacity-90"></div>
-        
+
         {/* PREMIUM GLOWS & TEXTURE */}
         <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-emerald-400/20 blur-[120px] rounded-full pointer-events-none"></div>
         <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-emerald-500/10 blur-[100px] rounded-full pointer-events-none"></div>
@@ -134,7 +134,7 @@ export default function LoginPage() {
                   placeholder="name@falcon.com"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="block w-full pl-14 pr-6 py-4.5 bg-white border border-emerald-100 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-600 transition-all outline-none text-emerald-950 font-semibold text-sm placeholder:text-slate-400 shadow-sm"
+                  className="block w-full pl-14 pr-6 py-5 bg-transparent border-b-2 border-emerald-100 focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400"
                 />
               </div>
             </div>
@@ -154,7 +154,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-14 pr-14 py-4.5 bg-white border border-emerald-100 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-600 transition-all outline-none text-emerald-950 font-semibold text-sm placeholder:text-slate-400 shadow-sm"
+                  className="block w-full pl-14 pr-14 py-5 bg-transparent border-b-2 border-emerald-100 focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400"
                 />
                 <button
                   type="button"

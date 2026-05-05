@@ -120,7 +120,7 @@ export default function Users() {
           <thead>
             <tr>
               <th>Personnel Details</th>
-              <th>Username</th>
+              <th>Mobile Number</th>
               <th>Role</th>
               <th>Settlement Info</th>
               <th>Operational Status</th>
@@ -143,7 +143,7 @@ export default function Users() {
                     </div>
                   </div>
                 </td>
-                <td className="text-xs font-semibold text-slate-600">@{u.username}</td>
+                <td className="text-sm font-bold text-slate-600">{u.phone || 'N/A'}</td>
                 <td>
                   <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg">
                     {u.role}
