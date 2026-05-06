@@ -24,6 +24,7 @@ import {
 import styles from './page.module.css';
 import Modal from '@/components/Modal';
 import WorkerSalaryDashboard from '@/components/WorkerSalaryDashboard';
+import { toast } from 'sonner';
 
 // For PDF generation
 const exportToPDF = () => {
@@ -79,6 +80,8 @@ export default function Salaries() {
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 10, totalPages: 1 });
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState('All');
+  const [showFilters, setShowFilters] = useState(false);
   const [selectedSalary, setSelectedSalary] = useState(null);
   const [user, setUser] = useState(null);
 
@@ -97,7 +100,8 @@ export default function Salaries() {
       const result = await apiService.getRecords('salaries', {
         q: searchTerm,
         page: pagination.page,
-        limit: pagination.limit
+        limit: pagination.limit,
+        status: status
       });
       setSalaries(result.data || []);
       if (result.pagination) {
@@ -108,7 +112,7 @@ export default function Salaries() {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, pagination.page, pagination.limit]);
+  }, [searchTerm, pagination.page, pagination.limit, status]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -119,12 +123,13 @@ export default function Salaries() {
 
   const handleDelete = async (id) => {
     if (isWorker) return; // Extra safety
-    if (confirm('Are you sure you want to delete this salary record?')) {
+    if (confirm('Permanently purge this salary record?')) {
       try {
         await apiService.deleteRecord('salaries', id);
+        toast.success('Salary record purged successfully');
         fetchSalaries();
       } catch (error) {
-        alert(error.message || 'Failed to delete salary record');
+        toast.error(error.message || 'Purge operation failed');
       }
     }
   };
@@ -148,32 +153,36 @@ export default function Salaries() {
   }
 
   return (
-    <div className="animate-fade-in">
-      <header className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Payroll & Salaries</h1>
-          <p className={styles.subtitle}>{isWorker ? 'View your monthly settlements and payslips.' : 'Manage monthly worker settlements and performance-based commissions.'}</p>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-black text-emerald-950 tracking-tight">
+            Worker <span className="text-emerald-600">Earnings</span>
+          </h1>
+          <p className="text-slate-500 text-sm font-medium">
+            Audit worker settlements and manage monthly payroll performance.
+          </p>
         </div>
         {!isWorker && (
           <div className="flex gap-4 items-center">
-            <Link href="/dashboard/salaries/payroll" className={styles.btnSecondary}>
-              <Calendar size={18} />
-              <span>Generate Payroll</span>
+            <Link href="/dashboard/salaries/payroll" className="flex items-center gap-2 px-6 py-3 bg-white border border-emerald-100 text-emerald-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-50 transition-all shadow-sm">
+               <Calendar size={18} className="text-emerald-600" />
+               <span>Payroll Summary</span>
             </Link>
-            <Link href="/dashboard/salaries/new" className="btn-primary">
-              <Plus size={18} />
-              <span>Record Payment</span>
+            <Link href="/dashboard/salaries/new" className="flex items-center gap-2 px-6 py-3 bg-emerald-950 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-900 transition-all shadow-lg shadow-emerald-900/20">
+               <Plus size={18} className="text-emerald-400" />
+               <span>Record Payment</span>
             </Link>
           </div>
         )}
       </header>
 
-      <div className="list-header">
-        <div className="search-wrapper">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <div className="search-wrapper flex-1 relative">
           <Search size={20} className="search-icon" />
-          <input 
-            type="text" 
-            placeholder="Search payroll history..." 
+          <input
+            type="text"
+            placeholder="Search salary records by worker name..."
             className="search-input"
             value={searchTerm}
             onChange={(e) => {
@@ -182,189 +191,66 @@ export default function Salaries() {
             }}
           />
         </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={() => exportToCSV(salaries)}
-            className="flex items-center gap-2 px-4 py-2 border border-[#d8dee6] bg-white rounded-md text-[10px] font-black uppercase tracking-widest text-[#64748b] hover:bg-[#263238] hover:text-white transition-all"
-          >
-            <FileSpreadsheet size={14} className="text-emerald-600" />
-            <span>Excel</span>
-          </button>
-          <button 
-            onClick={exportToPDF}
-            className="flex items-center gap-2 px-4 py-2 border border-[#d8dee6] bg-white rounded-md text-[10px] font-black uppercase tracking-widest text-[#64748b] hover:bg-[#263238] hover:text-white transition-all"
-          >
-            <FileText size={14} className="text-rose-500" />
-            <span>PDF</span>
-          </button>
-        </div>
+
+        <button 
+          onClick={() => setShowFilters(!showFilters)}
+          className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${
+            showFilters 
+              ? 'bg-emerald-950 text-emerald-400 border-emerald-800 shadow-emerald-900/40' 
+              : 'bg-white text-emerald-700 border border-emerald-100 hover:bg-emerald-50 shadow-emerald-900/5'
+          }`}
+        >
+          <Filter size={18} />
+          <span>{showFilters ? 'Hide Filters' : 'Filter View'}</span>
+        </button>
       </div>
 
-      <div className="table-container glass-card">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Ref</th>
-              <th>Worker / Period</th>
-              <th>Financial Breakdown</th>
-              <th>Total Deductions</th>
-              <th>Net Settlement</th>
-              <th>Status</th>
-              <th style={{ textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>Synchronizing Payroll Data...</td></tr>
-            ) : salaries.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>No payroll records found.</td></tr>
-            ) : (
-              salaries.map((sal) => (
-                <tr key={sal.id}>
-                  <td><span className={styles.salId}>#{sal.id}</span></td>
-                  <td>
-                    <div className={styles.workerCell}>
-                      <User size={14} className="text-[#f59e0b]" />
-                      <div className="flex flex-col">
-                        <span className="font-bold text-[#263238]">{sal.worker}</span>
-                        <span className="text-[10px] text-[#64748b] font-medium uppercase tracking-widest">{sal.month} {sal.year}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="flex flex-col">
-                      <span className="text-[11px] font-bold text-[#263238]">Base: QAR {Number(sal.baseSalary || 0).toLocaleString()}</span>
-                      <span className="text-[10px] text-emerald-600 font-black">Comm: +QAR {Number(sal.retention || 0).toLocaleString()}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="flex flex-col">
-                      <span className="text-[10px] text-rose-500 font-bold">Cash: -QAR {Number(sal.cashDeduction90 || 0).toLocaleString()}</span>
-                      <span className="text-[10px] text-rose-400 font-bold">Exp: -QAR {Number(sal.expenses || 0).toLocaleString()}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="flex flex-col">
-                      <span className="text-[13px] font-black text-[#263238] italic">QAR {Number(sal.amount || 0).toLocaleString()}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`badge ${sal.status === 'Paid' ? 'badge-success' : 'badge-warning'}`}>
-                      {sal.status}
-                    </span>
-                  </td>
-                  <td>
-                    <div className={styles.actionCell}>
-                      <button 
-                        onClick={() => setSelectedSalary(sal)}
-                        className={styles.viewBtn} 
-                        title="View Details"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      {!isWorker && (
-                        <>
-                          <Link href={`/dashboard/salaries/${sal.id}/edit`} className={styles.editBtn} title="Edit">
-                            <Edit3 size={16} />
-                          </Link>
-                          <button 
-                            onClick={() => handleDelete(sal.id)}
-                            className={styles.deleteBtn}
-                            title="Delete"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-
-        {/* View Modal */}
-        {selectedSalary && (
-          <Modal 
-            isOpen={!!selectedSalary} 
-            onClose={() => setSelectedSalary(null)} 
-            title={`Salary Settlement #${selectedSalary.id}`}
+      {/* Active Filter Chips */}
+      {status !== 'All' && (
+        <div className="flex flex-wrap items-center gap-3 mb-8 animate-in fade-in slide-in-from-left-4 duration-500">
+          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mr-2">Payroll Filters:</span>
+          <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
+            <span>Status: {status}</span>
+            <button onClick={() => setStatus('All')} className="hover:text-rose-500 transition-colors"><Plus size={12} className="rotate-45" /></button>
+          </div>
+          <button 
+            onClick={() => setStatus('All')}
+            className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-700 ml-2"
           >
-            <div className="p-8 space-y-8 bg-white">
-              <div className="flex justify-between items-start border-b border-[#d8dee6] pb-6">
-                 <div className="space-y-1">
-                    <h2 className="text-2xl font-black text-[#263238] uppercase italic">{selectedSalary.worker}</h2>
-                    <p className="text-[10px] font-bold text-[#64748b] uppercase tracking-[0.3em]">{selectedSalary.month} {selectedSalary.year} PAYROLL</p>
-                 </div>
-                 <div className={`px-4 py-2 rounded-md text-[10px] font-black uppercase tracking-widest ${selectedSalary.status === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                    {selectedSalary.status}
-                 </div>
-              </div>
+            Reset
+          </button>
+        </div>
+      )}
 
-              <div className="grid grid-cols-2 gap-8">
-                 <div className="space-y-4">
-                    <div className="p-4 bg-[#f8fafc] rounded-md border border-[#d8dee6]">
-                       <span className="block text-[8px] font-black text-[#64748b] uppercase tracking-widest mb-1">Base Salary</span>
-                       <span className="text-lg font-black text-[#263238]">QAR {Number(selectedSalary.baseSalary || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="p-4 bg-emerald-50 rounded-md border border-emerald-100">
-                       <span className="block text-[8px] font-black text-emerald-600 uppercase tracking-widest mb-1">Commission (10%)</span>
-                       <span className="text-lg font-black text-emerald-600">QAR {Number(selectedSalary.retention || 0).toLocaleString()}</span>
-                    </div>
-                 </div>
-                 <div className="space-y-4">
-                    <div className="p-4 bg-rose-50 rounded-md border border-rose-100">
-                       <span className="block text-[8px] font-black text-rose-500 uppercase tracking-widest mb-1">Cash Deductions (90%)</span>
-                       <span className="text-lg font-black text-rose-500">-QAR {Number(selectedSalary.cashDeduction90 || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="p-4 bg-rose-50 rounded-md border border-rose-100">
-                       <span className="block text-[8px] font-black text-rose-500 uppercase tracking-widest mb-1">Expenses Reimbursement</span>
-                       <span className="text-lg font-black text-rose-500">-QAR {Number(selectedSalary.expenses || 0).toLocaleString()}</span>
-                    </div>
-                 </div>
-              </div>
+      {showFilters && (
+        <div className="bg-white border border-emerald-100 rounded-[2rem] p-8 mb-10 shadow-2xl shadow-emerald-900/5 animate-in fade-in slide-in-from-top-4 duration-500 space-y-8">
+          <div className="flex flex-col gap-8">
+            <div className="flex items-center gap-3 border-b border-emerald-50 pb-4">
+               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-900/40">Payroll Query Engine</span>
+            </div>
 
-              <div className="bg-[#263238] p-6 rounded-md flex justify-between items-center shadow-xl">
-                 <span className="text-[10px] font-black text-[#f59e0b] uppercase tracking-[0.3em]">Final Net Settlement</span>
-                 <span className="text-2xl font-black text-white italic">QAR {Number(selectedSalary.amount || 0).toLocaleString()}</span>
-              </div>
-
-              <div className="flex justify-end pt-4">
-                 <button 
-                  onClick={() => setSelectedSalary(null)}
-                  className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-[#64748b] hover:text-[#263238]"
-                 >
-                  Close
-                 </button>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="filter-group-premium">
+                <Activity size={14} className="text-emerald-600" />
+                <select
+                  value={status}
+                  onChange={(e) => {
+                    setStatus(e.target.value);
+                    setPagination(prev => ({ ...prev, page: 1 }));
+                  }}
+                >
+                  <option value="All">All Status</option>
+                  <option value="Paid">Settled</option>
+                  <option value="Pending">Outstanding</option>
+                </select>
               </div>
             </div>
-          </Modal>
-        )}
-
-        <div className="pagination">
-          <span className="page-info">
-            Showing {salaries.length} of {pagination.total || 0} entries (Page {pagination.page} of {pagination.totalPages || 1})
-          </span>
-          <div className="page-controls">
-            <button 
-              className="page-btn" 
-              disabled={pagination.page <= 1}
-              onClick={() => handlePageChange(pagination.page - 1)}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button className="page-btn active">{pagination.page}</button>
-            <button 
-              className="page-btn" 
-              disabled={pagination.page >= (pagination.totalPages || 1)}
-              onClick={() => handlePageChange(pagination.page + 1)}
-            >
-              <ChevronRight size={16} />
-            </button>
           </div>
         </div>
-      </div>
+      )}
+      
+      <WorkerSalaryDashboard user={user} adminMode={!isWorker} />
     </div>
   );
 }

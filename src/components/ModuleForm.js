@@ -1,6 +1,8 @@
 'use client';
 import { getModuleRecord, moduleData } from '@/lib/moduleData';
 import { apiService } from '@/services/apiService';
+import { calculateTowShares } from '@/modules/tows/logic/towBusinessLogic';
+import { calculateSalarySettlement } from '@/modules/salaries/logic/salaryBusinessLogic';
 import { Activity, ArrowLeft, FileText, Plus, Save, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -159,7 +161,7 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
               ...prev,
               [field.name]: data.map(r => {
                 let label = '';
-                if (field.module === 'vehicles') label = `${r.name} - ${r.plate} [${r.modelRef || 'N/A'}] (${r.year || 'N/A'})`;
+                if (field.module === 'vehicles') label = `${r.name} - ${r.plate}`;
                 else if (field.module === 'users') label = r.name;
                 else if (field.module === 'tows') label = `${r.id} - ${r.customer}`;
                 else label = r.name || r.id || r.title;
@@ -289,22 +291,13 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
   useEffect(() => {
     if (moduleKey !== 'tows') return;
 
-    const amount = Number(values.amount || 0);
-    const paymentMethod = values.paymentMethod;
+    const shares = calculateTowShares(values.amount);
 
-    if (paymentMethod === 'Cash' && amount > 0) {
-      const driverShare = (amount * 0.1).toFixed(2);
-      const companyShare = (amount * 0.9).toFixed(2);
-
-      if (values.driverShare !== driverShare || values.companyShare !== companyShare) {
-        setFieldValue('driverShare', driverShare);
-        setFieldValue('companyShare', companyShare);
-      }
-    } else if (values.driverShare !== '0' || values.companyShare !== '0') {
-      setFieldValue('driverShare', '0');
-      setFieldValue('companyShare', '0');
+    if (values.driverShare !== shares.driverShare || values.companyShare !== shares.companyShare) {
+      setFieldValue('driverShare', shares.driverShare);
+      setFieldValue('companyShare', shares.companyShare);
     }
-  }, [moduleKey, values.amount, values.paymentMethod, values.driverShare, values.companyShare, setFieldValue]);
+  }, [moduleKey, values.amount, setFieldValue, values.driverShare, values.companyShare]);
 
   useEffect(() => {
     if (moduleKey !== 'tows' || !values.driver) return;
@@ -434,18 +427,20 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
 
         const totalExpenses = workerExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
 
-        // 4. Update values
-        // Retention is 10% commission for driver (90% remains for company)
-        const driverCommission = cashCollected * 0.1;
-        const netAmount = baseSalary + driverCommission - cashCollected - totalExpenses;
+        // 4. Calculate using the Official Formula
+        const settlement = calculateSalarySettlement({
+          totalTowAmount: cashCollected,
+          baseSalary: baseSalary,
+          expenses: totalExpenses
+        });
 
         setValues({
           ...values,
-          baseSalary: baseSalary.toString(),
-          cashCollected: cashCollected.toString(),
-          retention: driverCommission.toString(),
-          expenses: totalExpenses.toString(),
-          amount: netAmount.toString()
+          baseSalary: settlement.baseSalary.toString(),
+          cashCollected: settlement.totalTowAmount.toString(),
+          retention: settlement.worker10Share.toString(), // 10% Commission
+          expenses: settlement.expenses.toString(),
+          amount: settlement.finalSettlement.toString() // This is the "Final Settlement"
         });
 
       } catch (error) {

@@ -81,7 +81,7 @@
 
 .paper {
   background: white;
-  width: 210mm;
+  width: 100%;
   min-height: 297mm; /* Full A4 Height */
   padding: 15mm;
   margin: 0 auto;
@@ -89,7 +89,6 @@
   color: #1e293b;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* To make it look like paper on screen */
 }
 
 .paperHeader {

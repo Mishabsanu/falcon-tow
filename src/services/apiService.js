@@ -89,6 +89,7 @@ export const apiService = {
 
     // Administrative tracking
     payload.createdBy = user?.name || "System";
+    payload.createdById = user?._id || user?.id;
 
     const response = await fetch(`${API_BASE}/${moduleKey}`, {
       method: 'POST',

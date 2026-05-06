@@ -8,9 +8,11 @@ import { motion } from "framer-motion";
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
+    setMounted(true);
     if (typeof document !== "undefined") {
       const role = document.cookie
         .split("; ")
@@ -36,13 +38,30 @@ export default function MobileBottomNav() {
   const navItems = [
     { name: "Home", path: "/dashboard", icon: LayoutDashboard },
     { name: "Tows", path: "/dashboard/tows", icon: Truck },
-    { name: "Expenses", path: "/dashboard/expenses", icon: Receipt },
+    { name: "Salaries", path: "/dashboard/salaries", icon: Receipt },
   ];
+
+  const isVisible = (path: string) => {
+    if (!userRole) return true;
+    const role = userRole.toUpperCase();
+    if (role === "ADMIN" || role === "ADMINISTRATOR") return true;
+
+    // RBAC Rules for Bottom Nav
+    if (path === "/dashboard/salaries" && role === "WORKER") return true;
+    if (path === "/dashboard/tows") return true;
+    if (path === "/dashboard") return true;
+
+    return false;
+  };
+
+  const filteredItems = navItems.filter(item => isVisible(item.path));
+
+  if (!mounted) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[100] bg-white/90 border-t border-emerald-100 backdrop-blur-xl lg:hidden">
       <div className="grid h-16 grid-cols-4 items-center px-4 pb-[env(safe-area-inset-bottom)]">
-        {navItems.map((item) => {
+        {filteredItems.map((item) => {
           const Icon = item.icon;
           const isActive = item.path === "/dashboard" 
             ? pathname === "/dashboard" 
@@ -74,6 +93,7 @@ export default function MobileBottomNav() {
         
         <button
           onClick={handleLogout}
+          suppressHydrationWarning={true}
           className="flex flex-col items-center justify-center gap-1 text-rose-500 active:scale-95 transition-transform h-full"
         >
           <div className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 transition-colors">

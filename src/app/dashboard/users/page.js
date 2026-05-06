@@ -21,6 +21,7 @@ export default function Users() {
   const [searchTerm, setSearchTerm] = useState('');
   const [status, setStatus] = useState('All');
   const [loading, setLoading] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -81,15 +82,13 @@ export default function Users() {
         </Link>
       </header>
 
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-6 bg-white border border-emerald-100/50 rounded-2xl shadow-sm">
-        <div className="relative flex-1 max-w-xl group">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-600 transition-colors">
-            <Search size={18} />
-          </div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <div className="search-wrapper flex-1 relative">
+          <Search size={20} className="search-icon" />
           <input
             type="text"
             placeholder="Search users by name, email, or role..."
-            className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-emerald-100/50 rounded-xl focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-600/50 transition-all outline-none text-emerald-950 font-semibold text-sm placeholder:text-slate-400"
+            className="search-input"
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -97,23 +96,65 @@ export default function Users() {
             }}
           />
         </div>
-        <div className="flex items-center gap-4">
-          <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-800/40">Staff Status</label>
-          <select
-            className="filter-select"
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value);
-              setPagination(prev => ({ ...prev, page: 1 }));
-            }}
-          >
-            <option value="All">All Status</option>
-            <option value="Active">Active Duty</option>
-            <option value="On Leave">On Leave</option>
-            <option value="Inactive">Terminated</option>
-          </select>
-        </div>
+
+        <button 
+          onClick={() => setShowFilters(!showFilters)}
+          className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${
+            showFilters 
+              ? 'bg-emerald-950 text-emerald-400 border-emerald-800 shadow-emerald-900/40' 
+              : 'bg-white text-emerald-700 border border-emerald-100 hover:bg-emerald-50 shadow-emerald-900/5'
+          }`}
+        >
+          <Filter size={18} />
+          <span>{showFilters ? 'Hide Filters' : 'Filter View'}</span>
+        </button>
       </div>
+
+      {/* Active Filter Chips */}
+      {status !== 'All' && (
+        <div className="flex flex-wrap items-center gap-3 mb-8 animate-in fade-in slide-in-from-left-4 duration-500">
+          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mr-2">Personnel Filters:</span>
+          <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
+            <span>Status: {status}</span>
+            <button onClick={() => setStatus('All')} className="hover:text-rose-500 transition-colors"><Plus size={12} className="rotate-45" /></button>
+          </div>
+          <button 
+            onClick={() => setStatus('All')}
+            className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-700 ml-2"
+          >
+            Reset
+          </button>
+        </div>
+      )}
+
+      {showFilters && (
+        <div className="bg-white border border-emerald-100 rounded-[2rem] p-8 mb-10 shadow-2xl shadow-emerald-900/5 animate-in fade-in slide-in-from-top-4 duration-500 space-y-8">
+          <div className="flex flex-col gap-8">
+            <div className="flex items-center gap-3 border-b border-emerald-50 pb-4">
+               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-900/40">Personnel Query Engine</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="filter-group-premium">
+                <Activity size={14} className="text-emerald-600" />
+                <select
+                  value={status}
+                  onChange={(e) => {
+                    setStatus(e.target.value);
+                    setPagination(prev => ({ ...prev, page: 1 }));
+                  }}
+                >
+                  <option value="All">All Status</option>
+                  <option value="Active">Active Duty</option>
+                  <option value="On Leave">On Leave</option>
+                  <option value="Inactive">Terminated</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="table-container glass-card !p-0">
         <table className="data-table">

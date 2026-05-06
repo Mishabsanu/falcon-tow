@@ -9,20 +9,26 @@ import { toast } from "sonner";
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const [userName] = useState<string | null>(() => {
-    if (typeof document === "undefined") return null;
-    const name = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("name="))
-      ?.split("=")[1];
+  const [mounted, setMounted] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
-    return name ? decodeURIComponent(name) : null;
-  });
+  useEffect(() => {
+    setMounted(true);
+    if (typeof document !== "undefined") {
+      const name = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("name="))
+        ?.split("=")[1];
+      if (name) setUserName(decodeURIComponent(name));
 
-  const [userRole] = useState<string | null>(() => {
-    if (typeof document === "undefined") return null;
-    return document.cookie.split("; ").find(r => r.startsWith("role="))?.split("=")[1] || null;
-  });
+      const role = document.cookie
+        .split("; ")
+        .find(r => r.startsWith("role="))
+        ?.split("=")[1];
+      if (role) setUserRole(role);
+    }
+  }, []);
 
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -89,6 +95,8 @@ export default function Header() {
 
   const pageTitle = getPageTitle();
 
+  if (!mounted) return null;
+
   return (
     <header className={`sticky top-0 z-40 flex h-[5.5rem] items-center justify-between border-b border-emerald-100/30 bg-white/70 px-8 shadow-sm backdrop-blur-2xl transition-all duration-500 ${userRole === 'Worker' ? 'hidden md:flex' : 'flex'}`}>
       {/* LEFT: BRANDING & TITLE */}
@@ -112,18 +120,6 @@ export default function Header() {
         <div className="h-10 w-px bg-emerald-100/50 hidden md:block"></div>
 
         <div className="flex flex-col">
-          <div className="flex items-center gap-3">
-             <h1 className="truncate text-2xl font-black tracking-tight text-emerald-950">
-               {pageTitle.main} <span className="text-emerald-600">{pageTitle.sub}</span>
-             </h1>
-             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100/50">
-                <div className={`h-1.5 w-1.5 rounded-full bg-emerald-500 transition-opacity duration-1000 ${isLive ? 'opacity-100' : 'opacity-40'}`}></div>
-                <span className="text-[8px] font-black uppercase tracking-widest text-emerald-700">Live</span>
-             </div>
-          </div>
-          <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-emerald-800/40 mt-1">
-            System Alpha / <span className="text-emerald-600/60 font-black">{pathname.replace('/dashboard/', '').toUpperCase() || 'CORE'}</span>
-          </p>
         </div>
       </div>
 
@@ -135,6 +131,7 @@ export default function Header() {
           <input
             type="text"
             placeholder="Global Protocol Search..."
+            suppressHydrationWarning={true}
             className="ml-4 w-full border-none bg-transparent text-[11px] font-bold uppercase tracking-widest text-emerald-950 placeholder:text-emerald-800/20 focus:outline-none"
           />
           <div className="flex items-center gap-1 ml-2 px-2 py-0.5 rounded-md bg-emerald-100/30 border border-emerald-200/40">
@@ -147,6 +144,7 @@ export default function Header() {
         <div className="flex items-center gap-4 relative">
           <button
             onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+            suppressHydrationWarning={true}
             className={`group relative flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-500 ${isNotificationOpen ? 'bg-emerald-950 border-emerald-950 text-white shadow-2xl shadow-emerald-950/40' : 'bg-white border-emerald-100 text-emerald-900 hover:bg-emerald-50 hover:border-emerald-300 shadow-sm'}`}
           >
             <Bell size={20} className={isNotificationOpen ? "animate-bounce" : "text-emerald-700/60 group-hover:text-emerald-600 transition-colors"} />
@@ -199,6 +197,7 @@ export default function Header() {
         <div className="relative profile-node">
           <button 
             onClick={() => setIsProfileOpen(!isProfileOpen)}
+            suppressHydrationWarning={true}
             className={`group flex items-center gap-5 rounded-2xl border py-2 pl-6 pr-2 transition-all duration-500 ${isProfileOpen ? 'bg-emerald-950 border-emerald-950 shadow-2xl shadow-emerald-950/40' : 'bg-white border-emerald-100 hover:border-emerald-300 hover:shadow-lg shadow-sm'}`}
           >
             <div className="text-right hidden sm:block space-y-1">

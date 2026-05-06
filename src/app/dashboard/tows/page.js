@@ -1,25 +1,14 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { apiService } from '@/services/apiService';
-import {
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  Edit3,
-  Eye,
-  FileText,
-  Filter,
-  MapPin,
-  Plus,
-  Search,
-  Trash2,
-  Truck,
-  User,
-} from 'lucide-react';
-import styles from './page.module.css';
-
+import { Plus, Search, Filter, Truck, Activity, User, UserCircle, CreditCard, Calendar } from 'lucide-react';
+import { towService } from '@/modules/tows/services/towService';
+import TowTable from '@/modules/tows/components/TowTable';
+import SummaryCard from '@/modules/common/components/SummaryCard';
 import CsvImport from '@/components/CsvImport';
+import ExportCsvButton from '@/components/ExportCsvButton';
+import styles from './page.module.css';
+import { toast } from 'sonner';
 
 export default function Tows() {
   const [towJobs, setTowJobs] = useState([]);
@@ -29,11 +18,46 @@ export default function Tows() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
+  // New Filters
+  const [filters, setFilters] = useState({
+    driver: 'All',
+    vehicle: 'All',
+    customer: 'All',
+    paymentMethod: 'All',
+    startDate: '',
+    endDate: ''
+  });
+
+  const [filterOptions, setFilterOptions] = useState({
+    drivers: [],
+    vehicles: [],
+    customers: []
+  });
+
+  const [showFilters, setShowFilters] = useState(false);
+
   useEffect(() => {
     const userData = localStorage.getItem('user');
-    if (userData) {
-      setUser(JSON.parse(userData));
+    if (userData) setUser(JSON.parse(userData));
+
+    // Load Filter Options
+    async function loadOptions() {
+      try {
+        const [u, v, c] = await Promise.all([
+          apiService.getAllRecords('users'),
+          apiService.getAllRecords('vehicles'),
+          apiService.getAllRecords('customers')
+        ]);
+        setFilterOptions({
+          drivers: u.filter(user => user.role === 'Worker'),
+          vehicles: v,
+          customers: c
+        });
+      } catch (error) {
+        console.error('Failed to load filter options:', error);
+      }
     }
+    loadOptions();
   }, []);
 
   const isWorker = user?.role === 'Worker';
@@ -41,88 +65,97 @@ export default function Tows() {
   const fetchTows = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await apiService.getRecords('tows', {
+      const extraParams = {};
+      if (filters.driver !== 'All') extraParams.driver = filters.driver;
+      if (filters.vehicle !== 'All') extraParams.vehicle = filters.vehicle;
+      if (filters.customer !== 'All') extraParams.customer = filters.customer;
+      if (filters.paymentMethod !== 'All') extraParams.paymentMethod = filters.paymentMethod;
+      if (filters.startDate) extraParams.startDate = filters.startDate;
+      if (filters.endDate) extraParams.endDate = filters.endDate;
+
+      const result = await towService.getTows({
         q: searchTerm,
         page: pagination.page,
         limit: pagination.limit,
-        status: status
+        status: status,
+        extraParams
       });
       setTowJobs(result.data || []);
-      if (result.pagination) {
-        setPagination(result.pagination);
-      }
+      if (result.pagination) setPagination(result.pagination);
     } catch (error) {
-      console.error('Failed to fetch tow jobs:', error);
+      toast.error('Failed to sync tow service data');
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, pagination.page, pagination.limit, status]);
+  }, [searchTerm, pagination.page, pagination.limit, status, filters]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchTows();
-    }, 300);
+    const timer = setTimeout(fetchTows, 300);
     return () => clearTimeout(timer);
   }, [fetchTows]);
 
   const handleDelete = async (id) => {
     if (isWorker) return;
-    if (confirm('Are you sure you want to delete this tow job?')) {
+    if (confirm('Permanently decommission this job record from the ledger?')) {
       try {
-        await apiService.deleteRecord('tows', id);
+        await towService.deleteTow(id);
+        toast.success('Job record purged successfully');
         fetchTows();
       } catch (error) {
-        alert(error.message || 'Failed to delete tow job');
+        toast.error(error.message || 'Purge operation failed');
       }
     }
-  };
-
-  const handlePageChange = (newPage) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
   };
 
   const activeJobsCount = towJobs.filter((tow) => ['Pending', 'In Progress'].includes(tow.status)).length;
   const pageRevenue = towJobs.reduce((sum, tow) => sum + Number(tow.amount ?? 0), 0);
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className={styles.header}>
         <div>
-          <h1 className={styles.title}>Tow Jobs</h1>
-          <p className={styles.subtitle}>{isWorker ? 'Track your active tow requests and job status.' : 'Track every tow request from dispatch to completion.'}</p>
+          <h1 className={styles.title}>Tow Service <span style={{ color: 'var(--primary)' }}>Operations</span></h1>
+          <p className={styles.subtitle}>{isWorker ? 'Manage your assigned operational routes and job status.' : 'Global monitoring of fleet deployment and service execution.'}</p>
         </div>
         <div className="flex gap-4 items-center">
           {!isWorker && <CsvImport moduleKey="tows" onComplete={fetchTows} />}
+          {!isWorker && <ExportCsvButton moduleKey="tows" filename="Tow_Jobs_Ledger" />}
           <Link href="/dashboard/tows/new" className="btn-primary">
             <Plus size={18} />
-            <span>Create Tow Job</span>
+            <span>New Dispatch</span>
           </Link>
         </div>
       </header>
 
-      <div className={styles.summaryGrid}>
-        <div className="glass-card">
-          <span className={styles.summaryLabel}>{isWorker ? 'My Records' : 'Total Records'}</span>
-          <strong className={styles.summaryValue}>{pagination.total}</strong>
-        </div>
-        <div className="glass-card">
-          <span className={styles.summaryLabel}>{isWorker ? 'My Active Jobs' : 'Active Dispatch'}</span>
-          <strong className={styles.summaryValue}>{activeJobsCount}</strong>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 mt-10">
+        <SummaryCard 
+          label={isWorker ? "My Total Dispatches" : "Total Fleet Jobs"} 
+          value={pagination.total} 
+          icon={Truck} 
+          color="emerald" 
+        />
+        <SummaryCard 
+          label="Active Deployments" 
+          value={activeJobsCount} 
+          icon={Activity} 
+          color="amber" 
+        />
         {!isWorker && (
-          <div className="glass-card">
-            <span className={styles.summaryLabel}>Page Revenue</span>
-            <strong className={styles.summaryValue}>QAR {pageRevenue.toLocaleString()}</strong>
-          </div>
+          <SummaryCard 
+            label="Page Ledger Value" 
+            value={`QAR ${pageRevenue.toLocaleString()}`} 
+            icon={Plus} 
+            color="blue" 
+          />
         )}
       </div>
 
-      <div className="list-header">
-        <div className="search-wrapper">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <div className="search-wrapper flex-1 relative">
           <Search size={20} className="search-icon" />
           <input
             type="text"
-            placeholder="Search job, customer, vehicle, driver..."
+            placeholder="Search job ID, customer, vehicle or operator..."
             className="search-input"
             value={searchTerm}
             onChange={(e) => {
@@ -131,133 +164,211 @@ export default function Tows() {
             }}
           />
         </div>
-        <div className="filter-group">
-          <div className="filter-btn">
-            <Filter size={18} />
-            <select 
-              className={styles.statusSelect} 
-              value={status} 
-              onChange={(e) => {
-                setStatus(e.target.value);
-                setPagination(prev => ({ ...prev, page: 1 }));
-              }}
-            >
-              <option value="All">All Status</option>
-              <option value="Pending">Pending</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Completed">Completed</option>
-              <option value="Cancelled">Cancelled</option>
-            </select>
-          </div>
-        </div>
+
+        <button 
+          onClick={() => setShowFilters(!showFilters)}
+          className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${
+            showFilters 
+              ? 'bg-emerald-950 text-emerald-400 border-emerald-800 shadow-emerald-900/40' 
+              : 'bg-white text-emerald-700 border border-emerald-100 hover:bg-emerald-50 shadow-emerald-900/5'
+          }`}
+        >
+          <Filter size={18} />
+          <span>{showFilters ? 'Hide Filters' : 'Filter View'}</span>
+        </button>
       </div>
 
-      <div className="table-container glass-card">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Job ID / Vehicle</th>
-              <th>Customer</th>
-              <th>Route</th>
-              <th>Assigned Driver</th>
-              <th>Service Date</th>
-              <th>Service Charges</th>
-              <th>Status</th>
-              <th style={{ textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>Loading tow jobs...</td></tr>
-            ) : towJobs.map((tow) => (
-              <tr key={tow.id}>
-                <td>
-                  <div className={styles.jobCell}>
-                    <div className={styles.iconBox}><Truck size={18} /></div>
-                    <div>
-                      <span className={styles.towId}>{tow.id}</span>
-                      <span className={styles.subtext}>{tow.vehicle}</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div className={styles.customerCell}>
-                    <User size={16} />
-                    <div>
-                      <span className={styles.nameText}>{tow.customer}</span>
-                      <span className={styles.subtext}>{tow.phone}</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div className={styles.routeCell}>
-                    <MapPin size={16} />
-                    <span>{tow.pickup} to {tow.dropoff}</span>
-                  </div>
-                </td>
-                <td>{tow.driver}</td>
-                <td>
-                  <div className={styles.dateCell}>
-                    <CalendarDays size={16} />
-                    <span>{tow.date}</span>
-                  </div>
-                </td>
-                <td className={styles.amountText}>QAR {Number(tow.amount ?? 0).toLocaleString()}</td>
-                <td>
-                  <span className={`badge ${
-                    tow.status === 'Completed' ? 'badge-success' :
-                    ['In Progress', 'Pending'].includes(tow.status) ? 'badge-warning' : 'badge-danger'
-                  }`}>
-                    {tow.status}
-                  </span>
-                </td>
-                <td>
-                  <div className={styles.actionCell}>
-                    {!isWorker && tow.status === 'Completed' && (
-                      <Link 
-                        href={`/dashboard/invoices/new?jobId=${tow.id}`} 
-                        className={styles.invoiceBtn} 
-                        title="Create Invoice"
-                      >
-                        <FileText size={16} />
-                      </Link>
-                    )}
-                    <Link href={`/dashboard/tows/${tow.id}`} className={styles.viewBtn} title="View"><Eye size={16} /></Link>
-                    {!isWorker && <Link href={`/dashboard/tows/${tow.id}/edit`} className={styles.moreBtn} title="Edit"><Edit3 size={16} /></Link>}
-                    {!isWorker && <button className={styles.moreBtn} title="Delete" onClick={() => handleDelete(tow.id)}><Trash2 size={16} /></button>}
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {!loading && towJobs.length === 0 && (
-              <tr><td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>No tow jobs found.</td></tr>
-            )}
-          </tbody>
-        </table>
+      {/* Active Filter Chips */}
+      {(status !== 'All' || filters.driver !== 'All' || filters.vehicle !== 'All' || filters.customer !== 'All' || filters.paymentMethod !== 'All' || filters.startDate || filters.endDate) && (
+        <div className="flex flex-wrap items-center gap-3 mb-8 animate-in fade-in slide-in-from-left-4 duration-500">
+          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mr-2">Active Filters:</span>
+          
+          {status !== 'All' && (
+            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
+              <span>Status: {status}</span>
+              <button onClick={() => setStatus('All')} className="hover:text-rose-500 transition-colors"><MoreHorizontal size={12} className="rotate-45" /></button>
+            </div>
+          )}
 
-        <div className="pagination">
-          <span className="page-info">
-            Showing {towJobs.length} of {pagination.total} jobs (Page {pagination.page} of {pagination.totalPages})
-          </span>
-          <div className="page-controls">
-            <button 
-              className="page-btn" 
-              disabled={pagination.page <= 1}
-              onClick={() => handlePageChange(pagination.page - 1)}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button className="page-btn active">{pagination.page}</button>
-            <button 
-              className="page-btn" 
-              disabled={pagination.page >= pagination.totalPages}
-              onClick={() => handlePageChange(pagination.page + 1)}
-            >
-              <ChevronRight size={16} />
-            </button>
+          {filters.driver !== 'All' && (
+            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
+              <span>Driver: {filters.driver}</span>
+              <button onClick={() => setFilters(f => ({ ...f, driver: 'All' }))} className="hover:text-rose-500 transition-colors"><MoreHorizontal size={12} className="rotate-45" /></button>
+            </div>
+          )}
+
+          {filters.vehicle !== 'All' && (
+            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
+              <span>Vehicle: {filters.vehicle}</span>
+              <button onClick={() => setFilters(f => ({ ...f, vehicle: 'All' }))} className="hover:text-rose-500 transition-colors"><MoreHorizontal size={12} className="rotate-45" /></button>
+            </div>
+          )}
+
+          {filters.customer !== 'All' && (
+            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
+              <span>Customer: {filters.customer}</span>
+              <button onClick={() => setFilters(f => ({ ...f, customer: 'All' }))} className="hover:text-rose-500 transition-colors"><MoreHorizontal size={12} className="rotate-45" /></button>
+            </div>
+          )}
+
+          {filters.paymentMethod !== 'All' && (
+            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
+              <span>Payment: {filters.paymentMethod}</span>
+              <button onClick={() => setFilters(f => ({ ...f, paymentMethod: 'All' }))} className="hover:text-rose-500 transition-colors"><MoreHorizontal size={12} className="rotate-45" /></button>
+            </div>
+          )}
+
+          {(filters.startDate || filters.endDate) && (
+            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
+              <span>Date: {filters.startDate || '...'} to {filters.endDate || '...'}</span>
+              <button onClick={() => setFilters(f => ({ ...f, startDate: '', endDate: '' }))} className="hover:text-rose-500 transition-colors"><MoreHorizontal size={12} className="rotate-45" /></button>
+            </div>
+          )}
+
+          <button 
+            onClick={() => {
+              setStatus('All');
+              setFilters({ driver: 'All', vehicle: 'All', customer: 'All', paymentMethod: 'All', startDate: '', endDate: '' });
+            }}
+            className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-700 ml-2"
+          >
+            Reset All
+          </button>
+        </div>
+      )}
+
+      {showFilters && (
+        <div className="bg-white border border-emerald-100 rounded-[2rem] p-8 mb-10 shadow-2xl shadow-emerald-900/5 animate-in fade-in slide-in-from-top-4 duration-500 space-y-8">
+          <div className="flex flex-col gap-8">
+            <div className="flex items-center gap-3 border-b border-emerald-50 pb-4">
+               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-900/40">Advanced Query Engine</span>
+            </div>
+
+            <div className="flex flex-wrap gap-4">
+               {/* Status Filter */}
+              <div className="filter-group-premium">
+                <Activity size={14} className="text-emerald-600" />
+                <select 
+                  value={status} 
+                  onChange={(e) => {
+                    setStatus(e.target.value);
+                    setPagination(prev => ({ ...prev, page: 1 }));
+                  }}
+                >
+                  <option value="All">All Status</option>
+                  <option value="Pending">Pending</option>
+                  <option value="In Progress">Active</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              {/* Worker Filter */}
+              {!isWorker && (
+                <div className="filter-group-premium">
+                  <UserCircle size={14} className="text-emerald-600" />
+                  <select 
+                    value={filters.driver} 
+                    onChange={(e) => setFilters(f => ({ ...f, driver: e.target.value }))}
+                  >
+                    <option value="All">All Workers</option>
+                    {filterOptions.drivers.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
+                  </select>
+                </div>
+              )}
+
+              {/* Vehicle Filter */}
+              <div className="filter-group-premium">
+                <Truck size={14} className="text-emerald-600" />
+                <select 
+                  value={filters.vehicle} 
+                  onChange={(e) => setFilters(f => ({ ...f, vehicle: e.target.value }))}
+                >
+                  <option value="All">All Vehicles</option>
+                  {filterOptions.vehicles.map(v => <option key={v.id} value={`${v.name} - ${v.plate}`}>{v.name} - {v.plate}</option>)}
+                </select>
+              </div>
+
+              {/* Customer Filter */}
+              <div className="filter-group-premium">
+                <User size={14} className="text-emerald-600" />
+                <select 
+                  value={filters.customer} 
+                  onChange={(e) => setFilters(f => ({ ...f, customer: e.target.value }))}
+                >
+                  <option value="All">All Customers</option>
+                  {filterOptions.customers.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                </select>
+              </div>
+
+              {/* Payment Filter */}
+              <div className="filter-group-premium">
+                <CreditCard size={14} className="text-emerald-600" />
+                <select 
+                  value={filters.paymentMethod} 
+                  onChange={(e) => setFilters(f => ({ ...f, paymentMethod: e.target.value }))}
+                >
+                  <option value="All">All Payments</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Credit">Credit</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Date Range Filters */}
+            <div className="flex flex-wrap items-center gap-6 pt-8 border-t border-emerald-50 w-full">
+               <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-emerald-950 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-900/20">
+                    <Calendar size={18} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-950">Audit Period</span>
+                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Select temporal range</span>
+                  </div>
+               </div>
+
+               <div className="flex items-center gap-4">
+                  <div className="flex items-center bg-white border-2 border-emerald-100 rounded-2xl overflow-hidden focus-within:border-emerald-500/50 transition-all shadow-sm">
+                    <input 
+                      type="date" 
+                      className="bg-transparent border-none text-xs font-bold text-emerald-950 p-4 outline-none cursor-pointer"
+                      value={filters.startDate}
+                      onChange={(e) => setFilters(f => ({ ...f, startDate: e.target.value }))}
+                    />
+                    <div className="flex items-center justify-center px-2">
+                      <div className="w-6 h-[2px] bg-emerald-100 rounded-full"></div>
+                    </div>
+                    <input 
+                      type="date" 
+                      className="bg-transparent border-none text-xs font-bold text-emerald-950 p-4 outline-none cursor-pointer"
+                      value={filters.endDate}
+                      onChange={(e) => setFilters(f => ({ ...f, endDate: e.target.value }))}
+                    />
+                  </div>
+
+                  {(filters.startDate || filters.endDate) && (
+                    <button 
+                      onClick={() => setFilters(f => ({ ...f, startDate: '', endDate: '' }))}
+                      className="h-14 px-6 bg-rose-50 text-rose-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-sm active:scale-95"
+                    >
+                      Clear Range
+                    </button>
+                  )}
+               </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      <TowTable 
+        tows={towJobs}
+        loading={loading}
+        pagination={pagination}
+        onPageChange={(p) => setPagination(prev => ({ ...prev, page: p }))}
+        onDelete={handleDelete}
+        isWorker={isWorker}
+      />
     </div>
   );
 }

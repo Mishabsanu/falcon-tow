@@ -71,10 +71,12 @@ const menuGroups = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [notificationCount, setNotificationCount] = useState(0);
 
   useEffect(() => {
+    setMounted(true);
     if (typeof document !== "undefined") {
       const role = document.cookie
         .split("; ")
@@ -130,8 +132,10 @@ export default function Sidebar() {
     return ROLE_VISIBILITY[matchedPath].some(r => r.toLowerCase() === normalizedRole.toLowerCase());
   };
 
+  if (!mounted) return null;
+
   return (
-    <aside className="sticky top-0 z-50 flex h-screen w-[18.5rem] flex-col overflow-hidden bg-white border-r border-emerald-100 shadow-sm">
+    <aside className="flex h-screen w-full flex-col overflow-hidden bg-white border-r border-emerald-100 shadow-sm">
       {/* BRANDING AREA */}
       <div className="relative px-6 py-10 flex flex-col items-center border-b border-emerald-800 bg-emerald-900 overflow-hidden">
         {/* THEME GRADIENT OVERLAY */}
@@ -142,14 +146,11 @@ export default function Sidebar() {
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-500/10 blur-2xl rounded-full"></div>
 
         <Link href="/dashboard" className="relative z-10 w-full group">
-          <div className="h-16 w-full transition-all duration-500 group-hover:scale-105 flex items-center justify-center">
+          <div className="h-26 w-full transition-all duration-500 group-hover:scale-105 flex items-center justify-center">
             <img src="/logo-1.png" alt="Falcon Tow" className="h-full w-full object-contain brightness-0 invert" />
           </div>
         </Link>
-        <div className="mt-6 flex items-center gap-2.5 px-3 py-1.5 bg-white/10 rounded-full border border-white/10 shadow-inner relative z-10">
-          <ShieldCheck size={12} className="text-emerald-400" />
-          <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-100">{userRole} AUTHENTICATED</span>
-        </div>
+        
       </div>
 
       {/* NAVIGATION */}
@@ -210,6 +211,7 @@ export default function Sidebar() {
       <div className="mt-auto border-t border-emerald-100 bg-emerald-50/30 p-6">
         <button
           onClick={handleLogout}
+          suppressHydrationWarning={true}
           className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-emerald-200 text-emerald-700 hover:bg-emerald-600 hover:text-white transition-all font-bold text-[10px] uppercase tracking-widest shadow-sm active:scale-95"
         >
           Logout Session

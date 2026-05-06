@@ -13,9 +13,9 @@ export async function GET(request) {
   }
 
   try {
-    // 1. Get all active workers
-    const workers = await aggregateRecords('workers', [
-      { $match: { status: { $ne: 'Inactive' } } }
+    // 1. Get all active workers from the users collection
+    const workers = await aggregateRecords('users', [
+      { $match: { role: 'Worker', status: { $ne: 'Inactive' } } }
     ]);
 
     // 2. Aggregate tows for all workers in that month

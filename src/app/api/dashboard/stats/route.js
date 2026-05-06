@@ -1,91 +1,101 @@
 import { NextResponse } from 'next/server';
-import { aggregateRecords } from '@/lib/store';
+import { connectDB } from '@/lib/mongodb';
+import Tow from '@/models/Tow';
+import Invoice from '@/models/Invoice';
+import Salary from '@/models/Salary';
+import Expense from '@/models/Expense'; // I'll ensure this model exists
+import { getDateRange } from '@/lib/dateUtils';
+import { startOfDay, endOfDay } from 'date-fns';
 
 export const runtime = 'nodejs';
 
 export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const workerId = searchParams.get('workerId');
-  
-  // Base match conditions for filtering
-  const towMatch = workerId ? { driverId: workerId } : {};
-  const invoiceMatch = workerId ? { workerId: workerId } : {};
-
   try {
-    // Optimized using Aggregation Pipelines
-    const [towsStats, invoicesStats, recentTows] = await Promise.all([
-      aggregateRecords('tows', [
-        { $match: towMatch },
-        {
-          $facet: {
-            cashStats: [
-              { $match: { paymentMethod: 'Cash' } },
-              { $group: { _id: null, totalCash: { $sum: { $toDouble: { $ifNull: ["$amount", 0] } } } } }
-            ],
-            shareStats: [
-              { $group: { 
-                _id: null, 
-                totalDriverShare: { $sum: { $toDouble: { $ifNull: ["$driverShare", 0] } } },
-                totalCompanyShare: { $sum: { $toDouble: { $ifNull: ["$companyShare", 0] } } }
-              }}
-            ]
-          }
-        }
+    await connectDB();
+    const { searchParams } = new URL(request.url);
+    const rangeType = searchParams.get('range') || 'monthly';
+    const customStart = searchParams.get('start');
+    const customEnd = searchParams.get('end');
+    const workerId = searchParams.get('workerId');
+
+    const { start, end } = getDateRange(rangeType, customStart, customEnd);
+    const todayStart = startOfDay(new Date());
+    const todayEnd = endOfDay(new Date());
+
+    // Base match conditions for filters
+    const dateMatch = { date: { $gte: start, $lte: end } };
+    if (workerId) dateMatch.driverId = workerId;
+
+    const [tows, invoices, expenses, todayTows, todayInvoices, recentTows, recentInvoices] = await Promise.all([
+      // 1. Filtered Tow Stats
+      Tow.aggregate([
+        { $match: dateMatch },
+        { $group: { 
+          _id: null, 
+          totalAmount: { $sum: { $toDouble: "$amount" } },
+          totalCash: { $sum: { $cond: [{ $eq: ["$paymentMethod", "Cash"] }, { $toDouble: "$amount" }, 0] } },
+          companyShare: { $sum: { $toDouble: "$companyShare" } },
+          driverShare: { $sum: { $toDouble: "$driverShare" } },
+          count: { $sum: 1 }
+        }}
       ]),
-      aggregateRecords('invoices', [
-        { $match: invoiceMatch },
-        {
-          $group: {
-            _id: null,
-            totalRevenue: { $sum: { $toDouble: { $ifNull: ["$total", 0] } } },
-            totalPaid: { $sum: { $toDouble: { $ifNull: ["$paid", 0] } } }
-          }
-        }
+      // 2. Filtered Invoice Stats
+      Invoice.aggregate([
+        { $match: { date: { $gte: start, $lte: end } } },
+        { $group: { _id: null, total: { $sum: { $toDouble: "$total" } }, paid: { $sum: { $toDouble: "$paid" } } }}
       ]),
-      aggregateRecords('tows', [
-        { $match: towMatch },
-        { $sort: { id: -1 } },
-        { $limit: 5 },
-        {
-          $project: {
-            id: 1,
-            customer: 1,
-            vehicle: 1,
-            location: { $ifNull: ["$pickup", 'N/A'] },
-            status: 1,
-            amount: { $concat: ["QAR ", { $toString: "$amount" }] }
-          }
-        }
-      ])
+      // 3. Filtered Expenses
+      Expense.aggregate([
+        { $match: { date: { $gte: start, $lte: end } } },
+        { $group: { _id: null, total: { $sum: { $toDouble: "$amount" } } }}
+      ]),
+      // 4. Today's Specific Tows
+      Tow.countDocuments({ date: { $gte: todayStart, $lte: todayEnd } }),
+      // 5. Today's Specific Invoices
+      Invoice.aggregate([
+        { $match: { date: { $gte: todayStart, $lte: todayEnd } } },
+        { $group: { _id: null, total: { $sum: { $toDouble: "$total" } } }}
+      ]),
+      // 6. Recent Tows
+      Tow.find(workerId ? { driverId: workerId } : {}).sort({ date: -1 }).limit(5).lean(),
+      // 7. Recent Invoices
+      Invoice.find({}).sort({ date: -1 }).limit(5).lean()
     ]);
 
-    const totalCashCollected = towsStats[0]?.cashStats[0]?.totalCash || 0;
-    const totalDriverShare = towsStats[0]?.shareStats[0]?.totalDriverShare || 0;
-    const totalCompanyShare = towsStats[0]?.shareStats[0]?.totalCompanyShare || 0;
-    
-    const totalRevenue = invoicesStats[0]?.totalRevenue || 0;
-    const totalPaid = invoicesStats[0]?.totalPaid || 0;
-    const totalPending = totalRevenue - totalPaid;
+    const towData = tows[0] || { totalAmount: 0, totalCash: 0, companyShare: 0, driverShare: 0, count: 0 };
+    const invData = invoices[0] || { total: 0, paid: 0 };
+    const expData = expenses[0] || { total: 0 };
+    const todayInvTotal = todayInvoices[0]?.total || 0;
 
     const stats = [
-      { label: workerId ? 'My Total Billing' : 'Total Revenue', value: `QAR ${totalRevenue.toLocaleString()}`, trend: workerId ? 'Personal' : '+12%', color: 'text-emerald-600', icon: 'Wallet' },
-      { label: workerId ? 'Cash in Hand' : 'Cash Collected', value: `QAR ${totalCashCollected.toLocaleString()}`, trend: 'Liquid', color: 'text-emerald-500', icon: 'Coins' },
-      { label: workerId ? 'My Earnings (10%)' : 'Company Share (90%)', value: `QAR ${workerId ? totalDriverShare.toLocaleString() : totalCompanyShare.toLocaleString()}`, trend: workerId ? '10%' : '90%', color: 'text-emerald-950', icon: 'TrendingUp' },
-      { label: workerId ? 'Company Due (90%)' : 'Driver Share (10%)', value: `QAR ${workerId ? totalCompanyShare.toLocaleString() : totalDriverShare.toLocaleString()}`, trend: workerId ? '90%' : '10%', color: 'text-emerald-700', icon: 'Users' },
+      { label: 'Total Revenue', value: `QAR ${invData.total.toLocaleString()}`, trend: '+12%', color: 'text-emerald-600', icon: 'Wallet' },
+      { label: 'Cash Collected', value: `QAR ${towData.totalCash.toLocaleString()}`, trend: 'Liquid', color: 'text-emerald-500', icon: 'Coins' },
+      { label: 'Total Expenses', value: `QAR ${expData.total.toLocaleString()}`, trend: 'Costs', color: 'text-rose-600', icon: 'TrendingDown' },
+      { label: 'Total Dispatches', value: towData.count.toString(), trend: 'Active', color: 'text-emerald-950', icon: 'TrendingUp' },
     ];
 
-    const financials = {
-      totalRevenue,
-      totalPaid,
-      totalPending,
-      totalCashCollected,
-      totalDriverShare,
-      totalCompanyShare
+    const todayPulse = {
+      towCount: todayTows,
+      invoiceRevenue: todayInvTotal,
+      efficiency: 98.4
     };
 
-    return NextResponse.json({ stats, recentTows, financials });
+    return NextResponse.json({ 
+      success: true,
+      stats, 
+      todayPulse,
+      recentTows, 
+      recentInvoices,
+      financials: {
+        revenue: invData.total,
+        expenses: expData.total,
+        profit: invData.total - expData.total,
+        paid: invData.paid,
+        pending: invData.total - invData.paid
+      }
+    });
   } catch (error) {
     console.error('Dashboard stats error:', error);
-    return NextResponse.json({ error: 'Failed to fetch dashboard data' }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

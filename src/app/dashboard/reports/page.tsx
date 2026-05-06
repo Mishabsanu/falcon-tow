@@ -187,36 +187,32 @@ export default function ReportsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* LEFT: SELECTION */}
         <div className="lg:col-span-1 space-y-4">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-2">Select Report Category</p>
           <div className="grid grid-cols-1 gap-3">
             {[
-              { id: 'invoices', label: 'Invoices & Billing', icon: Wallet, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-              { id: 'tows', label: 'Tow Service Logs', icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
-              { id: 'expenses', label: 'Company Expenses', icon: AlertTriangle, color: 'text-rose-600', bg: 'bg-rose-50' },
-              { id: 'salaries', label: 'Payroll History', icon: Users2, color: 'text-emerald-700', bg: 'bg-emerald-100/50' }
+              { id: 'invoices', label: 'Invoices & Billing', desc: 'Financial audit of all billed services and payment statuses.', icon: Wallet, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+              { id: 'tows', label: 'Tow Service Logs', desc: 'Comprehensive history of operational tow jobs and driver logs.', icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
+              { id: 'expenses', label: 'Company Expenses', desc: 'Breakdown of operational costs, vehicle maintenance, and overhead.', icon: AlertTriangle, color: 'text-rose-600', bg: 'bg-rose-50' },
+              { id: 'salaries', label: 'Payroll History', desc: 'Detailed tracking of employee commissions and monthly settlements.', icon: Users2, color: 'text-emerald-700', bg: 'bg-emerald-100/50' }
             ].map((item) => (
               <button
                 key={item.id}
                 onClick={() => setSelectedModule(item.id)}
-                className={`flex items-center gap-4 p-5 rounded-2xl border transition-all duration-300 text-left relative overflow-hidden group ${
+                className={`flex items-start gap-4 p-6 rounded-2xl border transition-all duration-300 text-left relative overflow-hidden group ${
                   selectedModule === item.id 
-                    ? 'bg-emerald-950 border-emerald-600 shadow-xl shadow-emerald-900/10 -translate-y-1' 
-                    : 'bg-white border-emerald-100 hover:border-emerald-300'
+                    ? 'bg-emerald-950 border-emerald-600 shadow-xl shadow-emerald-900/20 -translate-y-1' 
+                    : 'bg-white border-emerald-100 hover:border-emerald-300 hover:shadow-lg'
                 }`}
               >
-                {/* Decorative background logo */}
-                <div className="absolute -right-4 -bottom-4 w-20 h-20 opacity-[0.03] grayscale brightness-0 group-hover:opacity-10 transition-opacity">
-                   <img src="/logo-1.png" alt="" className="w-full h-full object-contain" />
-                </div>
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${selectedModule === item.id ? 'bg-emerald-800 text-emerald-400' : `${item.bg} ${item.color}`}`}>
+                <div className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center shadow-sm ${selectedModule === item.id ? 'bg-emerald-800 text-emerald-400' : `${item.bg} ${item.color}`}`}>
                   <item.icon size={22} />
                 </div>
-                <div>
+                <div className="relative z-10">
                   <h3 className={`text-sm font-bold ${selectedModule === item.id ? 'text-white' : 'text-emerald-950'}`}>{item.label}</h3>
-                  <p className={`text-[10px] uppercase font-bold tracking-widest ${selectedModule === item.id ? 'text-emerald-400/40' : 'text-slate-400'}`}>{item.id}</p>
+                  <p className={`text-[10px] mt-1 leading-relaxed ${selectedModule === item.id ? 'text-emerald-400/60' : 'text-slate-400'}`}>{item.desc}</p>
                 </div>
               </button>
             ))}
@@ -224,16 +220,30 @@ export default function ReportsPage() {
         </div>
 
         {/* RIGHT: FILTERS & ACTIONS */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-3">
           <div className="bg-white rounded-[2rem] border border-emerald-100 shadow-sm overflow-hidden flex flex-col h-full">
             <div className="p-8 md:p-12 space-y-10 flex-1">
-              <div className="flex items-center gap-4 border-b border-emerald-50 pb-6">
-                <div className="h-12 w-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                  <FileCheck size={24} />
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-emerald-50 pb-8">
+                <div className="flex items-center gap-5">
+                  <div className="h-14 w-14 rounded-2xl bg-emerald-950 flex items-center justify-center text-emerald-400 shadow-xl shadow-emerald-900/20">
+                    <FileCheck size={28} />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-emerald-950 tracking-tight capitalize">{selectedModule} Parameters</h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em]">Customize your export data</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-emerald-950 tracking-tight capitalize">{selectedModule} Filter Options</h2>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Customize your report parameters</p>
+
+                <div className="flex items-center gap-3 bg-emerald-50/50 px-5 py-3 rounded-2xl border border-emerald-100/50">
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Report Insights</span>
+                    <span className="text-[11px] font-bold text-emerald-800">
+                      {selectedModule === 'invoices' && 'Financial Audit Ready'}
+                      {selectedModule === 'tows' && 'Operational History'}
+                      {selectedModule === 'expenses' && 'Cost Analysis Active'}
+                      {selectedModule === 'salaries' && 'Payroll Compliance'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -314,18 +324,24 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            <div className="p-8 md:p-10 bg-emerald-50/50 border-t border-emerald-100 flex flex-col sm:flex-row gap-4">
+            <div className="p-8 bg-emerald-50/30 border-t border-emerald-100 flex flex-col sm:flex-row gap-4">
               <button
                 onClick={() => handleExport('pdf')}
-                className="flex-1 flex items-center justify-center gap-3 bg-emerald-600 px-10 py-5 text-[11px] font-bold uppercase tracking-[0.25em] text-white shadow-xl shadow-emerald-900/20 transition-all hover:bg-emerald-700 active:scale-95 rounded-xl"
+                className="flex-1 flex items-center justify-center gap-3 bg-emerald-950 px-8 py-3.5 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-xl shadow-emerald-900/20 transition-all hover:bg-black active:scale-95 rounded-xl group"
               >
-                <Download size={18} /> Download PDF
+                <div className="p-1.5 bg-emerald-800 rounded-lg group-hover:bg-emerald-700 transition-colors">
+                  <Download size={14} className="text-emerald-400" />
+                </div>
+                Generate PDF Report
               </button>
               <button
                 onClick={() => handleExport('excel')}
-                className="flex-1 flex items-center justify-center gap-3 bg-white border-2 border-emerald-950 text-emerald-950 px-10 py-5 rounded-xl font-bold text-[11px] uppercase tracking-[0.25em] hover:bg-emerald-950 hover:text-white transition-all active:scale-95 shadow-lg shadow-emerald-900/5"
+                className="flex-1 flex items-center justify-center gap-3 bg-white border-2 border-emerald-950 text-emerald-950 px-8 py-3.5 rounded-xl font-bold text-[10px] uppercase tracking-[0.2em] hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all active:scale-95 shadow-lg shadow-emerald-900/5 group"
               >
-                <FileText size={18} /> Export Excel
+                <div className="p-1.5 bg-emerald-50 rounded-lg group-hover:bg-white/20 transition-colors">
+                  <FileText size={14} className="text-emerald-600 group-hover:text-white" />
+                </div>
+                Export CSV / Excel
               </button>
             </div>
           </div>

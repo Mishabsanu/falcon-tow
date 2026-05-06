@@ -28,17 +28,17 @@ export default function DashboardLayout({
     <div className="flex min-h-screen overflow-hidden bg-emerald-50/20 font-sans antialiased text-emerald-950">
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-50 bg-emerald-950/40 backdrop-blur-md lg:hidden"
+          className="fixed inset-0 z-[100] bg-emerald-950/40 backdrop-blur-md lg:hidden animate-in fade-in duration-300"
           onClick={() => setSidebarOpen(false)}
         >
           <div
-            className="h-full w-[18rem] bg-emerald-950 shadow-2xl"
+            className="h-full w-[18.5rem] bg-white shadow-2xl animate-in slide-in-from-left duration-500"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="absolute right-5 top-5 lg:hidden">
+            <div className="absolute right-[-3rem] top-5 lg:hidden">
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="p-2.5 bg-white/10 text-emerald-400 rounded-lg transition-all hover:bg-white/20"
+                className="p-2.5 bg-emerald-950 text-white rounded-xl shadow-lg border border-white/10 transition-all hover:scale-110 active:scale-90"
                 aria-label="Close navigation"
               >
                 <X size={20} />
@@ -49,7 +49,8 @@ export default function DashboardLayout({
         </div>
       )}
 
-      <div className="hidden lg:block shrink-0 shadow-sm z-50">
+      {/* Desktop Sidebar Container */}
+      <div className="hidden lg:block w-[18.5rem] shrink-0 shadow-sm z-50">
         <Sidebar />
       </div>
 
@@ -68,6 +69,7 @@ export default function DashboardLayout({
             
             <button
               onClick={() => setSidebarOpen(true)}
+              suppressHydrationWarning={true}
               className="rounded-xl border border-emerald-100 bg-white p-2.5 text-emerald-600 transition-all hover:bg-emerald-50 shadow-sm active:scale-95"
               aria-label="Open navigation"
             >
@@ -80,8 +82,8 @@ export default function DashboardLayout({
           <Header />
         </div>
 
-        <main className="garage-workspace flex-1 overflow-y-auto overflow-x-hidden p-5 scroll-smooth md:p-7 lg:p-8 pb-24 lg:pb-8">
-          <div className="mx-auto max-w-[1500px] space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
+        <main className="garage-workspace flex-1 overflow-y-auto overflow-x-hidden p-5 scroll-smooth md:p-7 lg:p-10 pb-24 lg:pb-10">
+          <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
             {children}
           </div>
           <div className="h-8" />
