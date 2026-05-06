@@ -160,31 +160,64 @@ export default function Vehicles() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Vehicle Details</th>
-              <th>License Plate</th>
-              <th>Last Service</th>
+              <th>Vehicle Asset</th>
+              <th>Fleet Specs</th>
+              <th>Technical Identity</th>
+              <th>Compliance Audit</th>
               <th>Status</th>
-              <th className="text-right">Action Interface</th>
+              <th>Administrative Audit</th>
+              <th className="text-right">Interface</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="5" className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">Scanning fleet database...</td></tr>
+              <tr><td colSpan="7" className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">Scanning fleet database...</td></tr>
             ) : vehicles.map((v) => (
               <tr key={v.id}>
                 <td>
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shadow-sm">
-                      <Truck size={20} />
+                    <div className="w-12 h-12 bg-emerald-950 text-emerald-400 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-900/20">
+                      <Truck size={24} />
                     </div>
-                    <span className="text-sm font-bold text-emerald-950">{v.name}</span>
+                    <div>
+                      <div className="text-sm font-black text-emerald-950 leading-tight">{v.name}</div>
+                      <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-1">UUID: {v.id}</div>
+                    </div>
                   </div>
                 </td>
                 <td>
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-widest bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-lg">{v.plate}</span>
+                  <div className="text-sm font-bold text-slate-700">{v.modelRef || 'N/A'}</div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Year: {v.year || 'N/A'}</div>
                 </td>
                 <td>
-                  <span className="text-xs font-semibold text-slate-400">{v.lastService || 'N/A'}</span>
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-black uppercase text-slate-400 w-12">Plate:</span>
+                      <span className="text-xs font-bold text-emerald-950 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">{v.plate}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-black uppercase text-slate-400 w-12">Chassis:</span>
+                      <span className="text-[10px] font-bold text-slate-500 font-mono tracking-tighter">{v.chassisRef || 'N/A'}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full ${new Date(v.insuranceExpiry) < new Date() ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`}></div>
+                      <div>
+                        <div className="text-[10px] font-black text-slate-800 uppercase leading-none">Insurance</div>
+                        <div className="text-[9px] font-bold text-slate-400 mt-1">{v.insuranceExpiry ? new Date(v.insuranceExpiry).toLocaleDateString('en-GB') : 'N/A'}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full ${new Date(v.registrationExpiry) < new Date() ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`}></div>
+                      <div>
+                        <div className="text-[10px] font-black text-slate-800 uppercase leading-none">Registration</div>
+                        <div className="text-[9px] font-bold text-slate-400 mt-1">{v.registrationExpiry ? new Date(v.registrationExpiry).toLocaleDateString('en-GB') : 'N/A'}</div>
+                      </div>
+                    </div>
+                  </div>
                 </td>
                 <td>
                   <span className={`badge ${
@@ -194,6 +227,10 @@ export default function Vehicles() {
                     <div className={`h-1 w-1 rounded-full ${v.status === 'Available' ? 'bg-emerald-600' : 'bg-emerald-400'}`}></div>
                     {v.status}
                   </span>
+                </td>
+                <td>
+                  <div className="text-[10px] font-bold text-emerald-950 uppercase tracking-tight">{v.createdBy || 'System'}</div>
+                  <div className="text-[9px] font-bold text-slate-400 mt-1">{v.createdAt ? new Date(v.createdAt).toLocaleDateString('en-GB') : 'Pre-Migration'}</div>
                 </td>
                 <td className="text-right">
                   <div className="flex items-center justify-end gap-2">
@@ -215,7 +252,7 @@ export default function Vehicles() {
               </tr>
             ))}
             {!loading && vehicles.length === 0 && (
-              <tr><td colSpan="5" className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">No fleet nodes detected.</td></tr>
+              <tr><td colSpan="6" className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">No fleet nodes detected.</td></tr>
             )}
           </tbody>
         </table>

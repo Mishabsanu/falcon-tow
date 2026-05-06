@@ -40,21 +40,10 @@ function processPayload(payload) {
   return processed;
 }
 
-function makeId(moduleKey) {
-  const prefix = {
-    customers: 'CUS',
-    workers: 'W',
-    vehicles: 'VEH',
-    invoices: 'INV',
-    quotations: 'QUO',
-    tows: 'TOW',
-    expenses: 'EXP',
-    salaries: 'SAL',
-  }[moduleKey] ?? 'REC';
+import { generateNextId } from './idGenerator';
 
-
-
-  return `${prefix}-${Date.now()}`;
+async function makeId(moduleKey) {
+  return await generateNextId(moduleKey);
 }
 
 const initializedCollections = new Set();
@@ -88,7 +77,7 @@ async function getCollection(moduleKey) {
     if (recordsWithoutId.length > 0) {
       console.log(`[MIGRATION] Fixing ${recordsWithoutId.length} records missing IDs in ${moduleKey}...`);
       for (const doc of recordsWithoutId) {
-        const newId = makeId(moduleKey);
+        const newId = await makeId(moduleKey);
         await collection.updateOne({ _id: doc._id }, { $set: { id: newId } });
         // Small delay to ensure unique timestamps if multiple
         await new Promise(r => setTimeout(r, 1));
@@ -246,7 +235,7 @@ export async function createRecord(moduleKey, payload) {
   }
 
   const record = { 
-    id: payload.id || makeId(moduleKey), 
+    id: payload.id || await makeId(moduleKey), 
     ...processPayload(payload),
     createdAt: new Date().toISOString()
   };
@@ -332,8 +321,97 @@ export async function importRecords(moduleKey, rows) {
     return [];
   }
 
-  const operations = rows.map(row => {
-    const record = { id: row.id || makeId(moduleKey), ...row };
+  // Header mapping dictionary
+  const headerMap = {
+    'full name': 'name',
+    'name': 'name',
+    'email address': 'email',
+    'email': 'email',
+    'contact number': 'phone',
+    'phone': 'phone',
+    'mobile': 'phone',
+    'street address': 'address',
+    'address': 'address',
+    'plate number': 'plate',
+    'plate': 'plate',
+    'amount (qar)': 'amount',
+    'amount': 'amount',
+    'reference id': 'id',
+    'id': 'id',
+    'service date': 'date',
+    'worker': 'driver',
+    'operational truck': 'vehicle',
+    'customer\'s vehicle name': 'customerVehicle',
+    'customer\'s vehicle plate number': 'customerPlate',
+    'payment method': 'paymentMethod',
+    'charges (qar)': 'amount',
+    'pickup address': 'pickup',
+    'drop-off address': 'dropoff'
+  };
+
+  const operations = await Promise.all(rows.map(async (row) => {
+    // Normalize keys
+    const normalizedRow = {};
+    Object.entries(row).forEach(([key, value]) => {
+      const lowerKey = key.toLowerCase().trim();
+      const targetKey = headerMap[lowerKey] || key;
+      normalizedRow[targetKey] = value;
+    });
+
+    const record = { 
+      id: normalizedRow.id || await makeId(moduleKey), 
+      ...processPayload(normalizedRow),
+      createdAt: new Date().toISOString()
+    };
+
+    // Relation Resolution Logic (Resolve Names to Mongo IDs)
+    if (moduleKey === 'tows' || moduleKey === 'invoices' || moduleKey === 'salaries' || moduleKey === 'expenses') {
+      const db = await getDb();
+      
+      // 1. Resolve Driver/Worker
+      const workerName = normalizedRow.driver || normalizedRow.worker;
+      if (workerName && !record.driverId && !record.workerId) {
+        const workerDoc = await db.collection('users').findOne({ 
+          $or: [{ name: workerName }, { id: workerName.split(' - ')[0] }] 
+        });
+        if (workerDoc) {
+          if (moduleKey === 'tows') record.driverId = workerDoc._id;
+          else record.workerId = workerDoc._id;
+        }
+      }
+
+      // 2. Resolve Vehicle
+      const vehicleName = normalizedRow.vehicle;
+      if (vehicleName && !record.vehicleId) {
+        const vehicleDoc = await db.collection('vehicles').findOne({ 
+          $or: [{ name: vehicleName }, { plate: vehicleName }, { id: vehicleName.split(' - ')[0] }] 
+        });
+        if (vehicleDoc) record.vehicleId = vehicleDoc._id;
+      }
+
+      // 3. Resolve Customer
+      const customerName = normalizedRow.customer;
+      if (customerName && !record.customerId) {
+        const customerDoc = await db.collection('customers').findOne({ 
+          $or: [{ name: customerName }, { phone: customerName }, { id: customerName.split(' - ')[0] }] 
+        });
+        if (customerDoc) record.customerId = customerDoc._id;
+      }
+
+      // 4. Resolve Tow Job (for Invoices)
+      if (moduleKey === 'invoices' && normalizedRow.jobId && !record.towId) {
+        const towDoc = await db.collection('tows').findOne({ id: normalizedRow.jobId });
+        if (towDoc) record.towId = towDoc._id;
+      }
+
+      // 5. Auto-calculate Tow Shares (for Tows)
+      if (moduleKey === 'tows' && record.amount) {
+        const amt = Number(record.amount);
+        record.driverShare = Math.round(amt * 0.1);
+        record.companyShare = Math.round(amt * 0.9);
+      }
+    }
+    
     return {
       updateOne: {
         filter: { id: record.id },
@@ -341,10 +419,10 @@ export async function importRecords(moduleKey, rows) {
         upsert: true
       }
     };
-  });
+  }));
 
   await collection.bulkWrite(operations);
 
-  // Return the first few for confirmation (don't clone everything if it's huge)
-  return rows.slice(0, 50).map(row => ({ ...row, id: row.id || 'IMPORTED' }));
+  // Return the first few for confirmation
+  return rows.slice(0, 50).map((row, idx) => ({ ...row, id: operations[idx].updateOne.update.$set.id }));
 }

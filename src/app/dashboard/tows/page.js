@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Filter, Truck, Activity, User, UserCircle, CreditCard, Calendar } from 'lucide-react';
+import { Plus, Search, Filter, Truck, Activity, User, UserCircle, CreditCard, Calendar, X } from 'lucide-react';
 import { towService } from '@/modules/tows/services/towService';
 import TowTable from '@/modules/tows/components/TowTable';
 import SummaryCard from '@/modules/common/components/SummaryCard';
@@ -9,6 +9,7 @@ import CsvImport from '@/components/CsvImport';
 import ExportCsvButton from '@/components/ExportCsvButton';
 import styles from './page.module.css';
 import { toast } from 'sonner';
+import { apiService } from '@/services/apiService';
 
 export default function Tows() {
   const [towJobs, setTowJobs] = useState([]);
@@ -150,13 +151,13 @@ export default function Tows() {
         )}
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-        <div className="search-wrapper flex-1 relative">
-          <Search size={20} className="search-icon" />
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-6 mb-8">
+        <div className="relative flex-1 group">
+          <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
           <input
             type="text"
-            placeholder="Search job ID, customer, vehicle or operator..."
-            className="search-input"
+            placeholder="Search Intelligence... (ID, Plate, Driver, Customer)"
+            className="w-full pl-16 pr-8 py-5 bg-white border border-slate-100 rounded-[2rem] text-sm font-bold text-emerald-950 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all shadow-xl shadow-slate-200/40"
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -165,74 +166,84 @@ export default function Tows() {
           />
         </div>
 
-        <button 
-          onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${
-            showFilters 
-              ? 'bg-emerald-950 text-emerald-400 border-emerald-800 shadow-emerald-900/40' 
-              : 'bg-white text-emerald-700 border border-emerald-100 hover:bg-emerald-50 shadow-emerald-900/5'
-          }`}
-        >
-          <Filter size={18} />
-          <span>{showFilters ? 'Hide Filters' : 'Filter View'}</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-3 px-10 py-5 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${
+              showFilters 
+                ? 'bg-emerald-950 text-emerald-400 shadow-emerald-900/40 border-transparent' 
+                : 'bg-white text-emerald-700 border border-slate-100 hover:bg-emerald-50 shadow-slate-200/40'
+            }`}
+          >
+            <Filter size={18} className={showFilters ? 'animate-pulse' : ''} />
+            <span>{showFilters ? 'System Active' : 'Filter Array'}</span>
+          </button>
+        </div>
       </div>
 
-      {/* Active Filter Chips */}
+      {/* Active System Filters */}
       {(status !== 'All' || filters.driver !== 'All' || filters.vehicle !== 'All' || filters.customer !== 'All' || filters.paymentMethod !== 'All' || filters.startDate || filters.endDate) && (
-        <div className="flex flex-wrap items-center gap-3 mb-8 animate-in fade-in slide-in-from-left-4 duration-500">
-          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mr-2">Active Filters:</span>
+        <div className="flex flex-wrap items-center gap-3 mb-10 p-6 bg-emerald-50/30 rounded-3xl border border-emerald-100/50">
+          <div className="flex items-center gap-2 mr-4">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-900/40">Active Filters</span>
+          </div>
           
-          {status !== 'All' && (
-            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
-              <span>Status: {status}</span>
-              <button onClick={() => setStatus('All')} className="hover:text-rose-500 transition-colors"><MoreHorizontal size={12} className="rotate-45" /></button>
-            </div>
-          )}
+          <div className="flex flex-wrap gap-2">
+            {status !== 'All' && (
+              <div className="group flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-bold shadow-lg shadow-emerald-600/20 hover:bg-rose-600 transition-all cursor-default">
+                <span>Status: {status}</span>
+                <button onClick={() => setStatus('All')} className="p-0.5 hover:bg-white/20 rounded-md transition-colors">
+                  <X size={12} />
+                </button>
+              </div>
+            )}
 
-          {filters.driver !== 'All' && (
-            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
-              <span>Driver: {filters.driver}</span>
-              <button onClick={() => setFilters(f => ({ ...f, driver: 'All' }))} className="hover:text-rose-500 transition-colors"><MoreHorizontal size={12} className="rotate-45" /></button>
-            </div>
-          )}
+            {filters.driver !== 'All' && (
+              <div className="group flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-default">
+                <span>Driver: {filters.driver}</span>
+                <button onClick={() => setFilters(f => ({ ...f, driver: 'All' }))} className="p-0.5 hover:bg-rose-100 rounded-md transition-colors">
+                  <X size={12} />
+                </button>
+              </div>
+            )}
 
-          {filters.vehicle !== 'All' && (
-            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
-              <span>Vehicle: {filters.vehicle}</span>
-              <button onClick={() => setFilters(f => ({ ...f, vehicle: 'All' }))} className="hover:text-rose-500 transition-colors"><MoreHorizontal size={12} className="rotate-45" /></button>
-            </div>
-          )}
+            {filters.vehicle !== 'All' && (
+              <div className="group flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-default">
+                <span>Vehicle: {filters.vehicle}</span>
+                <button onClick={() => setFilters(f => ({ ...f, vehicle: 'All' }))} className="p-0.5 hover:bg-rose-100 rounded-md transition-colors">
+                  <X size={12} />
+                </button>
+              </div>
+            )}
 
-          {filters.customer !== 'All' && (
-            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
-              <span>Customer: {filters.customer}</span>
-              <button onClick={() => setFilters(f => ({ ...f, customer: 'All' }))} className="hover:text-rose-500 transition-colors"><MoreHorizontal size={12} className="rotate-45" /></button>
-            </div>
-          )}
+            {filters.customer !== 'All' && (
+              <div className="group flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-default">
+                <span>Customer: {filters.customer}</span>
+                <button onClick={() => setFilters(f => ({ ...f, customer: 'All' }))} className="p-0.5 hover:bg-rose-100 rounded-md transition-colors">
+                  <X size={12} />
+                </button>
+              </div>
+            )}
 
-          {filters.paymentMethod !== 'All' && (
-            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
-              <span>Payment: {filters.paymentMethod}</span>
-              <button onClick={() => setFilters(f => ({ ...f, paymentMethod: 'All' }))} className="hover:text-rose-500 transition-colors"><MoreHorizontal size={12} className="rotate-45" /></button>
-            </div>
-          )}
-
-          {(filters.startDate || filters.endDate) && (
-            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
-              <span>Date: {filters.startDate || '...'} to {filters.endDate || '...'}</span>
-              <button onClick={() => setFilters(f => ({ ...f, startDate: '', endDate: '' }))} className="hover:text-rose-500 transition-colors"><MoreHorizontal size={12} className="rotate-45" /></button>
-            </div>
-          )}
+            {(filters.startDate || filters.endDate) && (
+              <div className="group flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-default">
+                <span>Period: {filters.startDate || '...'} / {filters.endDate || '...'}</span>
+                <button onClick={() => setFilters(f => ({ ...f, startDate: '', endDate: '' }))} className="p-0.5 hover:bg-rose-100 rounded-md transition-colors">
+                  <X size={12} />
+                </button>
+              </div>
+            )}
+          </div>
 
           <button 
             onClick={() => {
               setStatus('All');
               setFilters({ driver: 'All', vehicle: 'All', customer: 'All', paymentMethod: 'All', startDate: '', endDate: '' });
             }}
-            className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-700 ml-2"
+            className="ml-auto text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-500 transition-colors flex items-center gap-2"
           >
-            Reset All
+            Clear Intelligence Map
           </button>
         </div>
       )}

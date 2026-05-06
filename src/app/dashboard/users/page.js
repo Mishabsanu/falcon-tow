@@ -11,7 +11,8 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
-  FileText
+  FileText,
+  Activity
 } from 'lucide-react';
 import styles from './page.module.css';
 
@@ -165,12 +166,13 @@ export default function Users() {
               <th>Role</th>
               <th>Settlement Info</th>
               <th>Operational Status</th>
+              <th>Administrative Audit</th>
               <th className="text-right">Action Interface</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="6" className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">Scanning personnel directory...</td></tr>
+              <tr><td colSpan="7" className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">Scanning personnel directory...</td></tr>
             ) : users.map((u) => (
               <tr key={u.id}>
                 <td>
@@ -199,6 +201,10 @@ export default function Users() {
                     <div className={`h-1 w-1 rounded-full ${u.status === 'Active' ? 'bg-emerald-600' : 'bg-slate-400'}`}></div>
                     {u.status}
                   </span>
+                </td>
+                <td>
+                  <div className="text-[10px] font-bold text-emerald-950 uppercase tracking-tight">{u.createdBy || 'System'}</div>
+                  <div className="text-[9px] font-bold text-slate-400 mt-1">{u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-GB') : 'Pre-Migration'}</div>
                 </td>
                 <td className="text-right">
                   <div className="flex items-center justify-end gap-2">

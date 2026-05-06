@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Tow from '@/models/Tow';
 import { calculateTowShares } from '@/modules/tows/logic/towBusinessLogic';
+import { generateNextId } from '@/lib/idGenerator';
 
 export async function GET(request) {
   try {
@@ -68,6 +69,11 @@ export async function POST(request) {
   try {
     await connectDB();
     const payload = await request.json();
+
+    // Auto-generate ID if missing
+    if (!payload.id) {
+      payload.id = await generateNextId('tows');
+    }
 
     // SERVER-SIDE BUSINESS LOGIC
     // We recalculate shares on the server to prevent tampering

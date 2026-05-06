@@ -20,10 +20,10 @@ export const moduleData = {
     fields: [
       { name: 'name', label: 'Vehicle Name', type: 'text' },
       { name: 'plate', label: 'Plate Number', type: 'text' },
-      { name: 'modelRef', label: 'Model Reference', type: 'text' },
-      { name: 'year', label: 'Year of Manufacture', type: 'text' },
-      { name: 'engineRef', label: 'Engine Reference', type: 'text' },
-      { name: 'chassisRef', label: 'Chassis Reference', type: 'text' },
+      { name: 'modelRef', label: 'Model Reference', type: 'text', required: false },
+      { name: 'year', label: 'Year of Manufacture', type: 'text', required: false },
+      { name: 'engineRef', label: 'Engine Reference', type: 'text', required: false },
+      { name: 'chassisRef', label: 'Chassis Reference', type: 'text', required: false },
       { name: 'status', label: 'Operational Status', type: 'select', options: ['Available', 'In Use', 'Maintenance'], hidden: true, defaultValue: 'Available' },
 
       // Compliance Section
@@ -82,7 +82,7 @@ export const moduleData = {
     nameField: 'id',
     records: [],
     fields: [
-      { name: 'id', label: 'Reference ID', type: 'text', readOnly: true, span: 4, section: 'Client & Logistics' },
+      { name: 'id', label: 'Reference ID', type: 'text', hidden: true },
       { name: 'customer', label: 'Customer Name', type: 'select', module: 'customers', span: 8, section: 'Client & Logistics' },
       { name: 'customerId', label: 'Customer Mongo ID', type: 'text', hidden: true, required: false },
       
@@ -96,7 +96,7 @@ export const moduleData = {
       { name: 'date', label: 'Estimated Date', type: 'date', span: 4, section: 'Quotation Details' },
       
       { name: 'amount', label: 'Quoted Amount (QAR)', type: 'number', span: 6, section: 'Quotation Details' },
-      { name: 'status', label: 'Quote Status', type: 'select', options: ['Draft', 'Sent', 'Approved', 'Rejected'], defaultValue: 'Draft', span: 6, section: 'Quotation Details' },
+      { name: 'status', label: 'Quote Status', type: 'select', options: ['Draft', 'Sent', 'Approved', 'Cancelled', 'Rejected'], defaultValue: 'Draft', span: 6, section: 'Quotation Details' },
     ],
   },
   tows: {
@@ -122,8 +122,8 @@ export const moduleData = {
       { name: 'pickup', label: 'Pickup Address', type: 'text', span: 6, section: 'Service Path' },
       { name: 'dropoff', label: 'Drop-off Address', type: 'text', span: 6, section: 'Service Path' },
 
-      { name: 'pickupPhoto', label: 'Pickup Proof', type: 'file', span: 6, section: 'Service Path' },
-      { name: 'dropoffPhoto', label: 'Drop-off Proof', type: 'file', span: 6, section: 'Service Path' },
+      { name: 'pickupPhoto', label: 'Pickup Proof', type: 'file', span: 6, section: 'Service Path', required: false },
+      { name: 'dropoffPhoto', label: 'Drop-off Proof', type: 'file', span: 6, section: 'Service Path', required: false },
       { name: 'status', label: 'Job Status', type: 'select', options: ['Pending', 'In Progress', 'Completed', 'Cancelled'], defaultValue: 'Completed', hidden: true },
       { name: 'createdBy', label: 'Registered By', type: 'text', readOnly: true, section: 'Administrative Audit', hidden: true },
     ],
@@ -178,7 +178,7 @@ export const moduleData = {
       { id: 'EMP-001', name: 'System Admin', password: 'admin123', email: 'admin@falcon.com', role: 'Administrator' }
     ],
     fields: [
-      { name: 'id', label: 'Employee ID', type: 'text', readOnly: true },
+      { name: 'id', label: 'Employee ID', type: 'text', hidden: true },
       { name: 'name', label: 'Full Name', type: 'text' },
       { name: 'password', label: 'Password', type: 'password' },
       { name: 'email', label: 'Email Address', type: 'email' },

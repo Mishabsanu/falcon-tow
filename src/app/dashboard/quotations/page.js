@@ -12,7 +12,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
-  CheckCircle2
+  CheckCircle2,
+  Filter,
+  Activity,
+  X
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ExportCsvButton from '@/components/ExportCsvButton';
@@ -71,14 +74,15 @@ export default function Quotations() {
     if (!confirm(`Are you sure you want to approve Quote ${q.id} and create a Tow Job?`)) return;
 
     try {
-      // 1. Update quotation status to Approved
       await apiService.updateRecord('quotations', q.id, { ...q, status: 'Approved' });
-
-      // 2. Create new Tow entry
+      
       const newTow = {
         customer: q.customer,
+        customerId: q.customerId,
         vehicle: q.vehicle,
+        vehicleId: q.vehicleId,
         driver: q.driver,
+        driverId: q.driverId,
         pickup: q.pickup,
         dropoff: q.dropoff,
         date: q.date,
@@ -88,12 +92,22 @@ export default function Quotations() {
       };
 
       const createdTow = await apiService.createRecord('tows', newTow);
-
-      toast.success('Quotation Approved! A new Tow Job has been created.');
-      router.push(`/dashboard/tows/${createdTow.id}`);
+      toast.success('Quotation Approved! Tow Job created.');
+      router.push(`/dashboard/tows`);
     } catch (error) {
-      console.error('Failed to approve quotation:', error);
       toast.error('Failed to process approval.');
+    }
+  };
+
+  const handleStatusUpdate = async (id, status, label) => {
+    if (!confirm(`Are you sure you want to mark this quote as ${label}?`)) return;
+    try {
+      const q = quotations.find(item => item.id === id);
+      await apiService.updateRecord('quotations', id, { ...q, status });
+      toast.success(`Quotation marked as ${label}`);
+      fetchQuotations();
+    } catch (error) {
+      toast.error(`Failed to update status to ${label}`);
     }
   };
 
@@ -131,13 +145,13 @@ export default function Quotations() {
         </motion.div>
       </header>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-        <div className="search-wrapper flex-1 relative">
-          <Search size={20} className="search-icon" />
+      <motion.div variants={item} className="flex flex-col lg:flex-row items-stretch lg:items-center gap-6 mb-8">
+        <div className="relative flex-1 group">
+          <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
           <input
             type="text"
-            placeholder="Search quotations..."
-            className="search-input"
+            placeholder="Search Sales Intel... (Quote ID, Customer, Subject)"
+            className="w-full pl-16 pr-8 py-5 bg-white border border-slate-100 rounded-[2rem] text-sm font-bold text-emerald-950 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all shadow-xl shadow-slate-200/40"
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -146,36 +160,22 @@ export default function Quotations() {
           />
         </div>
 
-        <button 
-          onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${
-            showFilters 
-              ? 'bg-emerald-950 text-emerald-400 border-emerald-800 shadow-emerald-900/40' 
-              : 'bg-white text-emerald-700 border border-emerald-100 hover:bg-emerald-50 shadow-emerald-900/5'
-          }`}
-        >
-          <Filter size={18} />
-          <span>{showFilters ? 'Hide Filters' : 'Filter View'}</span>
-        </button>
-      </div>
-
-      {/* Active Filter Chips */}
-      {status !== 'All' && (
-        <div className="flex flex-wrap items-center gap-3 mb-8 animate-in fade-in slide-in-from-left-4 duration-500">
-          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mr-2">Quote Filters:</span>
-          <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
-            <span>Status: {status}</span>
-            <button onClick={() => setStatus('All')} className="hover:text-rose-500 transition-colors"><Plus size={12} className="rotate-45" /></button>
-          </div>
+        <div className="flex items-center gap-3">
           <button 
-            onClick={() => setStatus('All')}
-            className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-700 ml-2"
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-3 px-10 py-5 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${
+              showFilters 
+                ? 'bg-emerald-950 text-emerald-400 shadow-emerald-900/40 border-transparent' 
+                : 'bg-white text-emerald-700 border border-slate-100 hover:bg-emerald-50 shadow-slate-200/40'
+            }`}
           >
-            Reset
+            <Filter size={18} className={showFilters ? 'animate-pulse' : ''} />
+            <span>{showFilters ? 'System Active' : 'Filter Array'}</span>
           </button>
         </div>
-      )}
+      </motion.div>
 
+      {/* Active System Filters */}
       {showFilters && (
         <div className="bg-white border border-emerald-100 rounded-[2rem] p-8 mb-10 shadow-2xl shadow-emerald-900/5 animate-in fade-in slide-in-from-top-4 duration-500 space-y-8">
           <div className="flex flex-col gap-8">
@@ -195,12 +195,38 @@ export default function Quotations() {
                   }}
                 >
                   <option value="All">All Status</option>
-                  <option value="Pending">Pending</option>
+                  <option value="Draft">Draft</option>
+                  <option value="Sent">Sent</option>
                   <option value="Approved">Approved</option>
+                  <option value="Cancelled">Cancelled</option>
                   <option value="Rejected">Rejected</option>
                 </select>
               </div>
             </div>
+
+            {/* Active Filter Chips — inside panel */}
+            {status !== 'All' && (
+              <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-emerald-50">
+                <div className="flex items-center gap-2 mr-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-900/40">Active Filters</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <div className="group flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-bold shadow-lg shadow-emerald-600/20 hover:bg-rose-600 transition-all cursor-default">
+                    <span>Status: {status}</span>
+                    <button onClick={() => setStatus('All')} className="p-0.5 hover:bg-white/20 rounded-md transition-colors">
+                      <X size={12} />
+                    </button>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setStatus('All')}
+                  className="ml-auto text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-500 transition-colors"
+                >
+                  Clear Pipeline View
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -214,36 +240,60 @@ export default function Quotations() {
               <th>Estimated Date</th>
               <th>Quoted Amount</th>
               <th>Status</th>
+              <th>Created By</th>
               <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>Loading quotations...</td></tr>
+              <tr><td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>Loading quotations...</td></tr>
             ) : quotations.map((q) => (
               <motion.tr key={q.id} variants={item}>
                 <td><span className={styles.invId}>{q.id}</span></td>
                 <td><span className={styles.nameText}>{q.customer}</span></td>
-                <td>{q.date}</td>
+                <td>{new Date(q.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                 <td className="amount">QAR {Number(q.amount ?? 0).toLocaleString()}</td>
                 <td>
-                  <span className={`badge ${q.status === 'Approved' ? 'badge-success' :
-                    q.status === 'Draft' ? 'badge-info' : 'badge-warning'
+                  <span className={`badge ${
+                    q.status === 'Approved' ? 'badge-success' :
+                    q.status === 'Draft' ? 'badge-info' : 
+                    q.status === 'Cancelled' ? 'badge-error opacity-50' :
+                    q.status === 'Rejected' ? 'badge-error' :
+                    'badge-warning'
                     }`}>
                     {q.status}
                   </span>
                 </td>
+                <td><span className={styles.nameText}>{q.createdBy || '—'}</span></td>
                 <td>
                   <div className={styles.actionCell}>
-                    {q.status !== 'Approved' && (
-                      <button
-                        className={styles.payBtn}
-                        style={{ color: '#10b981' }}
-                        title="Approve & Create Tow"
-                        onClick={() => handleApprove(q)}
-                      >
-                        <CheckCircle2 size={16} />
-                      </button>
+                    {q.status !== 'Approved' && q.status !== 'Cancelled' && q.status !== 'Rejected' && (
+                      <>
+                        <button
+                          className={styles.payBtn}
+                          style={{ color: '#10b981' }}
+                          title="Approve & Create Tow"
+                          onClick={() => handleApprove(q)}
+                        >
+                          <CheckCircle2 size={16} />
+                        </button>
+                        <button
+                          className={styles.deleteBtn}
+                          style={{ color: '#ef4444' }}
+                          title="Reject"
+                          onClick={() => handleStatusUpdate(q.id, 'Rejected', 'Rejected')}
+                        >
+                          <X size={16} />
+                        </button>
+                        <button
+                          className={styles.editBtn}
+                          style={{ color: '#64748b' }}
+                          title="Cancel"
+                          onClick={() => handleStatusUpdate(q.id, 'Cancelled', 'Cancelled')}
+                        >
+                          <Activity size={16} className="rotate-90" />
+                        </button>
+                      </>
                     )}
                     <Link href={`/dashboard/quotations/${q.id}/edit`} className={styles.editBtn} title="Edit"><Edit3 size={16} /></Link>
                     <Link href={`/dashboard/quotations/${q.id}`} className={styles.payBtn} title="View & Export">

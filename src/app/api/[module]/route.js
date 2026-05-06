@@ -6,7 +6,10 @@ import Customer from '@/models/Customer';
 import Vehicle from '@/models/Vehicle';
 import Salary from '@/models/Salary';
 import Invoice from '@/models/Invoice';
+import Expense from '@/models/Expense';
+import Quotation from '@/models/Quotation';
 import bcrypt from 'bcryptjs';
+import { generateNextId } from '@/lib/idGenerator';
 
 const models = {
   users: User,
@@ -15,6 +18,8 @@ const models = {
   vehicles: Vehicle,
   salaries: Salary,
   invoices: Invoice,
+  expenses: Expense,
+  quotations: Quotation,
 };
 
 export const runtime = 'nodejs';
@@ -111,6 +116,21 @@ export async function POST(request, context) {
       return NextResponse.json({ success: false, message: 'Module configuration missing' }, { status: 404 });
     }
 
+    // Self-healing: Fix any existing records with null or missing IDs to prevent index conflicts
+    try {
+      await Model.updateMany(
+        { $or: [{ id: { $exists: false } }, { id: null }] },
+        [{ $set: { id: { $concat: [moduleKey.substring(0, 3).toUpperCase(), "-", { $toString: "$_id" }] } } }]
+      );
+    } catch (err) {
+      console.warn(`[API_WARN] Self-healing failed for ${moduleKey}:`, err.message);
+    }
+
+    // Auto-generate ID if missing
+    if (!payload.id) {
+      payload.id = await generateNextId(moduleKey);
+    }
+
     // Security: Hash password if creating a user
     if (moduleKey === 'users' && payload.password) {
       payload.password = await bcrypt.hash(payload.password, 10);
@@ -120,6 +140,9 @@ export async function POST(request, context) {
     return NextResponse.json({ success: true, data: record }, { status: 201 });
   } catch (error) {
     console.error(`[API_ERROR] ${request.url}:`, error);
-    return NextResponse.json({ success: false, message: error.message }, { status: 400 });
+    return NextResponse.json({ 
+      success: false, 
+      message: error.message 
+    }, { status: 400 });
   }
 }
