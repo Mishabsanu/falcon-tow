@@ -51,6 +51,10 @@ export default function Users() {
     return () => clearTimeout(timer);
   }, [fetchUsers]);
 
+  const handlePageChange = (newPage) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
+  };
+
   const handleDelete = async (id) => {
     if (confirm('Are you sure you want to remove this user?')) {
       try {
@@ -63,9 +67,6 @@ export default function Users() {
     }
   };
 
-  const handlePageChange = (newPage) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
-  };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out pb-20">

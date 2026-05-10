@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ExportCsvButton from '@/components/ExportCsvButton';
+import styles from './page.module.css';
 import { toast } from 'sonner';
 import ResponsiveTable from '@/modules/common/components/ResponsiveTable';
 import SummaryCard from '@/modules/common/components/SummaryCard';

@@ -53,6 +53,10 @@ export default function Vehicles() {
     return () => clearTimeout(timer);
   }, [fetchVehicles]);
 
+  const handlePageChange = (newPage) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
+  };
+
   const handleDelete = async (id) => {
     if (confirm('Are you sure you want to decommission this vehicle?')) {
       try {
@@ -65,9 +69,6 @@ export default function Vehicles() {
     }
   };
 
-  const handlePageChange = (newPage) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
-  };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out pb-20">

@@ -107,6 +107,10 @@ export default function Expenses() {
     return () => clearTimeout(timer);
   }, [fetchExpenses]);
 
+  const handlePageChange = (newPage) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
+  };
+
   const handleDelete = async (id) => {
     if (isWorker) return;
     if (confirm('Permanently purge this expense record from the ledger?')) {
@@ -120,9 +124,6 @@ export default function Expenses() {
     }
   };
 
-  const handlePageChange = (newPage) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
-  };
 
   const cleanVehicle = (v) => {
     if (!v) return '';

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ExportCsvButton from '@/components/ExportCsvButton';
+import styles from '../invoices/page.module.css';
 import { toast } from 'sonner';
 import ResponsiveTable from '@/modules/common/components/ResponsiveTable';
 import SummaryCard from '@/modules/common/components/SummaryCard';
@@ -110,6 +111,10 @@ export default function Quotations() {
     } catch (error) {
       toast.error(`Failed to update status to ${label}`);
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
   };
 
   const container = {

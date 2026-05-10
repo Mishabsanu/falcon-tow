@@ -69,6 +69,11 @@ export default function Customers() {
     return () => clearTimeout(timer);
   }, [fetchCustomers]);
 
+
+  const handlePageChange = (newPage) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
+  };
+
   const handleDelete = async (id) => {
     if (confirm('Permanently purge this customer record from the directory?')) {
       try {
@@ -81,9 +86,6 @@ export default function Customers() {
     }
   };
 
-  const handlePageChange = (newPage) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
-  };
 
   return (
     <div className="animate-fade-in">
