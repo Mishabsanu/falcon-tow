@@ -10,7 +10,12 @@ const CustomerSchema = new mongoose.Schema({
     type: String, 
     enum: ['Active', 'Inactive'], 
     default: 'Active',
-    set: v => v ? v.charAt(0).toUpperCase() + v.slice(1).toLowerCase() : v
+    set: v => {
+      if (!v) return 'Active';
+      const normalized = v.trim().toLowerCase();
+      if (normalized === 'inactive') return 'Inactive';
+      return 'Active';
+    }
   },
   createdAt: { type: Date, default: Date.now }
 });

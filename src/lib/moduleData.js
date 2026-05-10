@@ -87,10 +87,10 @@ export const moduleData = {
     records: [],
     fields: [
       { name: 'id', label: 'ID', type: 'text', hidden: true },
-      { name: 'customer', label: 'Customer Name', type: 'select', module: 'customers', span: 12, section: 'Client & Logistics' },
+      { name: 'customer', label: 'Customer Name', type: 'select', module: 'customers', span: 4, section: 'Client & Logistics' },
       { name: 'customerId', label: 'Customer Mongo ID', type: 'text', hidden: true, required: false },
-      { name: 'customerVehicle', label: "Customer's Vehicle Name", type: 'text', span: 6, section: 'Client & Logistics' },
-      { name: 'customerPlate', label: "Customer's Vehicle Plate Number", type: 'text', span: 6, section: 'Client & Logistics', required: false },
+      { name: 'customerVehicle', label: "Customer's Vehicle Name", type: 'text', span: 4, section: 'Client & Logistics' },
+      { name: 'customerPlate', label: "Customer's Vehicle Plate Number", type: 'text', span: 4, section: 'Client & Logistics', required: false },
       
       { name: 'pickup', label: 'Pickup Location', type: 'text', span: 6, section: 'Client & Logistics' },
       { name: 'dropoff', label: 'Drop-off Location', type: 'text', span: 6, section: 'Client & Logistics' },
