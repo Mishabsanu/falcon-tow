@@ -67,7 +67,7 @@ export default function CsvImport({ moduleKey, onComplete }) {
     const config = moduleData[moduleKey];
     if (!config) return;
 
-    const visibleFields = config.fields.filter(f => !f.hidden && !f.readOnly && f.type !== 'file');
+    const visibleFields = config.fields.filter(f => (!f.hidden || f.name === 'status') && !f.readOnly && f.type !== 'file');
     const headers = visibleFields.map(f => f.label).join(',');
 
     // Add 1 sample row based on hints
@@ -149,112 +149,116 @@ export default function CsvImport({ moduleKey, onComplete }) {
               className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md z-[9998]"
             />
 
-            {/* DRAWER -> TRANSFORMED TO CENTERED MODAL */}
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-8 pointer-events-none">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl pointer-events-auto flex flex-col max-h-[90vh] overflow-hidden border border-emerald-100"
-              >
-                {/* HEADER */}
-                <div className="p-8 md:p-10 border-b border-emerald-50 flex justify-between items-center bg-emerald-50/30">
-                  <div className="space-y-1">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-600 text-white rounded-lg text-[9px] font-bold uppercase tracking-[0.2em] shadow-lg shadow-emerald-900/10">Data Engine</div>
-                    <h2 className="text-3xl font-black tracking-tighter text-emerald-950">Bulk <span className="text-emerald-600">Import</span></h2>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Syncing {moduleKey} via CSV protocol</p>
-                  </div>
-                  <button
-                    onClick={() => setIsOpen(false)}
-                    className="p-4 bg-white text-emerald-600 rounded-2xl hover:bg-rose-600 hover:text-white transition-all shadow-xl shadow-emerald-900/5 active:scale-90"
-                  >
-                    <X size={24} />
-                  </button>
+            {/* RIGHT SIDE DRAWER (COMPACT) */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed right-0 top-0 h-full w-full max-w-lg bg-white shadow-2xl z-[9999] flex flex-col border-l border-emerald-100"
+            >
+              {/* COMPACT HEADER */}
+              <div className="p-6 border-b border-emerald-50 flex justify-between items-center bg-emerald-50/10">
+                <div className="space-y-0.5">
+                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-600 text-white rounded text-[7px] font-bold uppercase tracking-widest">Protocol 4.0</div>
+                  <h2 className="text-xl font-black text-emerald-950">Import <span className="text-emerald-600">Engine</span></h2>
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Target: {moduleKey} registry</p>
                 </div>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-3 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all active:scale-90"
+                >
+                  <X size={18} />
+                </button>
+              </div>
 
-                <div className="flex-1 overflow-y-auto p-8 md:p-10 space-y-12">
-                  {/* UTILITIES SECTION */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="group bg-emerald-50/50 rounded-3xl p-6 border border-emerald-100 hover:bg-white hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-500">
-                      <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm mb-4 text-emerald-600 group-hover:scale-110 transition-transform">
-                        <Download size={20} />
-                      </div>
-                      <h4 className="text-[11px] font-black uppercase tracking-widest text-emerald-950 mb-2">CSV Template</h4>
-                      <p className="text-[10px] text-slate-500 font-bold mb-6 leading-relaxed">Download the official schema to ensure data compatibility.</p>
+              <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                {/* STEP 1: PREPARE */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">1</div>
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-emerald-950">Prepare Data</h3>
+                  </div>
+                  <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/50">
+                    <p className="text-[9px] text-slate-500 font-bold mb-4 uppercase tracking-tight">Download the template and reference sheet first.</p>
+                    <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={downloadTemplate}
-                        className="w-full py-4 bg-emerald-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 active:scale-95"
+                        className="flex items-center justify-center gap-2 px-3 py-3 bg-emerald-600 text-white rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all"
                       >
-                        Download Template
+                        <Download size={12} />
+                        <span>Template</span>
                       </button>
-                    </div>
-
-                    <div className="group bg-slate-50/50 rounded-3xl p-6 border border-slate-100 hover:bg-white hover:shadow-xl hover:shadow-slate-900/5 transition-all duration-500">
-                      <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm mb-4 text-slate-600 group-hover:scale-110 transition-transform">
-                        <FileText size={20} />
-                      </div>
-                      <h4 className="text-[11px] font-black uppercase tracking-widest text-emerald-950 mb-2">Reference Sheet</h4>
-                      <p className="text-[10px] text-slate-500 font-bold mb-6 leading-relaxed">Lookup IDs for Workers, Vehicles, and Customers.</p>
                       <button
                         onClick={downloadReferenceData}
-                        className="w-full py-4 bg-white border-2 border-slate-100 text-slate-600 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95"
+                        className="flex items-center justify-center gap-2 px-3 py-3 bg-white border border-emerald-200 text-emerald-900 rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-emerald-50 transition-all"
                       >
-                        Get Sub-Sheet
+                        <FileText size={12} />
+                        <span>Sub-Sheet</span>
                       </button>
                     </div>
                   </div>
+                </div>
 
-                  {/* UPLOAD ZONE */}
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-4">
-                       <div className="h-[1px] flex-1 bg-emerald-100"></div>
-                       <span className="text-[10px] font-black text-emerald-800/40 uppercase tracking-[0.3em]">Drop Zone</span>
-                       <div className="h-[1px] flex-1 bg-emerald-100"></div>
+                {/* STEP 2: FORMAT */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-lg bg-emerald-950 text-white text-[10px] font-bold flex items-center justify-center">2</div>
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-emerald-950">Format Dates</h3>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle size={14} className="text-emerald-600 mt-0.5" />
+                      <p className="text-[9px] font-bold text-slate-500 leading-relaxed uppercase">
+                        Dates must be <span className="text-emerald-600 font-black">YYYY-MM-DD</span>. <br/>
+                        IDs must match the reference Sub-Sheet exactly.
+                      </p>
                     </div>
-
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      accept=".csv"
-                    />
-
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={importing}
-                      className="w-full flex flex-col items-center justify-center gap-6 py-16 bg-white rounded-[2rem] border-4 border-dashed border-emerald-50 hover:border-emerald-500 hover:bg-emerald-50/30 transition-all group relative overflow-hidden"
-                    >
-                      <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-emerald-400/5 blur-3xl rounded-full"></div>
-                      <div className="w-24 h-24 rounded-3xl bg-white border border-emerald-100 flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:-rotate-6 transition-all duration-700">
-                        <FileUp size={40} className="text-emerald-600" />
-                      </div>
-                      <div className="text-center space-y-2 relative z-10">
-                        <span className="block text-sm font-black text-emerald-950 uppercase tracking-tighter">
-                          {importing ? 'Processing File...' : 'Choose CSV Payload'}
-                        </span>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-8">
-                          Drag & drop or click to browse local storage
-                        </p>
-                      </div>
-                    </button>
                   </div>
                 </div>
 
-                {/* FOOTER TIPS */}
-                <div className="p-8 bg-emerald-950 text-white flex items-center gap-6">
-                   <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/10 backdrop-blur-md">
-                      <AlertCircle size={20} className="text-emerald-400" />
-                   </div>
-                   <div className="flex-1">
-                      <p className="text-[10px] font-bold text-white uppercase tracking-widest leading-relaxed">
-                         Protocol: Dates must follow <span className="text-emerald-400 font-black italic">YYYY-MM-DD</span>. 
-                         Ensure reference IDs match the Sub-Sheet.
+                {/* STEP 3: UPLOAD */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">3</div>
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-emerald-950">Final Upload</h3>
+                  </div>
+                  
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    accept=".csv"
+                  />
+
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={importing}
+                    className="w-full flex flex-col items-center justify-center gap-4 py-10 bg-emerald-50/20 rounded-[2rem] border-2 border-dashed border-emerald-100 hover:border-emerald-500 hover:bg-white transition-all group"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-white border border-emerald-100 flex items-center justify-center shadow-md group-hover:scale-105 transition-all">
+                      <FileUp size={24} className="text-emerald-600" />
+                    </div>
+                    <div className="text-center space-y-1">
+                      <span className="block text-[11px] font-black text-emerald-950 uppercase tracking-tight">
+                        {importing ? 'Processing...' : 'Upload CSV'}
+                      </span>
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest italic">
+                        Click to select local file
                       </p>
-                   </div>
+                    </div>
+                  </button>
                 </div>
-              </motion.div>
-            </div>
+              </div>
+
+              {/* COMPACT FOOTER */}
+              <div className="p-6 border-t border-emerald-50 bg-slate-50/50">
+                <p className="text-[8px] font-black text-emerald-900/40 uppercase tracking-[0.2em] text-center">
+                  Automated Data Validation Active
+                </p>
+              </div>
+            </motion.div>
           </>
         )}
       </AnimatePresence>

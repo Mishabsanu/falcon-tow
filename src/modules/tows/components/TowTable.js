@@ -38,7 +38,11 @@ export default function TowTable({ tows, loading, pagination, onPageChange, onDe
           <User size={16} />
           <div>
             <span className={styles.nameText}>{tow?.customer || 'Unknown'}</span>
-            <span className={styles.subtext}>{tow?.phone || 'N/A'}</span>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.1em]">{tow?.customerData?.id || 'WALK-IN'}</span>
+              <span className="text-[8px] text-slate-300">•</span>
+              <span className="text-[9px] font-bold text-slate-400">{tow?.phone || 'N/A'}</span>
+            </div>
           </div>
         </div>
       </td>

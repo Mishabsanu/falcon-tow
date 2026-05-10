@@ -321,40 +321,36 @@ export async function importRecords(moduleKey, rows) {
     return [];
   }
 
-  // Header mapping dictionary
-  const headerMap = {
-    'full name': 'name',
-    'name': 'name',
-    'email address': 'email',
-    'email': 'email',
-    'contact number': 'phone',
-    'phone': 'phone',
-    'mobile': 'phone',
-    'street address': 'address',
-    'address': 'address',
-    'plate number': 'plate',
-    'plate': 'plate',
-    'amount (qar)': 'amount',
-    'amount': 'amount',
-    'reference id': 'id',
+  // Dynamically map labels to field names from moduleData
+  const config = getConfig(moduleKey);
+  const dynamicMap = {};
+  if (config?.fields) {
+    config.fields.forEach(f => {
+      dynamicMap[f.label.toLowerCase().trim()] = f.name;
+    });
+  }
+
+  // Fallback / Common Mapping dictionary
+  const fallbackMap = {
     'id': 'id',
-    'service date': 'date',
-    'worker': 'driver',
+    'full name': 'name',
+    'contact number': 'phone',
+    'mobile': 'phone',
+    'email address': 'email',
+    'street address': 'address',
+    'plate number': 'plate',
     'operational truck': 'vehicle',
-    'customer\'s vehicle name': 'customerVehicle',
-    'customer\'s vehicle plate number': 'customerPlate',
-    'payment method': 'paymentMethod',
-    'charges (qar)': 'amount',
-    'pickup address': 'pickup',
-    'drop-off address': 'dropoff'
+    'charges (qar)': 'amount'
   };
+
+  const finalMap = { ...fallbackMap, ...dynamicMap };
 
   const operations = await Promise.all(rows.map(async (row) => {
     // Normalize keys
     const normalizedRow = {};
     Object.entries(row).forEach(([key, value]) => {
       const lowerKey = key.toLowerCase().trim();
-      const targetKey = headerMap[lowerKey] || key;
+      const targetKey = finalMap[lowerKey] || key;
       normalizedRow[targetKey] = value;
     });
 

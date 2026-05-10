@@ -404,7 +404,12 @@ export default function Invoices() {
           renderRow={(inv) => (
             <tr key={inv.id}>
               <td><span className={styles.invId}>{inv?.id || 'N/A'}</span></td>
-              <td><span className={styles.nameText}>{inv?.customer || 'Unknown'}</span></td>
+              <td>
+                <span className={styles.nameText}>{inv?.customer || 'Unknown'}</span>
+                <div className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mt-1">
+                  {inv?.customerData?.id || 'CUS-REF'}
+                </div>
+              </td>
               <td>{inv?.date ? new Date(inv.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</td>
               <td>
                 <div className={styles.typeCell}>
