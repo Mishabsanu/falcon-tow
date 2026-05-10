@@ -56,11 +56,11 @@ export default function CsvImport({ moduleKey, onComplete }) {
         const headers = splitCsvLine(rows[0]);
         const config = moduleData[moduleKey];
         
-        // Create a lookup map: Label -> Internal Name
+        // Create a lookup map: Label (lowercase) -> Internal Name
         const labelToNameMap = {};
         config.fields.forEach(field => {
-          labelToNameMap[field.label] = field.name;
-          labelToNameMap[field.name] = field.name; // Also allow internal names as headers
+          labelToNameMap[field.label.toLowerCase()] = field.name;
+          labelToNameMap[field.name.toLowerCase()] = field.name;
         });
 
         const data = rows.slice(1).filter(r => r.trim()).map(row => {
@@ -68,8 +68,9 @@ export default function CsvImport({ moduleKey, onComplete }) {
           const obj = {};
           headers.forEach((header, index) => {
             if (header) {
-              // Map the CSV header (usually a Label) back to the internal field name
-              const internalName = labelToNameMap[header] || header;
+              const cleanHeader = header.trim().toLowerCase();
+              // Map the CSV header back to the internal field name (case-insensitive)
+              const internalName = labelToNameMap[cleanHeader] || cleanHeader;
               obj[internalName] = values[index];
             }
           });
