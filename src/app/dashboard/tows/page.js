@@ -123,7 +123,7 @@ export default function Tows() {
           {!isWorker && <ExportCsvButton moduleKey="tows" filename="Tow_Jobs_Ledger" />}
           <Link href="/dashboard/tows/new" className="btn-primary">
             <Plus size={18} />
-            <span>New Dispatch</span>
+            <span>New Tow</span>
           </Link>
         </div>
       </header>

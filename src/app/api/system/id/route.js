@@ -14,7 +14,7 @@ export async function GET(request) {
 
     const prefixes = {
       users: 'EMP',
-      tows: 'TWO',
+      tows: 'TOW',
       invoices: 'INV',
       customers: 'CUS',
       vehicles: 'VEH',

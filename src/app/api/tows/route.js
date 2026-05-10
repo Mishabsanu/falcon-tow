@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/mongodb';
 import Tow from '@/models/Tow';
 import { calculateTowShares } from '@/modules/tows/logic/towBusinessLogic';
 import { generateNextId } from '@/lib/idGenerator';
+import { createNotification } from '@/utils/createNotification';
 
 export async function GET(request) {
   try {
@@ -70,10 +71,8 @@ export async function POST(request) {
     await connectDB();
     const payload = await request.json();
 
-    // Auto-generate ID if missing
-    if (!payload.id) {
-      payload.id = await generateNextId('tows');
-    }
+    // Force backend ID generation to ensure Counter is updated
+    payload.id = await generateNextId('tows');
 
     // SERVER-SIDE BUSINESS LOGIC
     // We recalculate shares on the server to prevent tampering
@@ -85,6 +84,20 @@ export async function POST(request) {
     };
 
     const record = await Tow.create(finalPayload);
+
+    // Trigger Notification Hook (Consistent with generic module route)
+    try {
+      await createNotification({
+        title: 'New Tow Job Assigned',
+        message: `Service for ${payload.customer} at ${payload.pickup} has been registered.`,
+        type: 'tow',
+        userId: payload.driverId,
+        referenceId: record.id
+      });
+    } catch (notifErr) {
+      console.warn('[NOTIFICATION_HOOK_FAILED]', notifErr.message);
+    }
+
     return NextResponse.json({ success: true, data: record }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ success: false, message: error.message }, { status: 400 });

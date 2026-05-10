@@ -4,7 +4,7 @@ import { getDb } from './mongodb';
 export async function generateNextId(moduleKey) {
   const prefixes = {
     users: 'EMP',
-    tows: 'TWO',
+    tows: 'TOW',
     invoices: 'INV',
     customers: 'CUS',
     vehicles: 'VEH',

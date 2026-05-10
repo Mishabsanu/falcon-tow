@@ -791,18 +791,20 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
           </div>
 
           {/* Form Actions */}
-          <div className="pt-12 border-t border-emerald-100 flex flex-col sm:flex-row items-center justify-end gap-6">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="w-full sm:w-auto px-10 py-5 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 hover:text-emerald-950 transition-all"
-            >
-              Discard Changes
-            </button>
+          <div className={`${isModal ? 'px-8 py-8 bg-emerald-50/30 -mx-6 sm:-mx-10 mt-10' : 'pt-12'} border-t border-emerald-100 flex flex-col sm:flex-row items-center justify-end gap-6`}>
+            {!isModal && (
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="w-full sm:w-auto px-10 py-5 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 hover:text-emerald-950 transition-all"
+              >
+                Discard Changes
+              </button>
+            )}
             <button
               type="submit"
               disabled={formik.isSubmitting}
-              className={`w-full sm:w-auto flex items-center justify-center gap-3 bg-emerald-600 px-12 py-5 text-[11px] font-bold uppercase tracking-[0.25em] text-white shadow-xl shadow-emerald-900/20 transition-all hover:bg-emerald-700 active:scale-95 rounded-xl ${formik.isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`${isModal ? 'w-full' : 'w-full sm:w-auto'} flex items-center justify-center gap-3 bg-emerald-600 px-12 py-5 text-[11px] font-bold uppercase tracking-[0.25em] text-white shadow-xl shadow-emerald-900/20 transition-all hover:bg-emerald-700 active:scale-95 rounded-xl ${formik.isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               {formik.isSubmitting ? (
                 <>
@@ -811,7 +813,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                 </>
               ) : (
                 <>
-                  {mode === 'edit' ? 'Update System Node' : 'Register New Node'}
+                  {isModal ? 'Quick Register' : (mode === 'edit' ? 'Update System Node' : 'Register New Node')}
                   <Save size={16} />
                 </>
               )}
