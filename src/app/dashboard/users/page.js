@@ -241,13 +241,15 @@ export default function Users() {
                 <Link href={`/dashboard/users/${u.id}`} className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title="View">
                   <FileText size={16} />
                 </Link>
-                <button
-                  className="p-2.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                  title="Delete"
-                  onClick={() => handleDelete(u.id)}
-                >
-                  <Trash2 size={16} />
-                </button>
+                {u.id !== 'EMP-001' && (
+                  <button
+                    className="p-2.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                    title="Delete"
+                    onClick={() => handleDelete(u.id)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </div>
             </td>
           </tr>
@@ -289,9 +291,11 @@ export default function Users() {
                 <Edit3 size={16} />
                 <span>Edit</span>
               </Link>
-              <button onClick={() => handleDelete(u.id)} className="p-3 bg-rose-50 text-rose-600 rounded-xl">
-                <Trash2 size={16} />
-              </button>
+              {u.id !== 'EMP-001' && (
+                <button onClick={() => handleDelete(u.id)} className="p-3 bg-rose-50 text-rose-600 rounded-xl">
+                  <Trash2 size={16} />
+                </button>
+              )}
             </div>
           </div>
         )}

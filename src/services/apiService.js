@@ -161,5 +161,21 @@ export const apiService = {
     const response = await fetch(url);
     if (!response.ok) throw new Error('Failed to fetch dashboard statistics');
     return await response.json();
+  },
+
+  /**
+   * Bulk imports records into the specified module.
+   */
+  async importRecords(moduleKey, data) {
+    const response = await fetch(`${API_BASE}/${moduleKey}/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || `Failed to import ${moduleKey} records`);
+    }
+    return await response.json();
   }
 };

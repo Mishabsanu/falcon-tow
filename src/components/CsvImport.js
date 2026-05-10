@@ -149,112 +149,112 @@ export default function CsvImport({ moduleKey, onComplete }) {
               className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md z-[9998]"
             />
 
-            {/* DRAWER */}
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl z-[9999] p-8 md:p-12 flex flex-col border-l border-emerald-100"
-            >
-              <div className="flex justify-between items-center mb-12">
-                <div className="space-y-1">
-                  <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-emerald-50 border border-emerald-100 rounded text-[8px] font-bold text-emerald-600 uppercase tracking-widest">Data Import</div>
-                  <h2 className="text-2xl font-bold tracking-tight text-emerald-950">Import <span className="text-emerald-600">Data</span></h2>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Import {moduleKey} from CSV</p>
-                </div>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="p-3 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <div className="bg-emerald-50/50 rounded-2xl p-6 border border-emerald-100 flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
-                <div className="flex-1 text-center sm:text-left">
-                  <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-900 mb-1">Helpful Info</h4>
-                  <p className="text-[10px] text-emerald-700/60 font-bold">Download the template and reference sheet to make sure your data is correct.</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={downloadTemplate}
-                    className="flex items-center gap-2 px-6 py-4 bg-emerald-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 active:scale-95"
-                  >
-                    <Download size={14} />
-                    <span>Template</span>
-                  </button>
-                  <button
-                    onClick={downloadReferenceData}
-                    className="flex items-center gap-2 px-6 py-4 bg-white border border-emerald-200 text-emerald-900 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-50 transition-all shadow-sm active:scale-95"
-                  >
-                    <FileText size={14} />
-                    <span>Reference</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-14 flex-1 overflow-y-auto pr-2">
-                {/* STEP 1 */}
-                <div className="space-y-5">
-                  <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center justify-center shadow-lg shadow-emerald-900/20">1</div>
-                    <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-950">Get Template</h3>
+            {/* DRAWER -> TRANSFORMED TO CENTERED MODAL */}
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-8 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl pointer-events-auto flex flex-col max-h-[90vh] overflow-hidden border border-emerald-100"
+              >
+                {/* HEADER */}
+                <div className="p-8 md:p-10 border-b border-emerald-50 flex justify-between items-center bg-emerald-50/30">
+                  <div className="space-y-1">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-600 text-white rounded-lg text-[9px] font-bold uppercase tracking-[0.2em] shadow-lg shadow-emerald-900/10">Data Engine</div>
+                    <h2 className="text-3xl font-black tracking-tighter text-emerald-950">Bulk <span className="text-emerald-600">Import</span></h2>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Syncing {moduleKey} via CSV protocol</p>
                   </div>
-                  <p className="text-xs text-slate-500 leading-relaxed font-medium">Download the CSV file to see how to format your data.</p>
                   <button
-                    onClick={downloadTemplate}
-                    className="w-full flex items-center justify-center gap-3 py-5 border-2 border-dashed border-emerald-100 bg-emerald-50/20 text-emerald-800 rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:border-emerald-500 hover:bg-white hover:text-emerald-600 transition-all group"
+                    onClick={() => setIsOpen(false)}
+                    className="p-4 bg-white text-emerald-600 rounded-2xl hover:bg-rose-600 hover:text-white transition-all shadow-xl shadow-emerald-900/5 active:scale-90"
                   >
-                    <Download size={18} className="group-hover:animate-bounce" />
-                    <span>Download CSV Template</span>
+                    <X size={24} />
                   </button>
                 </div>
 
-                {/* STEP 2 */}
-                <div className="space-y-5">
-                  <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-950 text-white text-xs font-bold flex items-center justify-center shadow-lg">2</div>
-                    <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-950">Upload CSV</h3>
+                <div className="flex-1 overflow-y-auto p-8 md:p-10 space-y-12">
+                  {/* UTILITIES SECTION */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="group bg-emerald-50/50 rounded-3xl p-6 border border-emerald-100 hover:bg-white hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-500">
+                      <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm mb-4 text-emerald-600 group-hover:scale-110 transition-transform">
+                        <Download size={20} />
+                      </div>
+                      <h4 className="text-[11px] font-black uppercase tracking-widest text-emerald-950 mb-2">CSV Template</h4>
+                      <p className="text-[10px] text-slate-500 font-bold mb-6 leading-relaxed">Download the official schema to ensure data compatibility.</p>
+                      <button
+                        onClick={downloadTemplate}
+                        className="w-full py-4 bg-emerald-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 active:scale-95"
+                      >
+                        Download Template
+                      </button>
+                    </div>
+
+                    <div className="group bg-slate-50/50 rounded-3xl p-6 border border-slate-100 hover:bg-white hover:shadow-xl hover:shadow-slate-900/5 transition-all duration-500">
+                      <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm mb-4 text-slate-600 group-hover:scale-110 transition-transform">
+                        <FileText size={20} />
+                      </div>
+                      <h4 className="text-[11px] font-black uppercase tracking-widest text-emerald-950 mb-2">Reference Sheet</h4>
+                      <p className="text-[10px] text-slate-500 font-bold mb-6 leading-relaxed">Lookup IDs for Workers, Vehicles, and Customers.</p>
+                      <button
+                        onClick={downloadReferenceData}
+                        className="w-full py-4 bg-white border-2 border-slate-100 text-slate-600 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95"
+                      >
+                        Get Sub-Sheet
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-500 leading-relaxed font-medium">Choose your CSV file. The system will automatically upload your records.</p>
 
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    accept=".csv"
-                  />
-
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={importing}
-                    className="w-full flex flex-col items-center justify-center gap-6 py-12 bg-emerald-50/50 rounded-3xl border-2 border-transparent hover:border-emerald-500 hover:bg-white transition-all group relative overflow-hidden"
-                  >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-400/5 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2"></div>
-                    <div className="w-20 h-20 rounded-2xl bg-white border border-emerald-100 flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
-                      <FileUp size={32} className="text-emerald-600" />
+                  {/* UPLOAD ZONE */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-4">
+                       <div className="h-[1px] flex-1 bg-emerald-100"></div>
+                       <span className="text-[10px] font-black text-emerald-800/40 uppercase tracking-[0.3em]">Drop Zone</span>
+                       <div className="h-[1px] flex-1 bg-emerald-100"></div>
                     </div>
-                    <div className="text-center space-y-2 relative z-10">
-                      <span className="block text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-950">
-                        {importing ? 'Importing...' : 'Choose File'}
-                      </span>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Max size: 5MB</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
 
-              <div className="pt-8 border-t border-emerald-50">
-                <div className="flex items-start gap-4 p-5 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
-                  <AlertCircle size={20} className="text-emerald-600 shrink-0 mt-0.5" />
-                  <p className="text-[10px] font-bold text-emerald-800/60 leading-relaxed uppercase tracking-wider">
-                    Note: Use YYYY-MM-DD for dates. Make sure all required fields are filled.
-                  </p>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      accept=".csv"
+                    />
+
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={importing}
+                      className="w-full flex flex-col items-center justify-center gap-6 py-16 bg-white rounded-[2rem] border-4 border-dashed border-emerald-50 hover:border-emerald-500 hover:bg-emerald-50/30 transition-all group relative overflow-hidden"
+                    >
+                      <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-emerald-400/5 blur-3xl rounded-full"></div>
+                      <div className="w-24 h-24 rounded-3xl bg-white border border-emerald-100 flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:-rotate-6 transition-all duration-700">
+                        <FileUp size={40} className="text-emerald-600" />
+                      </div>
+                      <div className="text-center space-y-2 relative z-10">
+                        <span className="block text-sm font-black text-emerald-950 uppercase tracking-tighter">
+                          {importing ? 'Processing File...' : 'Choose CSV Payload'}
+                        </span>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-8">
+                          Drag & drop or click to browse local storage
+                        </p>
+                      </div>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+
+                {/* FOOTER TIPS */}
+                <div className="p-8 bg-emerald-950 text-white flex items-center gap-6">
+                   <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/10 backdrop-blur-md">
+                      <AlertCircle size={20} className="text-emerald-400" />
+                   </div>
+                   <div className="flex-1">
+                      <p className="text-[10px] font-bold text-white uppercase tracking-widest leading-relaxed">
+                         Protocol: Dates must follow <span className="text-emerald-400 font-black italic">YYYY-MM-DD</span>. 
+                         Ensure reference IDs match the Sub-Sheet.
+                      </p>
+                   </div>
+                </div>
+              </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>

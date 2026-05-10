@@ -78,6 +78,13 @@ export async function DELETE(_request, context) {
 
     if (!Model) return NextResponse.json({ error: 'Module not found' }, { status: 404 });
 
+    // CRITICAL: Block deletion of the System Admin account (Root Protection)
+    if (moduleKey === 'users' && id === 'EMP-001') {
+      return NextResponse.json({ 
+        error: 'System Protection: The Root Administrator account cannot be deleted to prevent system lockout.' 
+      }, { status: 403 });
+    }
+
     const deleted = await Model.findOneAndDelete({ $or: [{ id: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }] });
 
     if (!deleted) return NextResponse.json({ error: 'Record not found' }, { status: 404 });
