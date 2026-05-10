@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FALCON PLUS | Fleet Command",
+  title: "FALCON PLUS",
   description: "Next-Gen Fleet Management & Operational Intelligence",
   icons:"/logo.jpeg",
 };

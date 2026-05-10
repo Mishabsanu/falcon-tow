@@ -339,6 +339,5 @@ export default function CrudPage({ moduleKey }) {
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
 }
