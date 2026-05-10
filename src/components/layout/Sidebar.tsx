@@ -92,7 +92,7 @@ export default function Sidebar() {
       const res = await fetch("/api/notifications");
       const data = await res.json();
       if (data.success) {
-        const unreadCount = data.data.filter((n: any) => n.unread).length;
+        const unreadCount = data.data.filter((n: any) => !n.isRead).length;
         setNotificationCount(unreadCount);
       }
     } catch {

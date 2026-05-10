@@ -63,13 +63,14 @@ export default function Quotations() {
   }, [fetchQuotations]);
 
   const handleDelete = async (id) => {
-    if (confirm('Permanently purge this quotation record?')) {
+    if (confirm('Are you sure you want to delete this quote? This action is irreversible.')) {
+      const toastId = toast.loading('Purging quotation from pipeline...');
       try {
         await apiService.deleteRecord('quotations', id);
-        toast.success('Quotation purged successfully');
+        toast.success('Quotation purged successfully.', { id: toastId });
         fetchQuotations();
       } catch (error) {
-        toast.error('Failed to purge quotation');
+        toast.error('Failed to purge quotation.', { id: toastId });
       }
     }
   };

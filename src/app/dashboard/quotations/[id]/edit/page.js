@@ -1,7 +1,8 @@
 'use client';
+import { useParams } from 'next/navigation';
 import ModuleForm from '@/components/ModuleForm';
 
-export default function EditQuotation({ params }) {
-  const { id } = params;
-  return <ModuleForm moduleKey="quotations" id={id} isEdit={true} />;
+export default function EditQuotation() {
+  const { id } = useParams();
+  return <ModuleForm moduleKey="quotations" mode="edit" id={id} />;
 }

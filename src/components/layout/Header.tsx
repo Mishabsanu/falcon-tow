@@ -42,7 +42,7 @@ export default function Header() {
       const data = await res.json();
       if (data.success) {
         setNotifications(data.data.slice(0, 5));
-        const unread = data.data.filter((n: any) => n.unread).length;
+        const unread = data.data.filter((n: any) => !n.isRead).length;
         setNotificationCount(unread);
       }
     } catch {

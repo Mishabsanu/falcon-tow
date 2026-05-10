@@ -32,7 +32,13 @@ export async function GET(_request, context) {
     if (!Model) return NextResponse.json({ error: 'Module not found' }, { status: 404 });
 
     // Try finding by custom ID string (e.g. TOW-001) or MongoDB _id
-    const record = await Model.findOne({ $or: [{ id: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }] }).lean();
+    let query = Model.findOne({ $or: [{ id: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }] });
+    
+    if (moduleKey === 'users') {
+      query = query.select('-password');
+    }
+    
+    const record = await query.lean();
 
     if (!record) return NextResponse.json({ error: 'Record not found' }, { status: 404 });
     return NextResponse.json({ success: true, data: record });
@@ -53,8 +59,16 @@ export async function PUT(request, context) {
     delete payload.id;
     delete payload._id;
 
-    if (moduleKey === 'users' && payload.password && !payload.password.startsWith('$2')) {
-      payload.password = await bcrypt.hash(payload.password, 10);
+    if (moduleKey === 'users') {
+      if (payload.password && payload.password.trim() !== '') {
+        // Only hash if a new password was actually provided
+        if (!payload.password.startsWith('$2')) {
+          payload.password = await bcrypt.hash(payload.password, 10);
+        }
+      } else {
+        // Remove password from payload if it's empty to prevent overwriting with null/empty
+        delete payload.password;
+      }
     }
 
     const record = await Model.findOneAndUpdate(

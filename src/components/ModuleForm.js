@@ -23,12 +23,21 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
     const today = new Date().toISOString().split('T')[0];
 
     return Object.fromEntries(config.fields.map((field) => {
-      let defaultValue = record?.[field.name] ?? field.defaultValue ?? '';
-
-      if (mode !== 'edit' && field.type === 'date' && !defaultValue) {
-        defaultValue = today;
+      let val = record?.[field.name] ?? field.defaultValue ?? '';
+      
+      // Format static dates for initial load
+      if (field.type === 'date' && val) {
+        const d = new Date(val);
+        if (!isNaN(d.getTime())) val = d.toISOString().split('T')[0];
       }
-      return [field.name, defaultValue];
+
+      // Security: Never populate password fields during edit
+      if (mode === 'edit' && field.name === 'password') val = '';
+
+      if (mode !== 'edit' && field.type === 'date' && !val) {
+        val = today;
+      }
+      return [field.name, val];
     }));
   }, [config.fields, id, mode, moduleKey]);
 
@@ -282,17 +291,34 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
     if (mode !== 'edit') return;
 
     async function loadRecord() {
+      const loadToast = toast.loading('Retrieving record from database...');
       try {
         const result = await apiService.getRecord(moduleKey, id);
         if (result) {
-          formik.setValues(
-            Object.fromEntries(
-              config.fields.map((field) => [field.name, result[field.name] ?? ''])
+          formik.setValues((prev) => ({
+            ...prev,
+            ...Object.fromEntries(
+              config.fields.map((field) => {
+                let val = result[field.name] ?? '';
+                // Robust Date Formatting for HTML5 Inputs
+                if (field.type === 'date' && val) {
+                  const d = new Date(val);
+                  if (!isNaN(d.getTime())) {
+                    val = d.toISOString().split('T')[0];
+                  }
+                }
+                if (field.name === 'password') val = '';
+                return [field.name, val];
+              })
             )
-          );
+          }));
+          toast.success('Record synchronized.', { id: loadToast });
+        } else {
+          toast.error('Record not found in the system.', { id: loadToast });
         }
       } catch (error) {
         console.error('Failed to load record:', error);
+        toast.error('Network error while retrieving record.', { id: loadToast });
       }
     }
     loadRecord();
