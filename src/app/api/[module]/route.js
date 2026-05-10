@@ -160,20 +160,26 @@ export async function POST(request, context) {
     await connectDB();
     const { module: moduleKey } = await context.params;
     const Model = models[moduleKey];
-    const payload = await request.json();
+    let payload = await request.json();
+
+    // Sanitize Payload: Convert empty strings to undefined to allow Mongoose defaults/validation
+    Object.keys(payload).forEach(key => {
+      if (payload[key] === '') payload[key] = undefined;
+    });
+
+    // Auto-Cast Numeric Fields based on module configuration
+    const config = moduleData[moduleKey];
+    if (config?.fields) {
+      config.fields.forEach(field => {
+        if (field.type === 'number' && typeof payload[field.name] === 'string') {
+          const num = parseFloat(payload[field.name]);
+          if (!isNaN(num)) payload[field.name] = num;
+        }
+      });
+    }
 
     if (!Model) {
       return NextResponse.json({ success: false, message: 'Module configuration missing' }, { status: 404 });
-    }
-
-    // Self-healing: Fix any existing records with null or missing IDs to prevent index conflicts
-    try {
-      await Model.updateMany(
-        { $or: [{ id: { $exists: false } }, { id: null }] },
-        [{ $set: { id: { $concat: [moduleKey.substring(0, 3).toUpperCase(), "-", { $toString: "$_id" }] } } }]
-      );
-    } catch (err) {
-      console.warn(`[API_WARN] Self-healing failed for ${moduleKey}:`, err.message);
     }
 
     // Force backend ID generation for consistency
@@ -225,9 +231,17 @@ export async function POST(request, context) {
     return NextResponse.json({ success: true, data: record }, { status: 201 });
   } catch (error) {
     console.error(`[API_ERROR] ${request.url}:`, error);
+    
+    let message = error.message;
+    if (error.code === 11000) {
+      message = "Duplicate Entry: A record with this unique ID or field already exists in the system.";
+    } else if (error.errors) {
+      message = Object.values(error.errors).map(e => e.message).join(', ');
+    }
+
     return NextResponse.json({ 
       success: false, 
-      message: error.message 
+      message: message 
     }, { status: 400 });
   }
 }

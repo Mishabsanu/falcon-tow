@@ -214,7 +214,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
 
   // Pre-fill from Quote Logic
   useEffect(() => {
-    if (fromQuote && mode === 'create' && moduleKey === 'tows' && !hasPrefilled.current) {
+    if (fromQuote && mode === 'add' && moduleKey === 'tows' && !hasPrefilled.current) {
       const loadQuoteData = async () => {
         hasPrefilled.current = true;
         try {

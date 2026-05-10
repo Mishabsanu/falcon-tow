@@ -354,8 +354,27 @@ export async function importRecords(moduleKey, rows) {
       normalizedRow[targetKey] = value;
     });
 
+    let existingId = normalizedRow.id;
+    
+    // Deduplication Logic: If ID is missing, try to find by secondary identifiers
+    if (!existingId) {
+      const db = await getDb();
+      if (moduleKey === 'customers' && normalizedRow.phone) {
+        const existing = await db.collection('customers').findOne({ phone: normalizedRow.phone });
+        if (existing) existingId = existing.id;
+      } else if (moduleKey === 'vehicles' && normalizedRow.plate) {
+        const existing = await db.collection('vehicles').findOne({ plate: normalizedRow.plate });
+        if (existing) existingId = existing.id;
+      } else if (moduleKey === 'users' && (normalizedRow.email || normalizedRow.phone)) {
+        const existing = await db.collection('users').findOne({ 
+          $or: [{ email: normalizedRow.email }, { phone: normalizedRow.phone }] 
+        });
+        if (existing) existingId = existing.id;
+      }
+    }
+
     const record = { 
-      id: normalizedRow.id || await makeId(moduleKey), 
+      id: existingId || await makeId(moduleKey), 
       ...processPayload(normalizedRow),
       createdAt: new Date().toISOString()
     };
