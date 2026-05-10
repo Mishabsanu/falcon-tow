@@ -6,7 +6,7 @@ import { calculateSalarySettlement } from '@/modules/salaries/logic/salaryBusine
 import { Activity, ArrowLeft, Eye, EyeOff, FileText, Plus, Save, ShieldCheck, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import Modal from './Modal';
@@ -202,12 +202,14 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
     fetchOptions();
   }, [fetchOptions]);
 
+  const hasPrefilled = useRef(false);
+
   // Pre-fill from Quote Logic
   useEffect(() => {
-    if (fromQuote && mode === 'create' && moduleKey === 'tows') {
+    if (fromQuote && mode === 'create' && moduleKey === 'tows' && !hasPrefilled.current) {
       const loadQuoteData = async () => {
+        hasPrefilled.current = true;
         try {
-          toast.loading('Synchronizing Data from Quote...');
           const quote = await apiService.getRecord('quotations', fromQuote);
           if (quote) {
             // Bulk set values from quote
@@ -228,15 +230,14 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
               date: quote.date ? new Date(quote.date).toISOString().split('T')[0] : values.date
             };
             
-            Object.entries(prefill).forEach(([key, val]) => {
-              if (val) setFieldValue(key, val);
-            });
+            setValues((prev) => ({
+              ...prev,
+              ...prefill
+            }));
             
-            toast.dismiss();
-            toast.success(`Data synchronized from Quote ${quote.id}`);
+            toast.success(`System synchronized with Quote ${quote.id}`);
           }
         } catch (error) {
-          toast.dismiss();
           console.error('Failed to pre-fill from quote:', error);
           toast.error('Data synchronization failed.');
         }
