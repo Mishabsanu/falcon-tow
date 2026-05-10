@@ -15,6 +15,7 @@ const TowSchema = new mongoose.Schema({
   
   customer: { type: String },
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
+  customerPhone: { type: String },
   
   // Job details
   customerVehicle: { type: String },

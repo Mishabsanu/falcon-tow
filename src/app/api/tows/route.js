@@ -50,7 +50,7 @@ export async function GET(request) {
 
     const total = await Tow.countDocuments(query);
     const data = await Tow.find(query)
-      .select('id date customer vehicle driver pickup dropoff amount status createdAt') // Projection: Only what we need
+      .select('id date customer customerVehicle customerPlate vehicle driver pickup dropoff amount status createdAt') // Projection: Only what we need
       .sort(q ? { score: { $meta: "textScore" } } : { date: -1 })
       .skip(skip)
       .limit(limit)

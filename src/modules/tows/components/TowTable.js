@@ -5,10 +5,11 @@ import styles from '@/app/dashboard/tows/page.module.css';
 
 export default function TowTable({ tows, loading, pagination, onPageChange, onDelete, isWorker }) {
   const headers = [
-    { label: "Job ID / Vehicle" },
+    { label: "Job ID" },
+    { label: "Fleet Asset" },
     { label: "Customer" },
+    { label: "Towed Vehicle" },
     { label: "Route" },
-    { label: "Assigned Driver" },
     { label: "Service Date" },
     { label: "Charges" },
     { label: "Status" },
@@ -25,16 +26,19 @@ export default function TowTable({ tows, loading, pagination, onPageChange, onDe
   const renderRow = (tow) => (
     <tr key={tow._id || tow.id}>
       <td>
+        <span className={styles.towId}>{tow?.id || 'N/A'}</span>
+      </td>
+      <td>
         <div className={styles.jobCell}>
           <div className={styles.iconBox}><Truck size={18} /></div>
           <div>
-            <span className={styles.towId}>{tow?.id || 'N/A'}</span>
-            <div className={styles.subtext}>{cleanVehicle(tow?.vehicle)}</div>
-            {(tow?.customerVehicle || tow?.customerPlate) && (
-              <div className="mt-1 text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md inline-block border border-emerald-100">
-                {tow.customerVehicle || 'N/A'} • {tow.customerPlate || 'N/A'}
+            <div className="text-[11px] font-black text-emerald-950 uppercase tracking-tight">{cleanVehicle(tow?.vehicle)}</div>
+            <div className="flex items-center gap-1.5 mt-2">
+              <div className="px-2 py-0.5 bg-emerald-100/50 border border-emerald-200 rounded-md flex items-center gap-1.5">
+                <User size={10} className="text-emerald-700" />
+                <span className="text-[10px] font-black text-emerald-900 uppercase tracking-tight">{tow?.driver || 'Unassigned'}</span>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </td>
@@ -46,9 +50,15 @@ export default function TowTable({ tows, loading, pagination, onPageChange, onDe
             <div className="flex items-center gap-1.5 mt-1">
               <span className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.1em]">{tow?.customerData?.id || 'WALK-IN'}</span>
               <span className="text-[8px] text-slate-300">•</span>
-              <span className="text-[9px] font-bold text-slate-400">{tow?.phone || 'N/A'}</span>
+              <span className="text-[9px] font-bold text-slate-400">{tow?.customerPhone || tow?.customerData?.phone || tow?.phone || 'N/A'}</span>
             </div>
           </div>
+        </div>
+      </td>
+      <td>
+        <div>
+          <div className="text-[11px] font-black text-emerald-950 uppercase tracking-tight leading-tight">{tow.customerVehicle || 'N/A'}</div>
+          <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{tow.customerPlate || 'N/A'}</div>
         </div>
       </td>
       <td>
@@ -57,7 +67,6 @@ export default function TowTable({ tows, loading, pagination, onPageChange, onDe
           <span>{tow?.pickup || 'Unknown'} to {tow?.dropoff || 'Unknown'}</span>
         </div>
       </td>
-      <td>{tow?.driver || 'N/A'}</td>
       <td>
         <div className={styles.dateCell}>
           <CalendarDays size={16} />
@@ -108,6 +117,7 @@ export default function TowTable({ tows, loading, pagination, onPageChange, onDe
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">REF #{tow?.id || 'N/A'}</p>
             <p className="text-sm font-black text-emerald-950">{cleanVehicle(tow?.vehicle)}</p>
+            <p className="text-[10px] font-bold text-emerald-600 mt-0.5 uppercase tracking-tight">{tow?.driver || 'Unassigned'}</p>
           </div>
         </div>
         <span className={`badge text-[10px] ${
@@ -119,13 +129,22 @@ export default function TowTable({ tows, loading, pagination, onPageChange, onDe
       </div>
       
       <div className="grid grid-cols-2 gap-4 py-4 border-y border-emerald-50">
-        <div>
+        <div className="col-span-1">
           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Customer</p>
           <p className="text-xs font-bold text-emerald-950">{tow?.customer || 'Unknown'}</p>
+          <p className="text-[9px] text-slate-500 mt-0.5">{tow?.customerData?.phone || tow?.phone || 'N/A'}</p>
         </div>
-        <div>
+        <div className="col-span-1">
           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Amount</p>
-          <p className="text-xs font-black text-emerald-600">QAR {tow?.amount || 0}</p>
+          <p className="text-xs font-black text-emerald-600">QAR {Number(tow.amount ?? 0).toLocaleString()}</p>
+        </div>
+        <div className="col-span-2 pt-3 border-t border-emerald-50/50">
+          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Towed Vehicle</p>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black text-emerald-700">{tow?.customerVehicle || 'N/A'}</span>
+            <span className="text-[8px] text-slate-300">•</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{tow?.customerPlate || 'N/A'}</span>
+          </div>
         </div>
       </div>
 

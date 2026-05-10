@@ -122,6 +122,7 @@ export const moduleData = {
       { name: 'vehicleName', label: 'Vehicle Name', type: 'text', hidden: true, required: false },
       { name: 'vehiclePlate', label: 'Vehicle Plate', type: 'text', hidden: true, required: false },
       { name: 'customer', label: 'Customer', type: 'select', module: 'customers', allowQuickAdd: true, span: 4, section: 'Towed Vehicle Details' },
+      { name: 'customerPhone', label: 'Customer Phone', type: 'text', hidden: true },
       { name: 'customerVehicle', label: "Customer's Vehicle Name", type: 'text', span: 4, section: 'Towed Vehicle Details' },
       { name: 'customerPlate', label: "Customer's Vehicle Plate Number", type: 'text', span: 4, section: 'Towed Vehicle Details' },
       { name: 'paymentMethod', label: 'Payment Method', type: 'select', options: ['Cash', 'Credit'], span: 3, section: 'Financial Split' },

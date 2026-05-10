@@ -103,6 +103,17 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
         initialPayload.createdBy = user?.name || 'System';
         initialPayload.createdById = user?._id || null; // Store native ObjectId for lookups
 
+        // 0. Clean module-based labels before storage (User Requirement: Separate Storage)
+        config.fields.forEach(field => {
+          if (field.module && payload[field.name]) {
+            const opt = (options[field.name] || []).find(o => o.value === payload[field.name]);
+            if (opt && opt.raw) {
+              // Store clean name instead of the combined "Name (Info)" label
+              payload[field.name] = opt.raw.name || opt.raw.id || payload[field.name];
+            }
+          }
+        });
+
         // 1. Create/Update record immediately
         const result = mode === 'edit'
           ? await apiService.updateRecord(moduleKey, id, initialPayload)
@@ -673,6 +684,10 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                   if (field.module === 'vehicles' && selectedOpt.raw) {
                                     setFieldValue('vehicleName', selectedOpt.raw.name);
                                     setFieldValue('vehiclePlate', selectedOpt.raw.plate);
+                                  }
+
+                                  if (field.module === 'customers' && selectedOpt.raw) {
+                                    setFieldValue('customerPhone', selectedOpt.raw.phone || '');
                                   }
 
                                   if (field.name === 'jobId') {
