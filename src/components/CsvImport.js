@@ -54,11 +54,24 @@ export default function CsvImport({ moduleKey, onComplete }) {
         };
 
         const headers = splitCsvLine(rows[0]);
+        const config = moduleData[moduleKey];
+        
+        // Create a lookup map: Label -> Internal Name
+        const labelToNameMap = {};
+        config.fields.forEach(field => {
+          labelToNameMap[field.label] = field.name;
+          labelToNameMap[field.name] = field.name; // Also allow internal names as headers
+        });
+
         const data = rows.slice(1).filter(r => r.trim()).map(row => {
           const values = splitCsvLine(row);
           const obj = {};
           headers.forEach((header, index) => {
-            if (header) obj[header] = values[index];
+            if (header) {
+              // Map the CSV header (usually a Label) back to the internal field name
+              const internalName = labelToNameMap[header] || header;
+              obj[internalName] = values[index];
+            }
           });
           
           // Inject Audit Info
