@@ -225,41 +225,12 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
 
     const generateNextId = async () => {
       try {
-        // Optimization: Instead of 1000 records, just fetch the LATEST one to find max ID
-        const result = await apiService.getRecords(moduleKey, { 
-          limit: 1, 
-          extraParams: { sort: 'createdAt', order: -1, select: 'id' } 
-        });
-        const records = result.data || [];
-
-        const prefix = moduleKey === 'users' ? 'EMP' :
-          moduleKey === 'tows' ? 'TOW' :
-            moduleKey === 'invoices' ? 'INV' :
-              moduleKey === 'quotations' ? 'QTN' : 'REF';
-
-        if (records.length === 0) {
-          setFieldValue('id', `${prefix}-001`);
-          return;
+        const result = await apiService.getNextId(moduleKey);
+        if (result.success) {
+          setFieldValue('id', result.nextId);
         }
-
-        // Extract numbers from existing IDs and find the maximum
-        const numbers = records.map(r => {
-          const idValue = r.id || '';
-          const match = idValue.match(/(\d+)$/);
-          return match ? parseInt(match[1], 10) : 0;
-        }).filter(n => !isNaN(n));
-
-        const maxNum = numbers.length > 0 ? Math.max(...numbers) : 0;
-        const nextNum = (maxNum + 1).toString().padStart(3, '0');
-
-        const nextId = `${prefix}-${nextNum}`;
-        console.log(`[ID_GENERATOR] Module: ${moduleKey}, Next ID: ${nextId}`);
-        setFieldValue('id', nextId);
       } catch (error) {
         console.error('Failed to generate sequential ID:', error);
-        // Better fallback: Default to 001 instead of random to maintain structure
-        const prefix = moduleKey === 'users' ? 'EMP' : 'REF';
-        setFieldValue('id', `${prefix}-001`);
       }
     };
 
@@ -756,10 +727,20 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
             </button>
             <button
               type="submit"
-              className="w-full sm:w-auto flex items-center justify-center gap-3 bg-emerald-600 px-12 py-5 text-[11px] font-bold uppercase tracking-[0.25em] text-white shadow-xl shadow-emerald-900/20 transition-all hover:bg-emerald-700 active:scale-95 rounded-xl"
+              disabled={formik.isSubmitting}
+              className={`w-full sm:w-auto flex items-center justify-center gap-3 bg-emerald-600 px-12 py-5 text-[11px] font-bold uppercase tracking-[0.25em] text-white shadow-xl shadow-emerald-900/20 transition-all hover:bg-emerald-700 active:scale-95 rounded-xl ${formik.isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              {mode === 'edit' ? 'Update System Node' : 'Register New Node'}
-              <Save size={16} />
+              {formik.isSubmitting ? (
+                <>
+                  <Activity size={16} className="animate-spin" />
+                  <span>Syncing Node...</span>
+                </>
+              ) : (
+                <>
+                  {mode === 'edit' ? 'Update System Node' : 'Register New Node'}
+                  <Save size={16} />
+                </>
+              )}
             </button>
           </div>
         </form>

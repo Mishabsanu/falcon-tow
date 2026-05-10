@@ -149,79 +149,85 @@ export default function CsvImport({ moduleKey, onComplete }) {
               className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md z-[9998]"
             />
 
-            {/* RIGHT SIDE DRAWER (COMPACT) */}
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed right-0 top-0 h-full w-full max-w-lg bg-white shadow-2xl z-[9999] flex flex-col border-l border-emerald-100"
+              className="fixed right-0 top-0 h-screen w-full md:w-96 bg-white shadow-2xl z-[9999] flex flex-col border-l border-emerald-100 overflow-hidden"
             >
-              {/* COMPACT HEADER */}
-              <div className="p-6 border-b border-emerald-50 flex justify-between items-center bg-emerald-50/10">
-                <div className="space-y-0.5">
-                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-600 text-white rounded text-[7px] font-bold uppercase tracking-widest">Protocol 4.0</div>
-                  <h2 className="text-xl font-black text-emerald-950">Import <span className="text-emerald-600">Engine</span></h2>
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Target: {moduleKey} registry</p>
+              {/* HEADER (MICRO) */}
+              <div className="p-3 border-b border-emerald-50 flex justify-between items-center bg-emerald-50/10">
+                <div className="space-y-0">
+                  <div className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-600 text-white rounded text-[5px] font-bold uppercase tracking-widest">Protocol Sync</div>
+                  <h2 className="text-base font-black text-emerald-950 leading-tight">Bulk <span className="text-emerald-600">Import</span></h2>
                 </div>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-3 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all active:scale-90"
+                  className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all"
                 >
-                  <X size={18} />
+                  <X size={14} />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                {/* STEP 1: PREPARE */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">1</div>
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-emerald-950">Prepare Data</h3>
+              <div className="flex-1 p-5 space-y-5 flex flex-col overflow-hidden">
+                {/* INTEGRATED USER GUIDE (ENHANCED LEGIBILITY) */}
+                <div className="bg-emerald-950 rounded-2xl p-5 text-white shadow-xl shadow-emerald-900/20">
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <Activity size={16} className="text-emerald-400" />
+                    <h3 className="text-xs font-black uppercase tracking-[0.2em]">Sync Protocol Guide</h3>
                   </div>
-                  <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/50">
-                    <p className="text-[9px] text-slate-500 font-bold mb-4 uppercase tracking-tight">Download the template and reference sheet first.</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={downloadTemplate}
-                        className="flex items-center justify-center gap-2 px-3 py-3 bg-emerald-600 text-white rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all"
-                      >
-                        <Download size={12} />
-                        <span>Template</span>
-                      </button>
-                      <button
-                        onClick={downloadReferenceData}
-                        className="flex items-center justify-center gap-2 px-3 py-3 bg-white border border-emerald-200 text-emerald-900 rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-emerald-50 transition-all"
-                      >
-                        <FileText size={12} />
-                        <span>Sub-Sheet</span>
-                      </button>
+                  <div className="space-y-3">
+                    <div className="flex gap-4">
+                      <span className="text-[10px] font-black text-emerald-400 opacity-50">01</span>
+                      <p className="text-[10px] font-bold leading-relaxed uppercase text-emerald-100/70">
+                        Download <span className="text-white italic">CSV Form</span> & <span className="text-white italic">IDs Reference</span> to match system nodes.
+                      </p>
                     </div>
-                  </div>
-                </div>
-
-                {/* STEP 2: FORMAT */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-lg bg-emerald-950 text-white text-[10px] font-bold flex items-center justify-center">2</div>
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-emerald-950">Format Dates</h3>
-                  </div>
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div className="flex items-start gap-3">
-                      <AlertCircle size={14} className="text-emerald-600 mt-0.5" />
-                      <p className="text-[9px] font-bold text-slate-500 leading-relaxed uppercase">
-                        Dates must be <span className="text-emerald-600 font-black">YYYY-MM-DD</span>. <br/>
-                        IDs must match the reference Sub-Sheet exactly.
+                    <div className="flex gap-4">
+                      <span className="text-[10px] font-black text-emerald-400 opacity-50">02</span>
+                      <p className="text-[10px] font-bold leading-relaxed uppercase text-emerald-100/70">
+                        Ensure dates are <span className="text-emerald-400 font-black underline underline-offset-4">YYYY-MM-DD</span>. Do not change headers.
+                      </p>
+                    </div>
+                    <div className="flex gap-4">
+                      <span className="text-[10px] font-black text-emerald-400 opacity-50">03</span>
+                      <p className="text-[10px] font-bold leading-relaxed uppercase text-emerald-100/70">
+                        Upload payload. System will auto-map fields and synchronize records.
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* STEP 3: UPLOAD */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">3</div>
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-emerald-950">Final Upload</h3>
+                {/* STEP 1: PREPARE */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white text-[11px] font-bold flex items-center justify-center shadow-lg shadow-emerald-600/20">1</div>
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-emerald-950">Preparation</h3>
+                  </div>
+                  <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/50 grid grid-cols-2 gap-3">
+                    <button
+                      onClick={downloadTemplate}
+                      className="flex items-center justify-center gap-2.5 px-3 py-4 bg-emerald-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/10"
+                    >
+                      <Download size={14} />
+                      <span>CSV Form</span>
+                    </button>
+                    <button
+                      onClick={downloadReferenceData}
+                      className="flex items-center justify-center gap-2.5 px-3 py-4 bg-white border border-emerald-200 text-emerald-900 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-50 transition-all"
+                    >
+                      <FileText size={14} />
+                      <span>IDs Reference</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* STEP 2: UPLOAD (EXPANDED TO FILL) */}
+                <div className="space-y-3 flex-1 flex flex-col pt-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white text-[11px] font-bold flex items-center justify-center shadow-lg shadow-emerald-600/20">2</div>
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-emerald-950">Data Execution</h3>
                   </div>
                   
                   <input
@@ -235,27 +241,30 @@ export default function CsvImport({ moduleKey, onComplete }) {
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={importing}
-                    className="w-full flex flex-col items-center justify-center gap-4 py-10 bg-emerald-50/20 rounded-[2rem] border-2 border-dashed border-emerald-100 hover:border-emerald-500 hover:bg-white transition-all group"
+                    className="flex-1 w-full flex flex-col items-center justify-center gap-5 bg-emerald-50/20 rounded-[2.5rem] border-2 border-dashed border-emerald-100 hover:border-emerald-500 hover:bg-white transition-all group relative overflow-hidden"
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-white border border-emerald-100 flex items-center justify-center shadow-md group-hover:scale-105 transition-all">
-                      <FileUp size={24} className="text-emerald-600" />
+                    <div className="w-20 h-20 rounded-[1.5rem] bg-white border border-emerald-100 flex items-center justify-center shadow-xl group-hover:scale-110 transition-all duration-500">
+                      <FileUp size={32} className="text-emerald-600" />
                     </div>
-                    <div className="text-center space-y-1">
-                      <span className="block text-[11px] font-black text-emerald-950 uppercase tracking-tight">
-                        {importing ? 'Processing...' : 'Upload CSV'}
+                    <div className="text-center space-y-2.5">
+                      <span className="block text-sm font-black text-emerald-950 uppercase tracking-tight">
+                        {importing ? 'Syncing Node...' : 'Sync CSV Payload'}
                       </span>
-                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest italic">
-                        Click to select local file
-                      </p>
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                          Prepare • Format • Sync
+                        </p>
+                      </div>
                     </div>
                   </button>
                 </div>
               </div>
 
-              {/* COMPACT FOOTER */}
-              <div className="p-6 border-t border-emerald-50 bg-slate-50/50">
-                <p className="text-[8px] font-black text-emerald-900/40 uppercase tracking-[0.2em] text-center">
-                  Automated Data Validation Active
+              {/* FOOTER */}
+              <div className="p-3 border-t border-emerald-50 bg-slate-50/50 flex items-center justify-center">
+                <p className="text-[6px] font-black text-emerald-900/20 uppercase tracking-[0.4em]">
+                  Secure Node Transmission
                 </p>
               </div>
             </motion.div>

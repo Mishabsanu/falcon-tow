@@ -163,6 +163,12 @@ export const apiService = {
     return await response.json();
   },
 
+  async getNextId(moduleKey) {
+    const response = await fetch(`/api/system/id?module=${moduleKey}`);
+    if (!response.ok) throw new Error('Failed to fetch next ID');
+    return await response.json();
+  },
+
   /**
    * Bulk imports records into the specified module.
    */
