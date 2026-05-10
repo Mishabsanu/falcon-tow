@@ -29,7 +29,12 @@ export default function TowTable({ tows, loading, pagination, onPageChange, onDe
           <div className={styles.iconBox}><Truck size={18} /></div>
           <div>
             <span className={styles.towId}>{tow?.id || 'N/A'}</span>
-            <span className={styles.subtext}>{cleanVehicle(tow?.vehicle)}</span>
+            <div className={styles.subtext}>{cleanVehicle(tow?.vehicle)}</div>
+            {(tow?.customerVehicle || tow?.customerPlate) && (
+              <div className="mt-1 text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md inline-block border border-emerald-100">
+                {tow.customerVehicle || 'N/A'} • {tow.customerPlate || 'N/A'}
+              </div>
+            )}
           </div>
         </div>
       </td>

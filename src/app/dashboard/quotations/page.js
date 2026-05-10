@@ -15,7 +15,9 @@ import {
   CheckCircle2,
   Filter,
   Activity,
-  X
+  X,
+  Truck,
+  Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ExportCsvButton from '@/components/ExportCsvButton';
@@ -72,33 +74,28 @@ export default function Quotations() {
     }
   };
 
+  const [isApproving, setIsApproving] = useState(null);
+
   const handleApprove = async (q) => {
-    if (!confirm(`Are you sure you want to approve Quote ${q.id} and create a Tow Job?`)) return;
-
-    try {
-      await apiService.updateRecord('quotations', q.id, { ...q, status: 'Approved' });
-      
-      const newTow = {
-        customer: q.customer,
-        customerId: q.customerId,
-        vehicle: q.vehicle,
-        vehicleId: q.vehicleId,
-        driver: q.driver,
-        driverId: q.driverId,
-        pickup: q.pickup,
-        dropoff: q.dropoff,
-        date: q.date,
-        amount: q.amount,
-        status: 'Pending',
-        paymentMethod: 'Cash'
-      };
-
-      const createdTow = await apiService.createRecord('tows', newTow);
-      toast.success('Quotation Approved! Tow Job created.');
-      router.push(`/dashboard/tows`);
-    } catch (error) {
-      toast.error('Failed to process approval.');
-    }
+    toast(`Finalize Approval for ${q.id}?`, {
+      description: "This will unlock the 'Sync to Tow' feature for this record.",
+      action: {
+        label: 'Confirm Approval',
+        onClick: async () => {
+          setIsApproving(q.id);
+          try {
+            await apiService.updateRecord('quotations', q.id, { ...q, status: 'Approved' });
+            toast.success(`Quote ${q.id} Approved Successfully`);
+            fetchQuotations();
+          } catch (error) {
+            toast.error('Failed to update system state.');
+          } finally {
+            setIsApproving(null);
+          }
+        }
+      },
+      cancel: { label: 'Cancel' }
+    });
   };
 
   const handleStatusUpdate = async (id, status, label) => {
@@ -261,6 +258,7 @@ export default function Quotations() {
           headers={[
             { label: "Quote ID" },
             { label: "Customer" },
+            { label: "Vehicle" },
             { label: "Estimated Date" },
             { label: "Quoted Amount" },
             { label: "Status" },
@@ -275,6 +273,12 @@ export default function Quotations() {
             <tr key={q.id}>
               <td><span className={styles.invId}>{q.id}</span></td>
               <td><span className={styles.nameText}>{q.customer}</span></td>
+              <td>
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-bold text-emerald-950 uppercase">{q.customerVehicle || 'N/A'}</span>
+                  <span className="text-[9px] font-bold text-slate-400 mt-0.5">{q.customerPlate || 'N/A'}</span>
+                </div>
+              </td>
               <td>{new Date(q.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
               <td className="amount">QAR {Number(q.amount ?? 0).toLocaleString()}</td>
               <td>
@@ -294,15 +298,26 @@ export default function Quotations() {
               </td>
               <td>
                 <div className={styles.actionCell}>
+                  {q.status === 'Approved' && (
+                    <Link
+                      href={`/dashboard/tows/new?fromQuote=${q.id}`}
+                      className={styles.payBtn}
+                      style={{ color: '#059669' }}
+                      title="Sync to Tow Job"
+                    >
+                      <Truck size={16} />
+                    </Link>
+                  )}
                   {q.status !== 'Approved' && q.status !== 'Cancelled' && q.status !== 'Rejected' && (
                     <>
                       <button
                         className={styles.payBtn}
                         style={{ color: '#10b981' }}
-                        title="Approve & Create Tow"
+                        title="Approve Quote"
+                        disabled={isApproving !== null}
                         onClick={() => handleApprove(q)}
                       >
-                        <CheckCircle2 size={16} />
+                        {isApproving === q.id ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
                       </button>
                       <button
                         className={styles.deleteBtn}

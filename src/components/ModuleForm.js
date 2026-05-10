@@ -5,7 +5,7 @@ import { calculateTowShares } from '@/modules/tows/logic/towBusinessLogic';
 import { calculateSalarySettlement } from '@/modules/salaries/logic/salaryBusinessLogic';
 import { Activity, ArrowLeft, Eye, EyeOff, FileText, Plus, Save, ShieldCheck, Lock } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -14,6 +14,8 @@ import { toast } from 'sonner';
 
 export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = false }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromQuote = searchParams.get('fromQuote');
   const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user')) : null;
   const isWorker = currentUser?.role === 'Worker';
   const config = moduleData[moduleKey];
@@ -158,15 +160,8 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
     const promises = config.fields.map(async (field) => {
       if (field.module) {
         try {
-          // Optimized: Fetch only needed fields for dropdowns (Projection)
-          let select = 'id,name';
-          if (field.module === 'vehicles') select = 'id,name,plate';
-          if (field.module === 'tows') select = 'id,customer,amount';
-          if (field.module === 'users') select = 'id,name,role,salary';
-
           const result = await apiService.getRecords(field.module, { 
-            limit: 200, // Balanced limit for lookup
-            extraParams: { select } 
+            limit: 500, // Increased limit for better coverage
           });
           if (result.data) {
             let data = result.data;
@@ -188,6 +183,7 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
                 if (field.module === 'vehicles') label = `${r.name} - ${r.plate}`;
                 else if (field.module === 'users') label = r.name;
                 else if (field.module === 'tows') label = `${r.id} - ${r.customer}`;
+                else if (field.module === 'customers') label = r.name + (r.phone ? ` (${r.phone})` : '');
                 else label = r.name || r.id || r.title;
 
                 return { label, value: label, _id: r._id, raw: r };
@@ -205,6 +201,49 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
   useEffect(() => {
     fetchOptions();
   }, [fetchOptions]);
+
+  // Pre-fill from Quote Logic
+  useEffect(() => {
+    if (fromQuote && mode === 'create' && moduleKey === 'tows') {
+      const loadQuoteData = async () => {
+        try {
+          toast.loading('Synchronizing Data from Quote...');
+          const quote = await apiService.getRecord('quotations', fromQuote);
+          if (quote) {
+            // Bulk set values from quote
+            const prefill = {
+              customer: quote.customer,
+              customerId: quote.customerId,
+              customerVehicle: quote.customerVehicle,
+              customerPlate: quote.customerPlate,
+              vehicle: quote.vehicle,
+              vehicleId: quote.vehicleId,
+              vehicleName: quote.vehicleName,
+              vehiclePlate: quote.vehiclePlate,
+              driver: quote.driver,
+              driverId: quote.driverId,
+              pickup: quote.pickup,
+              dropoff: quote.dropoff,
+              amount: quote.amount,
+              date: quote.date ? new Date(quote.date).toISOString().split('T')[0] : values.date
+            };
+            
+            Object.entries(prefill).forEach(([key, val]) => {
+              if (val) setFieldValue(key, val);
+            });
+            
+            toast.dismiss();
+            toast.success(`Data synchronized from Quote ${quote.id}`);
+          }
+        } catch (error) {
+          toast.dismiss();
+          console.error('Failed to pre-fill from quote:', error);
+          toast.error('Data synchronization failed.');
+        }
+      };
+      loadQuoteData();
+    }
+  }, [fromQuote, mode, moduleKey, setFieldValue]);
 
   // Worker Self-Selection for Tow Jobs and Expenses
   useEffect(() => {
@@ -549,7 +588,7 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
                       <div className="h-px flex-1 bg-emerald-50/50"></div>
                     </div>
                   )}
-                  <div className={section.title === 'Financial Split' ? "flex flex-col sm:flex-row items-start gap-4 sm:gap-6 bg-emerald-50/10 p-6 rounded-2xl border border-emerald-100/20" : `grid grid-cols-12 ${isModal ? 'gap-4' : 'gap-4 sm:gap-8 md:gap-10'}`}>
+                  <div className={`grid grid-cols-12 ${isModal ? 'gap-4' : 'gap-4 sm:gap-8 md:gap-10'}`}>
                     {section.fields.map((field) => {
                       const spanMap = {
                         1: 'col-span-12 md:col-span-1',
@@ -565,7 +604,7 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
                         11: 'col-span-12 md:col-span-11',
                         12: 'col-span-12',
                       };
-                      const colSpan = section.title === 'Financial Split' ? "flex-1" : (spanMap[field.span] || 'col-span-12 md:col-span-4');
+                      const colSpan = spanMap[field.span] || 'col-span-12 md:col-span-4';
                       return (
                         <div key={field.name} className={`space-y-4 ${colSpan}`}>
                           <div className="flex items-center justify-between">
@@ -600,6 +639,12 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
                                 if (selectedOpt && selectedOpt._id) {
                                   const idFieldName = `${field.name}Id`;
                                   setFieldValue(idFieldName, selectedOpt._id);
+
+                                  // Store vehicle name and plate separately if it's a vehicle selection
+                                  if (field.module === 'vehicles' && selectedOpt.raw) {
+                                    setFieldValue('vehicleName', selectedOpt.raw.name);
+                                    setFieldValue('vehiclePlate', selectedOpt.raw.plate);
+                                  }
 
                                   if (field.name === 'jobId') {
                                     setFieldValue('towId', selectedOpt._id);

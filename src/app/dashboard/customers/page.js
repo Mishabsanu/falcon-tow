@@ -13,6 +13,8 @@ import {
   ChevronRight,
   MoreHorizontal,
   User,
+  Eye,
+  Mail,
   Calendar,
   Activity
 } from 'lucide-react';
@@ -301,7 +303,7 @@ export default function Customers() {
                   title="Delete"
                   onClick={() => handleDelete(c.id)}
                 ><Trash2 size={16} /></button>
-                <Link href={`/dashboard/customers/${c.id}`} className={styles.moreBtn} title="View Details"><MoreHorizontal size={16} /></Link>
+                <Link href={`/dashboard/customers/${c.id}`} className={styles.moreBtn} title="View Details"><Eye size={16} /></Link>
               </div>
             </td>
           </tr>
@@ -330,7 +332,7 @@ export default function Customers() {
 
             <div className="flex items-center gap-2 pt-2">
               <Link href={`/dashboard/customers/${c.id}`} className="flex-1 flex items-center justify-center gap-2 p-3 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest">
-                <MoreHorizontal size={16} />
+                <Eye size={16} />
                 <span>Details</span>
               </Link>
               <Link href={`/dashboard/customers/${c.id}/edit`} className="flex-1 flex items-center justify-center gap-2 p-3 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest">

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
+import { moduleData } from '@/lib/moduleData';
 import User from '@/models/User';
 import Tow from '@/models/Tow';
 import Customer from '@/models/Customer';
@@ -105,9 +106,42 @@ export async function GET(request, context) {
 
     const data = await dataQuery.lean();
 
+    // DYNAMIC JOIN ENRICHMENT (Optimized Batch Fetching)
+    const config = moduleData[moduleKey];
+    const joins = config?.joins || [];
+    let enrichedData = data;
+
+    if (joins.length > 0 && data.length > 0) {
+      for (const join of joins) {
+        const JoinModel = models[join.from];
+        if (JoinModel) {
+          // Extract unique local keys to avoid redundant lookups
+          const localKeys = [...new Set(data.map(item => item[join.localField]?.toString()).filter(Boolean))];
+          
+          if (localKeys.length > 0) {
+            const joinedRecords = await JoinModel.find({ [join.foreignField]: { $in: localKeys } }).lean();
+            
+            // Map records for O(1) lookup during enrichment
+            const recordMap = {};
+            joinedRecords.forEach(rec => {
+              recordMap[rec[join.foreignField].toString()] = rec;
+            });
+
+            enrichedData = enrichedData.map(item => {
+              const localVal = item[join.localField];
+              if (localVal) {
+                item[join.as] = recordMap[localVal.toString()] || null;
+              }
+              return item;
+            });
+          }
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      data,
+      data: enrichedData,
       pagination: {
         total,
         page,

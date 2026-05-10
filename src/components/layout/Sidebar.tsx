@@ -12,7 +12,8 @@ import {
   Truck,
   Users,
   Receipt,
-  Wallet
+  Wallet,
+  LogOut
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -145,11 +146,21 @@ export default function Sidebar() {
         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-400/20 blur-3xl rounded-full"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-500/10 blur-2xl rounded-full"></div>
 
-        <Link href="/dashboard" className="relative z-10 w-full group">
-          <div className="h-26 w-full transition-all duration-500 group-hover:scale-105 flex items-center justify-center">
-            <img src="/logo-1.png" alt="Falcon Tow" className="h-full w-full object-contain brightness-0 invert" />
-          </div>
-        </Link>
+        <div className="flex w-full items-center justify-between relative z-10">
+          <Link href="/dashboard" className="group">
+            <div className="h-16 w-32 transition-all duration-500 group-hover:scale-105 flex items-center justify-center">
+              <img src="/logo-1.png" alt="Falcon Tow" className="h-full w-full object-contain brightness-0 invert" />
+            </div>
+          </Link>
+          
+          <button 
+            onClick={handleLogout}
+            className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all border border-white/5 active:scale-95"
+            title="Immediate Logout"
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
         
       </div>
 

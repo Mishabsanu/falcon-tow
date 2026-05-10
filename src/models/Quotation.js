@@ -4,6 +4,8 @@ const QuotationSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   customer: { type: String },
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
+  customerVehicle: { type: String },
+  customerPlate: { type: String },
   
   pickup: { type: String },
   dropoff: { type: String },
@@ -13,6 +15,8 @@ const QuotationSchema = new mongoose.Schema({
   
   vehicle: { type: String },
   vehicleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle' },
+  vehicleName: { type: String },
+  vehiclePlate: { type: String },
   
   date: { type: Date },
   amount: { type: Number },

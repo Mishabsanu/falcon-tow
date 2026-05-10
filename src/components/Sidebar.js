@@ -12,7 +12,8 @@ import {
   Bell,
   BarChart3,
   ClipboardList,
-  DollarSign
+  DollarSign,
+  LogOut
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 import { clsx } from 'clsx';
@@ -90,8 +91,8 @@ export default function Sidebar() {
             <p className={styles.userName}>{user?.name || 'Loading...'}</p>
             <p className={styles.userRole}>{user?.role || 'Guest'}</p>
           </div>
-          <button onClick={handleLogout} className="ml-auto text-white/40 hover:text-white transition-colors">
-            <LayoutDashboard size={16} className="rotate-90" />
+          <button onClick={handleLogout} className="ml-auto text-slate-400 hover:text-rose-600 transition-colors" title="System Logout">
+            <LogOut size={18} />
           </button>
         </div>
       </div>

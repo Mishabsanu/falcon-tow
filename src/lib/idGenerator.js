@@ -17,7 +17,7 @@ export async function generateNextId(moduleKey) {
   const counter = await Counter.findOneAndUpdate(
     { id: moduleKey },
     { $inc: { seq: 1 } },
-    { new: true, upsert: true }
+    { returnDocument: 'after', upsert: true }
   );
 
   const sequenceNumber = counter.seq.toString().padStart(3, '0');

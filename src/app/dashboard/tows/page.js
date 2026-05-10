@@ -45,14 +45,14 @@ export default function Tows() {
     async function loadOptions() {
       try {
         const [u, v, c] = await Promise.all([
-          apiService.getAllRecords('users'),
-          apiService.getAllRecords('vehicles'),
-          apiService.getAllRecords('customers')
+          apiService.getRecords('users', { limit: 200, extraParams: { select: 'id,name,role' } }),
+          apiService.getRecords('vehicles', { limit: 200, extraParams: { select: 'id,name,plate' } }),
+          apiService.getRecords('customers', { limit: 300, extraParams: { select: 'id,name' } })
         ]);
         setFilterOptions({
-          drivers: u.filter(user => user.role === 'Worker'),
-          vehicles: v,
-          customers: c
+          drivers: (u.data || []).filter(user => user.role === 'Worker'),
+          vehicles: v.data || [],
+          customers: c.data || []
         });
       } catch (error) {
         console.error('Failed to load filter options:', error);

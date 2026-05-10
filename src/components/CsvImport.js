@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Download, X, FileUp, FileText } from 'lucide-react';
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Download, X, FileUp, FileText, Activity } from 'lucide-react';
 import { apiService } from '@/services/apiService';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,17 +32,43 @@ export default function CsvImport({ moduleKey, onComplete }) {
           throw new Error('CSV is empty or missing headers');
         }
 
-        const headers = rows[0].split(',').map(h => h.trim());
-        const data = rows.slice(1).map(row => {
-          const values = row.split(',').map(v => v.trim());
+        const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user')) : null;
+        
+        // Robust CSV splitter that handles quotes
+        const splitCsvLine = (line) => {
+          const result = [];
+          let current = '';
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (char === '"') inQuotes = !inQuotes;
+            else if (char === ',' && !inQuotes) {
+              result.push(current.trim().replace(/^"|"$/g, ''));
+              current = '';
+            } else {
+              current += char;
+            }
+          }
+          result.push(current.trim().replace(/^"|"$/g, ''));
+          return result;
+        };
+
+        const headers = splitCsvLine(rows[0]);
+        const data = rows.slice(1).filter(r => r.trim()).map(row => {
+          const values = splitCsvLine(row);
           const obj = {};
           headers.forEach((header, index) => {
-            obj[header] = values[index];
+            if (header) obj[header] = values[index];
           });
+          
+          // Inject Audit Info
+          obj.createdBy = user?.name || 'System';
+          obj.createdById = user?._id || null;
+          
           return obj;
         });
 
-        toast.loading(`Importing ${data.length} records...`);
+        toast.loading(`Syncing ${data.length} records...`);
 
         const result = await apiService.importRecords(moduleKey, data);
         const successCount = result.count || 0;

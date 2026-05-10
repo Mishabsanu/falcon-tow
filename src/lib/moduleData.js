@@ -87,8 +87,10 @@ export const moduleData = {
     records: [],
     fields: [
       { name: 'id', label: 'ID', type: 'text', hidden: true },
-      { name: 'customer', label: 'Customer Name', type: 'select', module: 'customers', span: 8, section: 'Client & Logistics' },
+      { name: 'customer', label: 'Customer Name', type: 'select', module: 'customers', span: 12, section: 'Client & Logistics' },
       { name: 'customerId', label: 'Customer Mongo ID', type: 'text', hidden: true, required: false },
+      { name: 'customerVehicle', label: "Customer's Vehicle Name", type: 'text', span: 6, section: 'Client & Logistics' },
+      { name: 'customerPlate', label: "Customer's Vehicle Plate Number", type: 'text', span: 6, section: 'Client & Logistics', required: false },
       
       { name: 'pickup', label: 'Pickup Location', type: 'text', span: 6, section: 'Client & Logistics' },
       { name: 'dropoff', label: 'Drop-off Location', type: 'text', span: 6, section: 'Client & Logistics' },
@@ -97,6 +99,8 @@ export const moduleData = {
       { name: 'driverId', label: 'Worker Mongo ID', type: 'text', hidden: true, required: false },
       { name: 'vehicle', label: 'Operational Vehicle', type: 'select', module: 'vehicles', span: 4, section: 'Quotation Details' },
       { name: 'vehicleId', label: 'Vehicle Mongo ID', type: 'text', hidden: true, required: false },
+      { name: 'vehicleName', label: 'Vehicle Name', type: 'text', hidden: true, required: false },
+      { name: 'vehiclePlate', label: 'Vehicle Plate', type: 'text', hidden: true, required: false },
       { name: 'date', label: 'Estimated Date', type: 'date', span: 4, section: 'Quotation Details' },
       
       { name: 'amount', label: 'Quoted Amount (QAR)', type: 'number', span: 6, section: 'Quotation Details' },
@@ -115,6 +119,8 @@ export const moduleData = {
       { name: 'driverId', label: 'Worker Mongo ID', type: 'text', hidden: true, required: false },
       { name: 'vehicle', label: 'Operational Truck', type: 'select', module: 'vehicles', span: 4 },
       { name: 'vehicleId', label: 'Vehicle Mongo ID', type: 'text', hidden: true, required: false },
+      { name: 'vehicleName', label: 'Vehicle Name', type: 'text', hidden: true, required: false },
+      { name: 'vehiclePlate', label: 'Vehicle Plate', type: 'text', hidden: true, required: false },
       { name: 'customer', label: 'Customer', type: 'select', module: 'customers', allowQuickAdd: true, span: 4, section: 'Towed Vehicle Details' },
       { name: 'customerVehicle', label: "Customer's Vehicle Name", type: 'text', span: 4, section: 'Towed Vehicle Details' },
       { name: 'customerPlate', label: "Customer's Vehicle Plate Number", type: 'text', span: 4, section: 'Towed Vehicle Details' },

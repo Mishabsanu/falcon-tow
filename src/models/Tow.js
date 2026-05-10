@@ -10,6 +10,8 @@ const TowSchema = new mongoose.Schema({
   
   vehicle: { type: String },
   vehicleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle' },
+  vehicleName: { type: String },
+  vehiclePlate: { type: String },
   
   customer: { type: String },
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },

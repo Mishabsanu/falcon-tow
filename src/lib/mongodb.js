@@ -22,6 +22,9 @@ export async function connectDB() {
     const opts = {
       bufferCommands: false,
       dbName: dbName,
+      connectTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+      waitQueueTimeoutMS: 10000,
     };
 
     cached.promise = mongoose.connect(uri, opts).then((mongoose) => {
