@@ -6,6 +6,8 @@ import Customer from '@/models/Customer';
 import Vehicle from '@/models/Vehicle';
 import Salary from '@/models/Salary';
 import Invoice from '@/models/Invoice';
+import Expense from '@/models/Expense';
+import Quotation from '@/models/Quotation';
 import bcrypt from 'bcryptjs';
 
 const models = {
@@ -15,6 +17,8 @@ const models = {
   vehicles: Vehicle,
   salaries: Salary,
   invoices: Invoice,
+  expenses: Expense,
+  quotations: Quotation,
 };
 
 export const runtime = 'nodejs';
@@ -43,8 +47,11 @@ export async function PUT(request, context) {
     const { module: moduleKey, id } = await context.params;
     const Model = models[moduleKey];
     const payload = await request.json();
-
     if (!Model) return NextResponse.json({ error: 'Module not found' }, { status: 404 });
+
+    // Protect immutable fields
+    delete payload.id;
+    delete payload._id;
 
     if (moduleKey === 'users' && payload.password && !payload.password.startsWith('$2')) {
       payload.password = await bcrypt.hash(payload.password, 10);

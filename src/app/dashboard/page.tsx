@@ -1,31 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import {
-   TrendingUp,
-   TrendingDown,
-   Users,
-   ClipboardList,
-   Wallet,
-   AlertTriangle,
-   ArrowRight,
-   Zap,
-   Receipt,
-   BarChart3,
-   Activity,
-   Gauge,
-   Clock,
-   Layers,
-   ArrowUpRight,
-   ShieldCheck,
-   ChevronRight,
-   Box,
-   Target,
-   Coins
-} from "lucide-react";
-import Link from "next/link";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { apiService } from "@/services/apiService";
+import {
+   ArrowUpRight,
+   Coins,
+   Gauge,
+   Layers,
+   Receipt,
+   Target,
+   TrendingDown,
+   TrendingUp,
+   Wallet,
+   Zap
+} from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 
 export default function DashboardPage() {
    const [data, setData] = useState<any>(null);
@@ -54,7 +44,7 @@ export default function DashboardPage() {
       fetchStats();
    }, [fetchStats]);
 
-   if (loading && !data) return <LoadingSpinner label="Synchronizing Intelligence..." />;
+   if (loading && !data) return <LoadingSpinner label="Loading Dashboard..." />;
    if (!data) return null;
 
    const isWorker = user?.role === 'Worker';
@@ -73,24 +63,24 @@ export default function DashboardPage() {
        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 px-1 md:px-0">
          <div className="space-y-2">
            <h1 className="text-4xl font-bold text-emerald-950 tracking-tight">
-             Command <span className="text-emerald-600">Center</span>
+             Dashboard
            </h1>
-           <p className="text-slate-500 text-sm font-medium">Real-time operational intelligence and financial telemetry.</p>
+           <p className="text-slate-500 text-sm font-medium">View your business stats and latest activity.</p>
          </div>
          
          <div className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-emerald-100 shadow-sm self-start lg:self-auto">
             <div className="px-4 py-2 border-r border-emerald-50 hidden md:block">
-               <span className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest">Time Horizon</span>
+               <span className="text-[10px] font-black text-emerald-800/40 uppercase tracking-widest">Filter</span>
             </div>
             <select 
               className="bg-transparent outline-none text-xs font-bold text-emerald-950 cursor-pointer px-4 py-2"
               value={range}
               onChange={(e) => setRange(e.target.value)}
             >
-              <option value="today">Today's Pulse</option>
-              <option value="weekly">Weekly Report</option>
-              <option value="monthly">Monthly Overview</option>
-              <option value="yearly">Yearly Performance</option>
+              <option value="today">Today</option>
+              <option value="weekly">This Week</option>
+              <option value="monthly">This Month</option>
+              <option value="yearly">This Year</option>
             </select>
             <button onClick={fetchStats} className="p-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all">
                <Zap size={18} fill="currentColor" />
@@ -122,14 +112,14 @@ export default function DashboardPage() {
        {!isWorker && (
        <div className="space-y-6">
           <div className="flex items-center gap-4">
-             <h2 className="text-xl font-bold text-emerald-950">Today's <span className="text-emerald-600">Pulse</span></h2>
+             <h2 className="text-xl font-bold text-emerald-950">Today&apos;s <span className="text-emerald-600">Pulse</span></h2>
              <div className="h-px flex-1 bg-emerald-100"></div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
              <div className="bg-emerald-950 p-8 rounded-2xl text-white shadow-xl shadow-emerald-900/20 relative overflow-hidden">
                 <div className="flex items-center gap-4 mb-6">
                    <div className="p-3 bg-white/10 rounded-xl"><Target size={24} className="text-emerald-400" /></div>
-                   <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Target Alignment</span>
+                   <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Jobs</span>
                 </div>
                 <p className="text-4xl font-bold tracking-tighter mb-2">{data.todayPulse?.towCount || 0}</p>
                 <p className="text-xs text-emerald-100/60">New Tow Jobs Dispatched Today</p>
@@ -137,7 +127,7 @@ export default function DashboardPage() {
              <div className="bg-white p-8 rounded-2xl border border-emerald-100 shadow-sm">
                 <div className="flex items-center gap-4 mb-6">
                    <div className="p-3 bg-emerald-50 rounded-xl"><Coins size={24} className="text-emerald-600" /></div>
-                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Revenue Stream</span>
+                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Revenue</span>
                 </div>
                 <p className="text-4xl font-bold text-emerald-950 tracking-tighter mb-2">QAR {data.todayPulse?.invoiceRevenue?.toLocaleString() || 0}</p>
                 <p className="text-xs text-slate-500">Invoice Value Created Today</p>
@@ -145,10 +135,10 @@ export default function DashboardPage() {
              <div className="bg-white p-8 rounded-2xl border border-emerald-100 shadow-sm">
                 <div className="flex items-center gap-4 mb-6">
                    <div className="p-3 bg-emerald-50 rounded-xl"><Gauge size={24} className="text-emerald-600" /></div>
-                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">System Efficiency</span>
+                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Efficiency</span>
                 </div>
                 <p className="text-4xl font-bold text-emerald-950 tracking-tighter mb-2">{data.todayPulse?.efficiency}%</p>
-                <p className="text-xs text-slate-500">Real-time Service Performance</p>
+                <p className="text-xs text-slate-500">Current performance rate</p>
              </div>
           </div>
        </div>
@@ -172,15 +162,15 @@ export default function DashboardPage() {
                 {data.recentTows?.map((tow: any) => (
                    <div key={tow._id} className="flex items-center justify-between p-6 hover:bg-emerald-50/50 rounded-2xl transition-all">
                       <div className="flex items-center gap-4">
-                         <span className="text-xs font-bold text-slate-300">#{tow.id}</span>
+                         <span className="text-xs font-bold text-slate-300">#{tow?.id || 'N/A'}</span>
                          <div>
-                            <p className="text-sm font-bold text-emerald-950">{tow.customer}</p>
-                            <p className="text-[10px] text-slate-400 font-medium">{tow.vehicle}</p>
+                            <p className="text-sm font-bold text-emerald-950">{tow?.customer || 'Unknown'}</p>
+                            <p className="text-[10px] text-slate-400 font-medium">{tow?.vehicle || 'No Vehicle'}</p>
                          </div>
                       </div>
                       <div className="text-right">
-                         <p className="text-sm font-black text-emerald-950">QAR {tow.amount}</p>
-                         <span className="text-[9px] font-bold uppercase text-emerald-600 tracking-widest">{tow.status}</span>
+                         <p className="text-sm font-black text-emerald-950">QAR {tow?.amount || 0}</p>
+                         <span className="text-[9px] font-bold uppercase text-emerald-600 tracking-widest">{tow?.status || 'Completed'}</span>
                       </div>
                    </div>
                 ))}
@@ -203,16 +193,16 @@ export default function DashboardPage() {
                 {data.recentInvoices?.map((inv: any) => (
                    <div key={inv._id} className="flex items-center justify-between p-6 hover:bg-emerald-50/50 rounded-2xl transition-all">
                       <div className="flex items-center gap-4">
-                         <span className="text-xs font-bold text-slate-300">#{inv.id}</span>
+                         <span className="text-xs font-bold text-slate-300">#{inv?.id || 'N/A'}</span>
                          <div>
-                            <p className="text-sm font-bold text-emerald-950">{inv.customer}</p>
+                            <p className="text-sm font-bold text-emerald-950">{inv?.customer || 'Unknown'}</p>
                             <p className="text-[10px] text-slate-400 font-medium">{inv.date ? new Date(inv.date).toLocaleDateString() : 'N/A'}</p>
                          </div>
                       </div>
                       <div className="text-right">
-                         <p className="text-sm font-black text-emerald-950">QAR {inv.total}</p>
+                         <p className="text-sm font-black text-emerald-950">QAR {inv?.total || 0}</p>
                          <span className={`text-[9px] font-bold uppercase tracking-widest ${inv.status === 'Paid' ? 'text-emerald-600' : 'text-amber-600'}`}>
-                            {inv.status}
+                            {inv?.status || 'Unpaid'}
                          </span>
                       </div>
                    </div>
@@ -226,8 +216,8 @@ export default function DashboardPage() {
        <div className="bg-white p-10 rounded-3xl border border-emerald-100/50 shadow-sm">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-10">
              <div className="space-y-1">
-                <h3 className="text-2xl font-bold text-emerald-950">Financial Intelligence</h3>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Revenue vs Expense Comparison</p>
+                <h3 className="text-2xl font-bold text-emerald-950">Money Summary</h3>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Comparison of money in and money out.</p>
              </div>
              <div className="flex items-center gap-10">
                 <div className="flex items-center gap-3">

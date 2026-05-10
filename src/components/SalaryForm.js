@@ -201,6 +201,9 @@ export default function SalaryForm({ mode, id }) {
                 >
                   {months.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
+                {touched.month && errors.month && (
+                  <p className="text-[9px] font-bold text-red-500 ml-1 uppercase tracking-wider">{errors.month}</p>
+                )}
               </div>
 
               <div className="col-span-12 md:col-span-4 space-y-4">
@@ -216,6 +219,9 @@ export default function SalaryForm({ mode, id }) {
                    >
                      {years.map(y => <option key={y} value={y}>{y}</option>)}
                    </select>
+                   {touched.year && errors.year && (
+                     <p className="text-[9px] font-bold text-red-500 ml-1 uppercase tracking-wider">{errors.year}</p>
+                   )}
                    <button
                      type="button"
                      onClick={calculatePayroll}
@@ -305,6 +311,9 @@ export default function SalaryForm({ mode, id }) {
                     <option value="Pending">Pending</option>
                     <option value="Paid">Paid</option>
                   </select>
+                  {touched.status && errors.status && (
+                    <p className="text-[9px] font-bold text-red-500 ml-1 uppercase tracking-wider">{errors.status}</p>
+                  )}
                </div>
             </div>
           </div>

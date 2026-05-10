@@ -19,6 +19,7 @@ import {
   Download,
   FileSpreadsheet,
   FileText,
+  Activity,
   X
 } from 'lucide-react';
 import styles from './page.module.css';

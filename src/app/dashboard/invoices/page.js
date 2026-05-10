@@ -24,8 +24,9 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ExportCsvButton from '@/components/ExportCsvButton';
-import styles from './page.module.css';
 import { toast } from 'sonner';
+import ResponsiveTable from '@/modules/common/components/ResponsiveTable';
+import SummaryCard from '@/modules/common/components/SummaryCard';
 
 export default function Invoices() {
   const [invoices, setInvoices] = useState([]);
@@ -107,13 +108,13 @@ export default function Invoices() {
   }, [fetchInvoices]);
 
   const handleDelete = async (id) => {
-    if (confirm('Permanently purge this invoice record from the ledger?')) {
+    if (confirm('Are you sure you want to delete this invoice?')) {
       try {
         await apiService.deleteRecord('invoices', id);
-        toast.success('Invoice record purged successfully');
+        toast.success('Invoice deleted');
         fetchInvoices();
       } catch (error) {
-        toast.error(error.message || 'Purge operation failed');
+        toast.error(error.message || 'Failed to delete');
       }
     }
   };
@@ -144,10 +145,10 @@ export default function Invoices() {
     >
       <header className={styles.header}>
         <motion.div variants={item}>
-          <h1 className={styles.title}>Billing & Invoices</h1>
-          <p className={styles.subtitle}>Track payments, manage credits, and issue official receipts.</p>
+          <h1 className={styles.title}>Invoices</h1>
+          <p className={styles.subtitle}>Track payments and manage invoices.</p>
         </motion.div>
-        <motion.div variants={item} className={styles.actions}>
+        <motion.div variants={item} className="flex flex-wrap gap-3 md:gap-4 items-center">
           <ExportCsvButton moduleKey="invoices" filename="Invoice_Ledger" />
           <Link href="/dashboard/invoices/new" className="btn-primary">
             <Plus size={18} />
@@ -156,12 +157,33 @@ export default function Invoices() {
         </motion.div>
       </header>
 
+      <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 mt-10">
+        <SummaryCard 
+          label="Billing Directory" 
+          value={pagination.total} 
+          icon={Receipt} 
+          color="emerald" 
+        />
+        <SummaryCard 
+          label="Paid Collections" 
+          value={`QAR ${invoices.reduce((sum, inv) => sum + Number(inv.paid || 0), 0).toLocaleString()}`} 
+          icon={DollarSign} 
+          color="blue" 
+        />
+        <SummaryCard 
+          label="Outstanding Dues" 
+          value={`QAR ${invoices.reduce((sum, inv) => sum + (Number(inv.total || 0) - Number(inv.paid || 0)), 0).toLocaleString()}`} 
+          icon={Activity} 
+          color="rose" 
+        />
+      </motion.div>
+
       <motion.div variants={item} className="flex flex-col lg:flex-row items-stretch lg:items-center gap-6 mb-8">
         <div className="relative flex-1 group">
           <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
           <input
             type="text"
-            placeholder="Search Financial Records... (Invoice ID, Customer, Amount)"
+            placeholder="Search invoices (ID, Name, Amount)..."
             className="w-full pl-16 pr-8 py-5 bg-white border border-slate-100 rounded-[2rem] text-sm font-bold text-emerald-950 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all shadow-xl shadow-slate-200/40"
             value={searchTerm}
             onChange={(e) => {
@@ -181,7 +203,7 @@ export default function Invoices() {
             }`}
           >
             <Filter size={18} className={showFilters ? 'animate-pulse' : ''} />
-            <span>{showFilters ? 'System Active' : 'Filter Array'}</span>
+            <span>{showFilters ? 'Filtering' : 'Filter'}</span>
           </button>
         </div>
       </motion.div>
@@ -247,7 +269,7 @@ export default function Invoices() {
             }}
             className="ml-auto text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-500 transition-colors flex items-center gap-2"
           >
-            Clear Financial Map
+            Clear Filters
           </button>
         </motion.div>
       )}
@@ -261,7 +283,7 @@ export default function Invoices() {
           <div className="flex flex-col gap-8">
             <div className="flex items-center gap-3 border-b border-emerald-50 pb-4">
                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-900/40">Financial Query Engine</span>
+               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-900/40">Filter Options</span>
             </div>
 
             <div className="flex flex-wrap gap-4">
@@ -322,8 +344,8 @@ export default function Invoices() {
                     <Calendar size={18} />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-950">Billing Period</span>
-                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Temporal audit range</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-950">Date Range</span>
+                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Search by date</span>
                   </div>
                </div>
 
@@ -360,103 +382,111 @@ export default function Invoices() {
         </motion.div>
       )}
 
-      <motion.div variants={item} className="table-container glass-card">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Invoice Number</th>
-              <th>Customer Name</th>
-              <th>Issue Date</th>
-              <th>Payment Type</th>
-              <th>Grand Total</th>
-              <th>Amount Paid</th>
-              <th>Due Balance</th>
-              <th>Billing Status</th>
-              <th>Issued By</th>
-              <th style={{ textAlign: 'right' }}>Actions</th>
+      <motion.div variants={item}>
+        <ResponsiveTable
+          headers={[
+            { label: "Invoice Number" },
+            { label: "Customer Name" },
+            { label: "Issue Date" },
+            { label: "Payment Type" },
+            { label: "Grand Total" },
+            { label: "Amount Paid" },
+            { label: "Due Balance" },
+            { label: "Billing Status" },
+            { label: "Issued By" },
+            { label: "Actions", style: { textAlign: 'right' } }
+          ]}
+          data={invoices}
+          loading={loading}
+          pagination={pagination}
+          onPageChange={handlePageChange}
+          renderRow={(inv) => (
+            <tr key={inv.id}>
+              <td><span className={styles.invId}>{inv?.id || 'N/A'}</span></td>
+              <td><span className={styles.nameText}>{inv?.customer || 'Unknown'}</span></td>
+              <td>{inv?.date || 'N/A'}</td>
+              <td>
+                <div className={styles.typeCell}>
+                  {(inv.type ?? 'Credit') === 'Cash' ? <DollarSign size={14} /> : <CreditCard size={14} />}
+                  <span>{inv.type ?? 'Credit'}</span>
+                </div>
+              </td>
+              <td className={`amount ${styles.amountText}`}>QAR {Number(inv?.total ?? 0).toLocaleString()}</td>
+              <td className={`amount ${styles.paidText}`}>QAR {Number(inv.paid ?? 0).toLocaleString()}</td>
+              <td className={`amount ${styles.balanceText}`}>QAR {(Number(inv.total ?? 0) - Number(inv.paid ?? 0)).toLocaleString()}</td>
+              <td>
+                <span className={`badge ${
+                  inv?.status === 'Paid' ? 'badge-success' : 
+                  inv?.status === 'Partial' ? 'badge-warning' : 'badge-danger'
+                }`}>
+                  {inv?.status || 'Unpaid'}
+                </span>
+              </td>
+              <td>
+                 <div className="flex flex-col">
+                    <span className="text-[10px] font-black text-emerald-950 uppercase">{inv.createdBy || 'System'}</span>
+                    <span className="text-[8px] text-slate-400">
+                       {inv.createdBy === 'System' || !inv.createdBy ? 'System Processed' : 'Billing Staff'}
+                    </span>
+                 </div>
+              </td>
+              <td>
+                <div className={styles.actionCell}>
+                  <Link href={`/dashboard/invoices/${inv.id}/edit`} className={styles.editBtn} title="Edit"><Edit3 size={16} /></Link>
+                  <Link href={`/dashboard/invoices/${inv.id}`} className={styles.payBtn} title="View & Print">
+                    <Eye size={16} />
+                  </Link>
+                  <button className={styles.deleteBtn} title="Delete" onClick={() => handleDelete(inv.id)}><Trash2 size={16} /></button>
+                </div>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan="10" style={{ textAlign: 'center', padding: '2rem' }}>Loading invoices...</td></tr>
-            ) : invoices.map((inv) => (
-              <motion.tr 
-                key={inv.id}
-                variants={item}
-              >
-                <td>
-                  <span className={styles.invId}>{inv.id}</span>
-                </td>
-                <td>
-                  <div className={styles.customerInfo}>
-                    <span className={styles.nameText}>{inv.customer}</span>
+          )}
+          renderMobileCard={(inv) => (
+            <div className="space-y-4">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><Receipt size={16} /></div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">#{inv?.id || 'N/A'}</p>
+                    <p className="text-sm font-black text-emerald-950 uppercase">{inv?.customer || 'Unknown'}</p>
                   </div>
-                </td>
-                <td>{inv.date}</td>
-                <td>
-                  <div className={styles.typeCell}>
-                    {(inv.type ?? 'Credit') === 'Cash' ? <DollarSign size={14} /> : <CreditCard size={14} />}
-                    <span>{inv.type ?? 'Credit'}</span>
-                  </div>
-                </td>
-                <td className={`amount ${styles.amountText}`}>QAR {Number(inv.total ?? 0).toLocaleString()}</td>
-                <td className={`amount ${styles.paidText}`}>QAR {Number(inv.paid ?? 0).toLocaleString()}</td>
-                <td className={`amount ${styles.balanceText}`}>QAR {(Number(inv.total ?? 0) - Number(inv.paid ?? 0)).toLocaleString()}</td>
-                <td>
-                  <span className={`badge ${
-                    inv.status === 'Paid' ? 'badge-success' : 
-                    inv.status === 'Partial' ? 'badge-warning' : 'badge-danger'
-                  }`}>
-                    {inv.status}
-                  </span>
-                </td>
-                <td>
-                   <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-emerald-950 uppercase">{inv.createdBy || 'System'}</span>
-                      <span className="text-[8px] text-slate-400">
-                         {inv.createdBy === 'System' || !inv.createdBy ? 'System Processed' : 'Billing Staff'}
-                      </span>
-                   </div>
-                </td>
-                <td>
-                  <div className={styles.actionCell}>
-                    <Link href={`/dashboard/invoices/${inv.id}/edit`} className={styles.editBtn} title="Edit"><Edit3 size={16} /></Link>
-                    <Link href={`/dashboard/invoices/${inv.id}`} className={styles.payBtn} title="View & Print">
-                      <Eye size={16} />
-                    </Link>
-                    <button className={styles.deleteBtn} title="Delete" onClick={() => handleDelete(inv.id)}><Trash2 size={16} /></button>
-                  </div>
-                </td>
-              </motion.tr>
-            ))}
-            {!loading && invoices.length === 0 && (
-              <tr><td colSpan="9" style={{ textAlign: 'center', padding: '2rem' }}>No invoices found.</td></tr>
-            )}
-          </tbody>
-        </table>
-        
-        <div className="pagination">
-          <span className="page-info">
-            Showing {invoices.length} of {pagination.total} invoices (Page {pagination.page} of {pagination.totalPages})
-          </span>
-          <div className="page-controls">
-            <button 
-              className="page-btn" 
-              disabled={pagination.page <= 1}
-              onClick={() => handlePageChange(pagination.page - 1)}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button className="page-btn active">{pagination.page}</button>
-            <button 
-              className="page-btn" 
-              disabled={pagination.page >= pagination.totalPages}
-              onClick={() => handlePageChange(pagination.page + 1)}
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+                </div>
+                <span className={`badge ${
+                  inv?.status === 'Paid' ? 'badge-success' : 
+                  inv?.status === 'Partial' ? 'badge-warning' : 'badge-danger'
+                }`}>
+                  {inv?.status || 'Unpaid'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 py-3 border-y border-emerald-50">
+                 <div>
+                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Billed</p>
+                    <p className="text-xs font-black text-emerald-950">QAR {inv.total || 0}</p>
+                 </div>
+                 <div>
+                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Due Balance</p>
+                    <p className="text-xs font-black text-rose-600">QAR {(inv.total || 0) - (inv.paid || 0)}</p>
+                 </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-2">
+                  <Link href={`/dashboard/invoices/${inv.id}`} className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                    <Eye size={18} />
+                  </Link>
+                  <Link href={`/dashboard/invoices/${inv.id}/edit`} className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                    <Edit3 size={18} />
+                  </Link>
+                  <button onClick={() => handleDelete(inv.id)} className="p-3 bg-rose-50 text-rose-600 rounded-xl">
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+                <div className="text-[9px] font-bold text-slate-300 uppercase tracking-widest italic">{inv.date || 'N/A'}</div>
+              </div>
+            </div>
+          )}
+        />
       </motion.div>
     </motion.div>
   );

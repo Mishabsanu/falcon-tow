@@ -97,13 +97,13 @@ export default function Tows() {
 
   const handleDelete = async (id) => {
     if (isWorker) return;
-    if (confirm('Permanently decommission this job record from the ledger?')) {
+    if (confirm('Are you sure you want to delete this job?')) {
       try {
         await towService.deleteTow(id);
-        toast.success('Job record purged successfully');
+        toast.success('Job deleted');
         fetchTows();
       } catch (error) {
-        toast.error(error.message || 'Purge operation failed');
+        toast.error(error.message || 'Failed to delete');
       }
     }
   };
@@ -115,10 +115,10 @@ export default function Tows() {
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className={styles.header}>
         <div>
-          <h1 className={styles.title}>Tow Service <span style={{ color: 'var(--primary)' }}>Operations</span></h1>
-          <p className={styles.subtitle}>{isWorker ? 'Manage your assigned operational routes and job status.' : 'Global monitoring of fleet deployment and service execution.'}</p>
+          <h1 className={styles.title}>Tow Jobs</h1>
+          <p className={styles.subtitle}>{isWorker ? 'Manage your assigned jobs and status.' : 'View all tow jobs and fleet activity.'}</p>
         </div>
-        <div className="flex gap-4 items-center">
+        <div className="flex flex-wrap gap-3 md:gap-4 items-center">
           {!isWorker && <CsvImport moduleKey="tows" onComplete={fetchTows} />}
           {!isWorker && <ExportCsvButton moduleKey="tows" filename="Tow_Jobs_Ledger" />}
           <Link href="/dashboard/tows/new" className="btn-primary">
@@ -156,7 +156,7 @@ export default function Tows() {
           <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
           <input
             type="text"
-            placeholder="Search Intelligence... (ID, Plate, Driver, Customer)"
+            placeholder="Search jobs (ID, Plate, Name)..."
             className="w-full pl-16 pr-8 py-5 bg-white border border-slate-100 rounded-[2rem] text-sm font-bold text-emerald-950 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all shadow-xl shadow-slate-200/40"
             value={searchTerm}
             onChange={(e) => {
@@ -176,7 +176,7 @@ export default function Tows() {
             }`}
           >
             <Filter size={18} className={showFilters ? 'animate-pulse' : ''} />
-            <span>{showFilters ? 'System Active' : 'Filter Array'}</span>
+            <span>{showFilters ? 'Filtering' : 'Filter'}</span>
           </button>
         </div>
       </div>
@@ -243,7 +243,7 @@ export default function Tows() {
             }}
             className="ml-auto text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-500 transition-colors flex items-center gap-2"
           >
-            Clear Intelligence Map
+            Clear Filters
           </button>
         </div>
       )}
@@ -253,7 +253,7 @@ export default function Tows() {
           <div className="flex flex-col gap-8">
             <div className="flex items-center gap-3 border-b border-emerald-50 pb-4">
                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-900/40">Advanced Query Engine</span>
+               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-900/40">Filter Options</span>
             </div>
 
             <div className="flex flex-wrap gap-4">
@@ -334,8 +334,8 @@ export default function Tows() {
                     <Calendar size={18} />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-950">Audit Period</span>
-                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Select temporal range</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-950">Date Range</span>
+                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Search by date</span>
                   </div>
                </div>
 

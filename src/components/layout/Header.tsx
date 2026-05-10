@@ -71,7 +71,7 @@ export default function Header() {
       document.cookie = "name=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
       localStorage.removeItem("user");
       localStorage.removeItem("isLogind");
-      toast.success("Session Purged Successfully");
+      toast.success("Logged out");
       window.location.href = "/login";
     } catch (error) {
       window.location.href = "/login";
@@ -112,7 +112,7 @@ export default function Header() {
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               </h2>
               <p className="text-[9px] font-bold uppercase text-slate-400 leading-none tracking-widest flex items-center gap-2">
-                <Globe size={10} className="text-emerald-300" /> Real-time Nodes
+                <Globe size={10} className="text-emerald-300" /> Live System
               </p>
            </div>
         </div>
@@ -130,7 +130,7 @@ export default function Header() {
           <Search size={14} className="text-emerald-600/30 group-focus-within:text-emerald-600 transition-all duration-300 transform group-focus-within:scale-110" />
           <input
             type="text"
-            placeholder="Global Protocol Search..."
+            placeholder="Search..."
             suppressHydrationWarning={true}
             className="ml-4 w-full border-none bg-transparent text-[11px] font-bold uppercase tracking-widest text-emerald-950 placeholder:text-emerald-800/20 focus:outline-none"
           />
@@ -159,8 +159,8 @@ export default function Header() {
             <div className="absolute right-0 top-16 w-80 bg-white border border-emerald-100 rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
                <div className="bg-emerald-950 px-8 py-6 flex items-center justify-between relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/20 to-transparent opacity-50"></div>
-                <span className="relative z-10 text-[10px] font-black uppercase tracking-[0.25em] text-white">Security Intelligence</span>
-                <span className="relative z-10 text-[8px] font-bold text-emerald-400 uppercase tracking-widest">{notificationCount} New Alerts</span>
+                <span className="relative z-10 text-[10px] font-black uppercase tracking-[0.25em] text-white">Notifications</span>
+                <span className="relative z-10 text-[8px] font-bold text-emerald-400 uppercase tracking-widest">{notificationCount} New</span>
               </div>
               <div className="max-h-80 overflow-y-auto divide-y divide-emerald-50">
                 {notifications.length === 0 ? (
@@ -169,8 +169,8 @@ export default function Header() {
                       <ShieldCheck size={32} className="text-emerald-100" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-emerald-950 uppercase tracking-widest">Protocol Nominal</p>
-                      <p className="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-widest">No Active Threats Detected</p>
+                      <p className="text-[10px] font-black text-emerald-950 uppercase tracking-widest">No Notifications</p>
+                      <p className="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-widest">Everything is up to date</p>
                     </div>
                   </div>
                 ) : notifications.map(n => (
@@ -185,7 +185,7 @@ export default function Header() {
                 ))}
               </div>
               <Link href="/dashboard/notifications" className="block w-full py-4 bg-emerald-50 text-center text-[10px] font-black uppercase tracking-[0.3em] text-emerald-700 hover:bg-emerald-100 transition-all border-t border-emerald-100">
-                Sync Global Ledger
+                View all notifications
               </Link>
             </div>
           )}
@@ -207,7 +207,7 @@ export default function Header() {
               <div className="flex items-center gap-2 justify-end">
                  <ShieldCheck size={10} className={`${isProfileOpen ? 'text-emerald-400' : 'text-emerald-600/40'}`} />
                  <p className={`text-[8px] font-black uppercase tracking-[0.25em] ${isProfileOpen ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                    {userRole} Node
+                    {userRole}
                  </p>
               </div>
             </div>
@@ -226,20 +226,20 @@ export default function Header() {
                   <div className="h-16 w-16 rounded-2xl bg-emerald-950 flex items-center justify-center text-white text-xl font-black mb-4 shadow-xl">
                     {userName?.charAt(0)}
                   </div>
-                  <p className="text-[10px] font-black text-emerald-800/40 uppercase tracking-[0.3em]">Authorized Node</p>
+                  <p className="text-[10px] font-black text-emerald-800/40 uppercase tracking-[0.3em]">User Profile</p>
                   <p className="text-base font-black text-emerald-950 mt-2 tracking-tight">{userName}</p>
                   <p className="text-[9px] font-black text-emerald-600 uppercase mt-1 tracking-[0.2em] px-3 py-1 rounded-full bg-emerald-100/50">{userRole}</p>
                </div>
                <div className="p-4 space-y-1">
                   <Link href="/dashboard/settings" className="flex items-center gap-4 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.25em] text-emerald-950 hover:bg-emerald-50 transition-all group">
-                     <Settings size={16} className="text-emerald-600/30 group-hover:text-emerald-600 transition-colors" /> Parameters
+                     <Settings size={16} className="text-emerald-600/30 group-hover:text-emerald-600 transition-colors" /> Settings
                   </Link>
                   <div className="my-2 border-t border-emerald-50 mx-4"></div>
                    <button 
                     onClick={handleLogout}
                     className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.25em] text-rose-500 hover:bg-rose-50 transition-all group"
                   >
-                     <LogOut size={16} className="group-hover:translate-x-1 transition-transform" /> Sync Terminate
+                     <LogOut size={16} className="group-hover:translate-x-1 transition-transform" /> Logout
                   </button>
                </div>
             </div>

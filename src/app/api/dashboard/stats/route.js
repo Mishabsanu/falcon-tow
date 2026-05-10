@@ -24,7 +24,12 @@ export async function GET(request) {
 
     // Base match conditions for filters
     const dateMatch = { date: { $gte: start, $lte: end } };
-    if (workerId) dateMatch.driverId = workerId;
+    const baseMatch = { date: { $gte: start, $lte: end } };
+    
+    if (workerId) {
+      dateMatch.driverId = workerId;
+      baseMatch.workerId = workerId;
+    }
 
     const [tows, invoices, expenses, todayTows, todayInvoices, recentTows, recentInvoices] = await Promise.all([
       // 1. Filtered Tow Stats
@@ -32,34 +37,40 @@ export async function GET(request) {
         { $match: dateMatch },
         { $group: { 
           _id: null, 
-          totalAmount: { $sum: { $toDouble: "$amount" } },
-          totalCash: { $sum: { $cond: [{ $eq: ["$paymentMethod", "Cash"] }, { $toDouble: "$amount" }, 0] } },
-          companyShare: { $sum: { $toDouble: "$companyShare" } },
-          driverShare: { $sum: { $toDouble: "$driverShare" } },
+          totalAmount: { $sum: { $convert: { input: "$amount", to: "double", onError: 0, onNull: 0 } } },
+          totalCash: { $sum: { $cond: [{ $eq: ["$paymentMethod", "Cash"] }, { $convert: { input: "$amount", to: "double", onError: 0, onNull: 0 } }, 0] } },
+          companyShare: { $sum: { $convert: { input: "$companyShare", to: "double", onError: 0, onNull: 0 } } },
+          driverShare: { $sum: { $convert: { input: "$driverShare", to: "double", onError: 0, onNull: 0 } } },
           count: { $sum: 1 }
         }}
       ]),
       // 2. Filtered Invoice Stats
       Invoice.aggregate([
-        { $match: { date: { $gte: start, $lte: end } } },
-        { $group: { _id: null, total: { $sum: { $toDouble: "$total" } }, paid: { $sum: { $toDouble: "$paid" } } }}
+        { $match: baseMatch },
+        { $group: { _id: null, total: { $sum: { $convert: { input: "$total", to: "double", onError: 0, onNull: 0 } } }, paid: { $sum: { $convert: { input: "$paid", to: "double", onError: 0, onNull: 0 } } } }}
       ]),
       // 3. Filtered Expenses
       Expense.aggregate([
-        { $match: { date: { $gte: start, $lte: end } } },
-        { $group: { _id: null, total: { $sum: { $toDouble: "$amount" } } }}
+        { $match: baseMatch },
+        { $group: { _id: null, total: { $sum: { $convert: { input: "$amount", to: "double", onError: 0, onNull: 0 } } } }}
       ]),
       // 4. Today's Specific Tows
-      Tow.countDocuments({ date: { $gte: todayStart, $lte: todayEnd } }),
+      Tow.countDocuments({ 
+        date: { $gte: todayStart, $lte: todayEnd },
+        ...(workerId ? { driverId: workerId } : {})
+      }),
       // 5. Today's Specific Invoices
       Invoice.aggregate([
-        { $match: { date: { $gte: todayStart, $lte: todayEnd } } },
-        { $group: { _id: null, total: { $sum: { $toDouble: "$total" } } }}
+        { $match: { 
+          date: { $gte: todayStart, $lte: todayEnd },
+          ...(workerId ? { workerId: workerId } : {})
+        } },
+        { $group: { _id: null, total: { $sum: { $convert: { input: "$total", to: "double", onError: 0, onNull: 0 } } } }}
       ]),
       // 6. Recent Tows
       Tow.find(workerId ? { driverId: workerId } : {}).sort({ date: -1 }).limit(5).lean(),
       // 7. Recent Invoices
-      Invoice.find({}).sort({ date: -1 }).limit(5).lean()
+      Invoice.find(workerId ? { workerId: workerId } : {}).sort({ date: -1 }).limit(5).lean()
     ]);
 
     const towData = tows[0] || { totalAmount: 0, totalCash: 0, companyShare: 0, driverShare: 0, count: 0 };
@@ -69,9 +80,9 @@ export async function GET(request) {
 
     const stats = [
       { label: 'Total Revenue', value: `QAR ${invData.total.toLocaleString()}`, trend: '+12%', color: 'text-emerald-600', icon: 'Wallet' },
-      { label: 'Cash Collected', value: `QAR ${towData.totalCash.toLocaleString()}`, trend: 'Liquid', color: 'text-emerald-500', icon: 'Coins' },
-      { label: 'Total Expenses', value: `QAR ${expData.total.toLocaleString()}`, trend: 'Costs', color: 'text-rose-600', icon: 'TrendingDown' },
-      { label: 'Total Dispatches', value: towData.count.toString(), trend: 'Active', color: 'text-emerald-950', icon: 'TrendingUp' },
+      { label: 'Cash Collected', value: `QAR ${towData.totalCash.toLocaleString()}`, trend: 'Cash', color: 'text-emerald-500', icon: 'Coins' },
+      { label: 'Total Expenses', value: `QAR ${expData.total.toLocaleString()}`, trend: 'Expenses', color: 'text-rose-600', icon: 'TrendingDown' },
+      { label: 'Total Dispatches', value: towData.count.toString(), trend: 'Jobs', color: 'text-emerald-950', icon: 'TrendingUp' },
     ];
 
     const todayPulse = {

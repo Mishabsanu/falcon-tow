@@ -90,7 +90,7 @@ export default function ExportCsvButton({ moduleKey, filename }) {
     <button
       onClick={handleExport}
       disabled={exporting}
-      className="flex items-center gap-2 px-6 py-3 bg-white border border-emerald-100 text-emerald-950 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-50 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+      className="flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-white border border-emerald-100 text-emerald-950 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-50 transition-all shadow-sm active:scale-95 disabled:opacity-50"
     >
       <FileSpreadsheet size={16} className="text-emerald-600" />
       <span>{exporting ? 'Exporting...' : 'Export CSV'}</span>

@@ -26,4 +26,14 @@ const VehicleSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// PERFORMANCE INDEXES
+VehicleSchema.index({ name: 1 });
+VehicleSchema.index({ plate: 1 });
+VehicleSchema.index({ id: 1 });
+VehicleSchema.index({ insuranceExpiry: 1 });
+VehicleSchema.index({ registrationExpiry: 1 });
+
+// TEXT INDEX FOR GLOBAL SEARCH
+VehicleSchema.index({ name: 'text', plate: 'text', id: 'text', modelRef: 'text' });
+
 export default mongoose.models.Vehicle || mongoose.model('Vehicle', VehicleSchema);

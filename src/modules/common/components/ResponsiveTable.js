@@ -42,8 +42,8 @@ export default function ResponsiveTable({
         </table>
         
         {pagination && (
-          <div className="pagination">
-            <span className="page-info">
+          <div className="flex flex-wrap items-center justify-between gap-4 p-6 border-t border-emerald-50">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
               Showing {data.length} of {pagination.total} Ledger Entries
             </span>
             <div className="page-controls">

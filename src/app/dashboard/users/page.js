@@ -1,20 +1,20 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
-import Link from 'next/link';
+import ResponsiveTable from '@/modules/common/components/ResponsiveTable';
+import SummaryCard from '@/modules/common/components/SummaryCard';
 import { apiService } from '@/services/apiService';
 import {
-  UserSquare2,
-  Search,
-  Plus,
-  Filter,
+  Activity,
   Edit3,
-  Trash2,
-  ChevronLeft,
-  ChevronRight,
   FileText,
-  Activity
+  Filter,
+  Plus,
+  Search,
+  Trash2,
+  UserSquare2
 } from 'lucide-react';
-import styles from './page.module.css';
+import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -55,9 +55,10 @@ export default function Users() {
     if (confirm('Are you sure you want to remove this user?')) {
       try {
         await apiService.deleteRecord('users', id);
+        toast.success('User removed successfully');
         fetchUsers();
       } catch (error) {
-        alert('Failed to delete user');
+        toast.error('Failed to delete user');
       }
     }
   };
@@ -72,24 +73,47 @@ export default function Users() {
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-lg">
              <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-pulse"></div>
-             <span className="text-[9px] font-bold text-emerald-800/60 uppercase tracking-[0.2em]">Personnel Monitor</span>
+             <span className="text-[9px] font-bold text-emerald-800/60 uppercase tracking-[0.2em]">Staff List</span>
           </div>
           <h1 className="text-4xl font-bold text-emerald-950 tracking-tight">User <span className="text-emerald-600">Management</span></h1>
-          <p className="text-slate-500 text-sm font-medium">Manage your staff, roles, and automated payroll settlements.</p>
+          <p className="text-slate-500 text-sm font-medium">Manage your employees, roles, and payroll.</p>
         </div>
-        <Link href="/dashboard/users/new" className="btn-primary">
-          <Plus size={18} />
-          <span>Register New Staff</span>
-        </Link>
+        <div className="flex flex-wrap gap-3 items-center">
+          <Link href="/dashboard/users/new" className="btn-primary">
+            <Plus size={18} />
+            <span>Register New Staff</span>
+          </Link>
+        </div>
       </header>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-        <div className="search-wrapper flex-1 relative">
-          <Search size={20} className="search-icon" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 mt-10">
+        <SummaryCard 
+          label="Staff Count" 
+          value={pagination.total} 
+          icon={UserSquare2} 
+          color="emerald" 
+        />
+        <SummaryCard 
+          label="Active Duty" 
+          value={users.filter(u => u.status === 'Active').length} 
+          icon={Activity} 
+          color="blue" 
+        />
+        <SummaryCard 
+          label="Monthly Payroll Pool" 
+          value={`QAR ${users.reduce((sum, u) => sum + Number(u.salary || 0), 0).toLocaleString()}`} 
+          icon={Plus} 
+          color="amber" 
+        />
+      </div>
+
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-6 mb-8">
+        <div className="relative flex-1 group">
+          <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
           <input
             type="text"
             placeholder="Search users by name, email, or role..."
-            className="search-input"
+            className="w-full pl-16 pr-8 py-5 bg-white border border-slate-100 rounded-[2rem] text-sm font-bold text-emerald-950 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all shadow-xl shadow-slate-200/40"
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -98,23 +122,25 @@ export default function Users() {
           />
         </div>
 
-        <button 
-          onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${
-            showFilters 
-              ? 'bg-emerald-950 text-emerald-400 border-emerald-800 shadow-emerald-900/40' 
-              : 'bg-white text-emerald-700 border border-emerald-100 hover:bg-emerald-50 shadow-emerald-900/5'
-          }`}
-        >
-          <Filter size={18} />
-          <span>{showFilters ? 'Hide Filters' : 'Filter View'}</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-3 px-10 py-5 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${
+              showFilters 
+                ? 'bg-emerald-950 text-emerald-400 shadow-emerald-900/40 border-transparent' 
+                : 'bg-white text-emerald-700 border border-slate-100 hover:bg-emerald-50 shadow-slate-200/40'
+            }`}
+          >
+            <Filter size={18} className={showFilters ? 'animate-pulse' : ''} />
+            <span>{showFilters ? 'System Active' : 'Filter Ledger'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Active Filter Chips */}
       {status !== 'All' && (
         <div className="flex flex-wrap items-center gap-3 mb-8 animate-in fade-in slide-in-from-left-4 duration-500">
-          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mr-2">Personnel Filters:</span>
+          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mr-2">Filters:</span>
           <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
             <span>Status: {status}</span>
             <button onClick={() => setStatus('All')} className="hover:text-rose-500 transition-colors"><Plus size={12} className="rotate-45" /></button>
@@ -133,7 +159,7 @@ export default function Users() {
           <div className="flex flex-col gap-8">
             <div className="flex items-center gap-3 border-b border-emerald-50 pb-4">
                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-900/40">Personnel Query Engine</span>
+               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-900/40">Filter Options</span>
             </div>
 
             <div className="flex flex-wrap items-center gap-4">
@@ -157,105 +183,118 @@ export default function Users() {
         </div>
       )}
 
-      <div className="table-container glass-card !p-0">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Personnel Details</th>
-              <th>Mobile Number</th>
-              <th>Role</th>
-              <th>Settlement Info</th>
-              <th>Operational Status</th>
-              <th>Administrative Audit</th>
-              <th className="text-right">Action Interface</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan="7" className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">Scanning personnel directory...</td></tr>
-            ) : users.map((u) => (
-              <tr key={u.id}>
-                <td>
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center font-bold shadow-lg shadow-emerald-900/10">
-                      {u.name?.charAt(0) ?? 'U'}
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold text-emerald-950">{u.name}</div>
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{u.email}</div>
-                    </div>
+      <ResponsiveTable
+        headers={[
+          { label: "User Name" },
+          { label: "Phone" },
+          { label: "Role" },
+          { label: "Salary" },
+          { label: "Status" },
+          { label: "Created By" },
+          { label: "Actions", style: { textAlign: 'right' } }
+        ]}
+        data={users}
+        loading={loading}
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        renderRow={(u) => (
+          <tr key={u.id}>
+            <td>
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center font-bold shadow-lg shadow-emerald-900/10">
+                  {u?.name?.charAt(0) ?? 'U'}
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-emerald-950">
+                    {u?.name ?? 'Unknown'} <span className="ml-2 text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">{u?.id || 'NO_ID'}</span>
                   </div>
-                </td>
-                <td className="text-sm font-bold text-slate-600">{u.phone || 'N/A'}</td>
-                <td>
-                  <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg">
-                    {u.role}
-                  </span>
-                </td>
-                <td>
-                  <p className="text-sm font-bold text-emerald-950">QAR {Number(u.salary || 0).toLocaleString()}</p>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Base Monthly</p>
-                </td>
-                <td>
-                  <span className={`badge ${u.status === 'Active' ? 'badge-success' : 'badge-neutral'}`}>
-                    <div className={`h-1 w-1 rounded-full ${u.status === 'Active' ? 'bg-emerald-600' : 'bg-slate-400'}`}></div>
-                    {u.status}
-                  </span>
-                </td>
-                <td>
-                  <div className="text-[10px] font-bold text-emerald-950 uppercase tracking-tight">{u.createdBy || 'System'}</div>
-                  <div className="text-[9px] font-bold text-slate-400 mt-1">{u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-GB') : 'Pre-Migration'}</div>
-                </td>
-                <td className="text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <Link href={`/dashboard/users/${u.id}/edit`} className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title="Edit Parameters">
-                      <Edit3 size={16} />
-                    </Link>
-                    <Link href={`/dashboard/users/${u.id}`} className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title="Profile Reports">
-                      <FileText size={16} />
-                    </Link>
-                    <button
-                      className="p-2.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                      title="Remove Staff"
-                      onClick={() => handleDelete(u.id)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {!loading && users.length === 0 && (
-              <tr><td colSpan="6" className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">No staff nodes detected.</td></tr>
-            )}
-          </tbody>
-        </table>
-
-        <div className="pagination">
-          <span className="page-info">
-            Displaying {users.length} of {pagination.total} staff members
-          </span>
-          <div className="page-controls">
-            <button
-              className="page-btn"
-              disabled={pagination.page <= 1}
-              onClick={() => handlePageChange(pagination.page - 1)}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <div className="flex items-center gap-1">
-              <button className="page-btn active">{pagination.page}</button>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{u?.email || 'NO_EMAIL'}</div>
+                </div>
+              </div>
+            </td>
+            <td className="text-sm font-bold text-slate-600">{u?.phone || 'N/A'}</td>
+            <td>
+              <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg">
+                {u?.role || 'User'}
+              </span>
+            </td>
+            <td>
+              <p className="text-sm font-bold text-emerald-950">QAR {Number(u?.salary || 0).toLocaleString()}</p>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Base Monthly</p>
+            </td>
+            <td>
+              <span className={`badge ${u?.status === 'Active' ? 'badge-success' : 'badge-neutral'}`}>
+                <div className={`h-1 w-1 rounded-full ${u?.status === 'Active' ? 'bg-emerald-600' : 'bg-slate-400'}`}></div>
+                {u?.status || 'Active'}
+              </span>
+            </td>
+            <td>
+              <div className="text-[10px] font-bold text-emerald-950 uppercase tracking-tight">{u?.createdBy || 'System'}</div>
+              <div className="text-[9px] font-bold text-slate-400 mt-1">{u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-GB') : 'Pre-Migration'}</div>
+            </td>
+            <td className="text-right">
+              <div className="flex items-center justify-end gap-2">
+                <Link href={`/dashboard/users/${u.id}/edit`} className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title="Edit">
+                  <Edit3 size={16} />
+                </Link>
+                <Link href={`/dashboard/users/${u.id}`} className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title="View">
+                  <FileText size={16} />
+                </Link>
+                <button
+                  className="p-2.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                  title="Delete"
+                  onClick={() => handleDelete(u.id)}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </td>
+          </tr>
+        )}
+        renderMobileCard={(u) => (
+          <div className="space-y-4">
+            <div className="flex justify-between items-start">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center font-bold">
+                  {u?.name?.charAt(0) ?? 'U'}
+                </div>
+                <div>
+                  <p className="text-sm font-black text-emerald-950 uppercase">{u.name}</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{u.role}</p>
+                </div>
+              </div>
+              <span className={`badge ${u?.status === 'Active' ? 'badge-success' : 'badge-neutral'}`}>
+                {u?.status || 'Active'}
+              </span>
             </div>
-            <button
-              className="page-btn"
-              disabled={pagination.page >= pagination.totalPages}
-              onClick={() => handlePageChange(pagination.page + 1)}
-            >
-              <ChevronRight size={16} />
-            </button>
+
+            <div className="grid grid-cols-2 gap-4 py-3 border-y border-emerald-50">
+               <div>
+                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Phone</p>
+                  <p className="text-xs font-bold text-emerald-950">{u.phone || 'N/A'}</p>
+               </div>
+               <div>
+                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Salary</p>
+                  <p className="text-xs font-black text-emerald-600">QAR {u.salary || 0}</p>
+               </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <Link href={`/dashboard/users/${u.id}`} className="flex-1 flex items-center justify-center gap-2 p-3 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                <FileText size={16} />
+                <span>View</span>
+              </Link>
+              <Link href={`/dashboard/users/${u.id}/edit`} className="flex-1 flex items-center justify-center gap-2 p-3 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                <Edit3 size={16} />
+                <span>Edit</span>
+              </Link>
+              <button onClick={() => handleDelete(u.id)} className="p-3 bg-rose-50 text-rose-600 rounded-xl">
+                <Trash2 size={16} />
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
+        )}
+      />
     </div>
   );
 }

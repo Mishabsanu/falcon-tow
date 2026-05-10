@@ -18,8 +18,10 @@ import {
 } from 'lucide-react';
 import styles from './page.module.css';
 import { toast } from 'sonner';
+import ResponsiveTable from '@/modules/common/components/ResponsiveTable';
 import CsvImport from '@/components/CsvImport';
 import ExportCsvButton from '@/components/ExportCsvButton';
+import SummaryCard from '@/modules/common/components/SummaryCard';
 
 export default function Customers() {
   const [customers, setCustomers] = useState([]);
@@ -90,7 +92,7 @@ export default function Customers() {
           <h1 className={styles.title}>Customers</h1>
           <p className={styles.subtitle}>Manage your customer database and service history.</p>
         </div>
-        <div className="flex gap-4 items-center">
+        <div className="flex flex-wrap gap-3 md:gap-4 items-center">
           <CsvImport moduleKey="customers" onComplete={fetchCustomers} />
           <ExportCsvButton moduleKey="customers" filename="Customer_Database" />
           <Link href="/dashboard/customers/new" className="btn-primary">
@@ -100,13 +102,34 @@ export default function Customers() {
         </div>
       </header>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-        <div className="search-wrapper flex-1 relative">
-          <Search size={20} className="search-icon" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 mt-10">
+        <SummaryCard 
+          label="Total Directory Nodes" 
+          value={pagination.total} 
+          icon={Users} 
+          color="emerald" 
+        />
+        <SummaryCard 
+          label="Active Partnerships" 
+          value={customers.filter(c => c.status === 'Active').length} 
+          icon={Activity} 
+          color="blue" 
+        />
+        <SummaryCard 
+          label="Service Reach" 
+          value={customers.length} 
+          icon={Plus} 
+          color="amber" 
+        />
+      </div>
+
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-6 mb-8">
+        <div className="relative flex-1 group">
+          <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
           <input 
             type="text" 
             placeholder="Search by name, email or phone..." 
-            className="search-input"
+            className="w-full pl-16 pr-8 py-5 bg-white border border-slate-100 rounded-[2rem] text-sm font-bold text-emerald-950 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all shadow-xl shadow-slate-200/40"
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -115,17 +138,19 @@ export default function Customers() {
           />
         </div>
 
-        <button 
-          onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${
-            showFilters 
-              ? 'bg-emerald-950 text-emerald-400 border-emerald-800 shadow-emerald-900/40' 
-              : 'bg-white text-emerald-700 border border-emerald-100 hover:bg-emerald-50 shadow-emerald-900/5'
-          }`}
-        >
-          <Filter size={18} />
-          <span>{showFilters ? 'Hide Filters' : 'Filter View'}</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-3 px-10 py-5 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${
+              showFilters 
+                ? 'bg-emerald-950 text-emerald-400 shadow-emerald-900/40 border-transparent' 
+                : 'bg-white text-emerald-700 border border-slate-100 hover:bg-emerald-50 shadow-slate-200/40'
+            }`}
+          >
+            <Filter size={18} className={showFilters ? 'animate-pulse' : ''} />
+            <span>{showFilters ? 'System Active' : 'Filter Ledger'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Active Filter Chips */}
@@ -230,88 +255,95 @@ export default function Customers() {
         </div>
       )}
 
-      <div className="table-container glass-card">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Full Name</th>
-              <th>Email Address</th>
-              <th>Contact Number</th>
-              <th>Street Address</th>
-              <th>Account Status</th>
-              <th>Registered By</th>
-              <th style={{ textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>Loading customers...</td></tr>
-            ) : customers.map((c) => (
-              <tr key={c.id}>
-                <td>
-                  <div className={styles.nameCell}>
-                    <div className={styles.avatarMini}>{c.name?.charAt(0) ?? 'C'}</div>
-                    <span className={styles.nameText}>{c.name}</span>
-                  </div>
-                </td>
-                <td>{c.email}</td>
-                <td>{c.phone}</td>
-                <td>
-                  <span className={styles.addressText}>{c.address}</span>
-                </td>
-                <td>
-                  <span className={`badge ${c.status === 'Active' ? 'badge-success' : 'badge-danger'}`}>
-                    {c.status}
-                  </span>
-                </td>
-                <td>
-                   <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-emerald-950 uppercase">{c.createdBy || 'System'}</span>
-                      <span className="text-[8px] text-slate-400">Admin</span>
-                   </div>
-                </td>
-                <td>
-                  <div className={styles.actionCell}>
-                    <Link href={`/dashboard/customers/${c.id}/edit`} className={styles.editBtn} title="Edit"><Edit3 size={16} /></Link>
-                    <button 
-                      className={styles.deleteBtn} 
-                      title="Delete"
-                      onClick={() => handleDelete(c.id)}
-                    ><Trash2 size={16} /></button>
-                    <Link href={`/dashboard/customers/${c.id}`} className={styles.moreBtn} title="View Details"><MoreHorizontal size={16} /></Link>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {!loading && customers.length === 0 && (
-              <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>No customers found.</td></tr>
-            )}
-          </tbody>
-        </table>
-        
-        <div className="pagination">
-          <span className="page-info">
-            Showing {customers.length} of {pagination.total} entries (Page {pagination.page} of {pagination.totalPages})
-          </span>
-          <div className="page-controls">
-            <button 
-              className="page-btn" 
-              disabled={pagination.page <= 1}
-              onClick={() => handlePageChange(pagination.page - 1)}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button className="page-btn active">{pagination.page}</button>
-            <button 
-              className="page-btn" 
-              disabled={pagination.page >= pagination.totalPages}
-              onClick={() => handlePageChange(pagination.page + 1)}
-            >
-              <ChevronRight size={16} />
-            </button>
+      <ResponsiveTable
+        headers={[
+          { label: "Full Name" },
+          { label: "Email Address" },
+          { label: "Contact Number" },
+          { label: "Street Address" },
+          { label: "Account Status" },
+          { label: "Registered By" },
+          { label: "Actions", style: { textAlign: 'right' } }
+        ]}
+        data={customers}
+        loading={loading}
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        renderRow={(c) => (
+          <tr key={c.id}>
+            <td>
+              <div className={styles.nameCell}>
+                <div className={styles.avatarMini}>{c.name?.charAt(0) ?? 'C'}</div>
+                <span className={styles.nameText}>{c.name}</span>
+              </div>
+            </td>
+            <td>{c.email}</td>
+            <td>{c.phone}</td>
+            <td>
+              <span className={styles.addressText}>{c.address}</span>
+            </td>
+            <td>
+              <span className={`badge ${c.status === 'Active' ? 'badge-success' : 'badge-danger'}`}>
+                {c.status}
+              </span>
+            </td>
+            <td>
+               <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-emerald-950 uppercase">{c.createdBy || 'System'}</span>
+                  <span className="text-[8px] text-slate-400">Admin</span>
+               </div>
+            </td>
+            <td>
+              <div className={styles.actionCell}>
+                <Link href={`/dashboard/customers/${c.id}/edit`} className={styles.editBtn} title="Edit"><Edit3 size={16} /></Link>
+                <button 
+                  className={styles.deleteBtn} 
+                  title="Delete"
+                  onClick={() => handleDelete(c.id)}
+                ><Trash2 size={16} /></button>
+                <Link href={`/dashboard/customers/${c.id}`} className={styles.moreBtn} title="View Details"><MoreHorizontal size={16} /></Link>
+              </div>
+            </td>
+          </tr>
+        )}
+        renderMobileCard={(c) => (
+          <div className="space-y-4">
+            <div className="flex justify-between items-start">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center font-bold">
+                  {c.name?.charAt(0) ?? 'C'}
+                </div>
+                <div>
+                  <p className="text-sm font-black text-emerald-950 uppercase">{c.name}</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{c.phone}</p>
+                </div>
+              </div>
+              <span className={`badge ${c.status === 'Active' ? 'badge-success' : 'badge-danger'}`}>
+                {c.status}
+              </span>
+            </div>
+
+            <div className="py-3 border-y border-emerald-50">
+               <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Email Address</p>
+               <p className="text-xs font-bold text-emerald-950">{c.email || 'N/A'}</p>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <Link href={`/dashboard/customers/${c.id}`} className="flex-1 flex items-center justify-center gap-2 p-3 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                <MoreHorizontal size={16} />
+                <span>Details</span>
+              </Link>
+              <Link href={`/dashboard/customers/${c.id}/edit`} className="flex-1 flex items-center justify-center gap-2 p-3 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                <Edit3 size={16} />
+                <span>Edit</span>
+              </Link>
+              <button onClick={() => handleDelete(c.id)} className="p-3 bg-rose-50 text-rose-600 rounded-xl">
+                <Trash2 size={16} />
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
+        )}
+      />
     </div>
   );
 }

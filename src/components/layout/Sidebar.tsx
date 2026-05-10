@@ -42,11 +42,11 @@ const ROLE_VISIBILITY: Record<string, string[]> = {
 
 const menuGroups = [
   {
-    label: "Command",
+    label: "Main",
     items: [
-      { name: "Overview", path: "/dashboard", icon: LayoutDashboard },
+      { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
       { name: "Reports", path: "/dashboard/reports", icon: ClipboardList },
-      { name: "Alerts", path: "/dashboard/notifications", icon: Bell },
+      { name: "Notifications", path: "/dashboard/notifications", icon: Bell },
     ],
   },
   {
@@ -59,7 +59,7 @@ const menuGroups = [
     ],
   },
   {
-    label: "Management",
+    label: "Admin",
     items: [
       { name: "Salaries", path: "/dashboard/salaries", icon: Banknote },
       { name: "Expenses", path: "/dashboard/expenses", icon: Receipt },
@@ -214,7 +214,7 @@ export default function Sidebar() {
           suppressHydrationWarning={true}
           className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-emerald-200 text-emerald-700 hover:bg-emerald-600 hover:text-white transition-all font-bold text-[10px] uppercase tracking-widest shadow-sm active:scale-95"
         >
-          Logout Session
+          Logout
         </button>
       </div>
     </aside>

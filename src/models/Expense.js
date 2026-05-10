@@ -17,4 +17,13 @@ const ExpenseSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// PERFORMANCE INDEXES
+ExpenseSchema.index({ id: 1 });
+ExpenseSchema.index({ date: -1 });
+ExpenseSchema.index({ workerId: 1 });
+ExpenseSchema.index({ vehicleId: 1 });
+
+// TEXT INDEX FOR GLOBAL SEARCH
+ExpenseSchema.index({ id: 'text', description: 'text', worker: 'text' });
+
 export default mongoose.models.Expense || mongoose.model('Expense', ExpenseSchema);

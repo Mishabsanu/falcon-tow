@@ -21,9 +21,11 @@ import {
 } from 'lucide-react';
 import styles from './page.module.css';
 import { toast } from 'sonner';
+import ResponsiveTable from '@/modules/common/components/ResponsiveTable';
 
 import CsvImport from '@/components/CsvImport';
 import ExportCsvButton from '@/components/ExportCsvButton';
+import SummaryCard from '@/modules/common/components/SummaryCard';
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState([]);
@@ -134,7 +136,7 @@ export default function Expenses() {
           <h1 className={styles.title}>Expense Management</h1>
           <p className={styles.subtitle}>{isWorker ? 'View and track your business-related expenses.' : 'Track business costs, fuel, and maintenance expenses.'}</p>
         </div>
-        <div className="flex gap-4 items-center">
+        <div className="flex flex-wrap gap-3 md:gap-4 items-center">
           {!isWorker && <CsvImport moduleKey="expenses" onComplete={fetchExpenses} />}
           {!isWorker && <ExportCsvButton moduleKey="expenses" filename="Expense_Ledger" />}
           <Link href="/dashboard/expenses/new" className="btn-primary">
@@ -143,6 +145,27 @@ export default function Expenses() {
           </Link>
         </div>
       </header>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 mt-10">
+        <SummaryCard 
+          label={isWorker ? "My Registered Expenses" : "Total Fleet Logs"} 
+          value={pagination.total} 
+          icon={Receipt} 
+          color="emerald" 
+        />
+        <SummaryCard 
+          label="Total Ledger Burn" 
+          value={`QAR ${expenses.reduce((sum, exp) => sum + Number(exp.amount ?? 0), 0).toLocaleString()}`} 
+          icon={Activity} 
+          color="rose" 
+        />
+        <SummaryCard 
+          label="Average Cost Unit" 
+          value={`QAR ${expenses.length > 0 ? Math.round(expenses.reduce((sum, exp) => sum + Number(exp.amount ?? 0), 0) / expenses.length).toLocaleString() : 0}`} 
+          icon={CreditCard} 
+          color="blue" 
+        />
+      </div>
 
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-6 mb-8">
         <div className="relative flex-1 group">
@@ -169,7 +192,7 @@ export default function Expenses() {
             }`}
           >
             <Filter size={18} className={showFilters ? 'animate-pulse' : ''} />
-            <span>{showFilters ? 'System Active' : 'Filter Array'}</span>
+            <span>{showFilters ? 'System Active' : 'Filter Ledger'}</span>
           </button>
         </div>
       </div>
@@ -320,90 +343,104 @@ export default function Expenses() {
         </div>
       )}
 
-      <div className="table-container glass-card">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Expense ID</th>
-              <th>Transaction Date</th>
-              <th>Expense Description</th>
-              <th>Assigned Worker</th>
-              <th>Associated Vehicle</th>
-              <th>Expense Amount</th>
-              <th>Authorized By</th>
-              <th style={{ textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>Loading expenses...</td></tr>
-            ) : expenses.map((exp) => (
-              <tr key={exp.id}>
-                <td><span className={styles.expId}>{exp.id}</span></td>
-                <td>{exp.date}</td>
-                <td><span className={styles.descriptionText}>{exp.description}</span></td>
-                <td>
-                  <div className={styles.workerCell}>
-                    <User size={14} />
-                    <span>{exp.worker}</span>
-                  </div>
-                </td>
-                <td>
-                  <div className={styles.vehicleCell}>
-                    <Truck size={14} />
-                    <span>{cleanVehicle(exp.vehicle)}</span>
-                  </div>
-                </td>
-                <td className={styles.amountText}>QAR {Number(exp.amount ?? 0).toLocaleString()}</td>
-                <td>
-                   <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-emerald-950 uppercase">{exp.createdBy || 'System'}</span>
-                      <span className="text-[8px] text-slate-400">
-                         {exp.createdBy === 'System' || !exp.createdBy ? 'System Log' : 'Admin Authorized'}
-                      </span>
-                   </div>
-                </td>
-                <td>
-                  <div className={styles.actionCell}>
-                    {!isWorker && (
-                      <>
-                        <Link href={`/dashboard/expenses/${exp.id}/edit`} className={styles.editBtn} title="Edit"><Edit3 size={16} /></Link>
-                        <button className={styles.deleteBtn} title="Delete" onClick={() => handleDelete(exp.id)}><Trash2 size={16} /></button>
-                      </>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {!loading && expenses.length === 0 && (
-              <tr><td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>No expenses found.</td></tr>
-            )}
-          </tbody>
-        </table>
-        
-        <div className="pagination">
-          <span className="page-info">
-            Showing {expenses.length} of {pagination.total} expenses (Page {pagination.page} of {pagination.totalPages})
-          </span>
-          <div className="page-controls">
-            <button 
-              className="page-btn" 
-              disabled={pagination.page <= 1}
-              onClick={() => handlePageChange(pagination.page - 1)}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button className="page-btn active">{pagination.page}</button>
-            <button 
-              className="page-btn" 
-              disabled={pagination.page >= pagination.totalPages}
-              onClick={() => handlePageChange(pagination.page + 1)}
-            >
-              <ChevronRight size={16} />
-            </button>
+      <ResponsiveTable
+        headers={[
+          { label: "Expense ID" },
+          { label: "Transaction Date" },
+          { label: "Description" },
+          { label: "Worker" },
+          { label: "Vehicle" },
+          { label: "Amount" },
+          { label: "Authorized By" },
+          { label: "Actions", style: { textAlign: 'right' } }
+        ]}
+        data={expenses}
+        loading={loading}
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        renderRow={(exp) => (
+          <tr key={exp.id}>
+            <td><span className={styles.expId}>{exp.id}</span></td>
+            <td>{exp.date}</td>
+            <td><span className={styles.descriptionText}>{exp.description}</span></td>
+            <td>
+              <div className={styles.workerCell}>
+                <User size={14} />
+                <span>{exp.worker}</span>
+              </div>
+            </td>
+            <td>
+              <div className={styles.vehicleCell}>
+                <Truck size={14} />
+                <span>{cleanVehicle(exp.vehicle)}</span>
+              </div>
+            </td>
+            <td className={styles.amountText}>QAR {Number(exp.amount ?? 0).toLocaleString()}</td>
+            <td>
+               <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-emerald-950 uppercase">{exp.createdBy || 'System'}</span>
+                  <span className="text-[8px] text-slate-400">
+                     {exp.createdBy === 'System' || !exp.createdBy ? 'System Log' : 'Admin Authorized'}
+                  </span>
+               </div>
+            </td>
+            <td>
+              <div className={styles.actionCell}>
+                {!isWorker && (
+                  <>
+                    <Link href={`/dashboard/expenses/${exp.id}/edit`} className={styles.editBtn} title="Edit"><Edit3 size={16} /></Link>
+                    <button className={styles.deleteBtn} title="Delete" onClick={() => handleDelete(exp.id)}><Trash2 size={16} /></button>
+                  </>
+                )}
+              </div>
+            </td>
+          </tr>
+        )}
+        renderMobileCard={(exp) => (
+          <div className="space-y-4">
+            <div className="flex justify-between items-start">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-rose-50 text-rose-600 rounded-lg"><Receipt size={16} /></div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">#{exp.id}</p>
+                  <p className="text-sm font-black text-emerald-950 uppercase">{exp.description}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-black text-rose-600">QAR {exp.amount || 0}</p>
+                <p className="text-[8px] font-bold text-slate-400 uppercase">{exp.date}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 py-3 border-y border-emerald-50">
+               <div className="flex items-center gap-2">
+                  <UserCircle size={14} className="text-slate-400" />
+                  <span className="text-xs font-bold text-emerald-950">{exp.worker}</span>
+               </div>
+               <div className="flex items-center gap-2">
+                  <Truck size={14} className="text-slate-400" />
+                  <span className="text-xs font-bold text-emerald-950">{cleanVehicle(exp.vehicle)}</span>
+               </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <div className="flex items-center gap-2">
+                {!isWorker && (
+                  <>
+                    <Link href={`/dashboard/expenses/${exp.id}/edit`} className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                      <Edit3 size={18} />
+                    </Link>
+                    <button onClick={() => handleDelete(exp.id)} className="p-3 bg-rose-50 text-rose-600 rounded-xl">
+                      <Trash2 size={18} />
+                    </button>
+                  </>
+                )}
+              </div>
+              <div className="text-[9px] font-bold text-slate-300 uppercase tracking-widest italic">Auth: {exp.createdBy || 'System'}</div>
+            </div>
           </div>
-        </div>
-      </div>
+        )}
+      />
     </div>
   );
 }

@@ -48,8 +48,12 @@ export async function GET(request, context) {
       const searchFields = [];
       if (moduleKey === 'users') searchFields.push('name', 'email', 'id');
       else if (moduleKey === 'tows') searchFields.push('id', 'customer', 'vehicle', 'driver');
-      else if (moduleKey === 'customers') searchFields.push('name', 'phone', 'email');
-      else if (moduleKey === 'vehicles') searchFields.push('name', 'plate');
+      else if (moduleKey === 'customers') searchFields.push('id', 'name', 'phone', 'email');
+      else if (moduleKey === 'vehicles') searchFields.push('id', 'name', 'plate');
+      else if (moduleKey === 'expenses') searchFields.push('id', 'description', 'worker', 'vehicle');
+      else if (moduleKey === 'invoices') searchFields.push('id', 'customer', 'worker', 'jobId');
+      else if (moduleKey === 'quotations') searchFields.push('id', 'customer', 'driver', 'pickup', 'dropoff');
+      else searchFields.push('id', 'name');
       
       if (searchFields.length > 0) {
         query.$or = searchFields.map(field => ({ [field]: { $regex: q, $options: 'i' } }));
@@ -126,10 +130,8 @@ export async function POST(request, context) {
       console.warn(`[API_WARN] Self-healing failed for ${moduleKey}:`, err.message);
     }
 
-    // Auto-generate ID if missing
-    if (!payload.id) {
-      payload.id = await generateNextId(moduleKey);
-    }
+    // Force backend ID generation for consistency
+    payload.id = await generateNextId(moduleKey);
 
     // Security: Hash password if creating a user
     if (moduleKey === 'users' && payload.password) {

@@ -5,52 +5,61 @@ import { useRouter } from "next/navigation";
 import { Mail, Lock, ArrowRight, Loader2, ShieldCheck, Zap, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
+import { useFormik } from "formik";
+import * as Yup from "yup";
+
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+  const formik = useFormik({
+    initialValues: {
+      username: "",
+      password: "",
+    },
+    validationSchema: Yup.object({
+      username: Yup.string()
+        .required("Employee ID or Email is required"),
+      password: Yup.string()
+        .min(6, "Password must be at least 6 characters")
+        .required("Password is required"),
+    }),
+    onSubmit: async (values) => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          body: JSON.stringify(values),
+        });
 
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ username, password }),
-      });
+        const data = await res.json();
 
-      const data = await res.json();
+        if (data.success) {
+          toast.success("Login successful. Redirecting...");
 
-      if (data.success) {
-        toast.success("Identity verified. Establishing secure connection...");
+          // Set secure session tokens
+          document.cookie = `role=${data.user.role.toUpperCase()}; path=/; max-age=86400`;
+          document.cookie = `name=${data.user.name}; path=/; max-age=86400`;
+          document.cookie = `id=${data.user.id}; path=/; max-age=86400`;
 
-        // Set secure session tokens
-        document.cookie = `role=${data.user.role.toUpperCase()}; path=/; max-age=86400`;
-        document.cookie = `name=${data.user.name}; path=/; max-age=86400`;
-        document.cookie = `id=${data.user.id}; path=/; max-age=86400`;
+          localStorage.setItem('isLogind', 'true');
+          localStorage.setItem('user', JSON.stringify(data.user));
 
-        localStorage.setItem('isLogind', 'true');
-        localStorage.setItem('user', JSON.stringify(data.user));
-
-        window.location.href = "/dashboard";
-      } else {
-        const msg = data.error || "Authentication failed. Access denied.";
-        setError(msg);
-        toast.error(msg);
+          window.location.href = "/dashboard";
+        } else {
+          const msg = data.error || "Incorrect ID or password.";
+          toast.error(msg);
+        }
+      } catch (err) {
+        toast.error("Network error. Please try again.");
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      const msg = "Network encryption failure. Please verify connection.";
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+  });
+
+  const { values, errors, touched, handleChange, handleBlur, handleSubmit } = formik;
 
   return (
     <div className="min-h-screen bg-emerald-50/30 flex flex-col lg:flex-row font-sans antialiased selection:bg-emerald-500 selection:text-white">
@@ -71,7 +80,7 @@ export default function LoginPage() {
             </div>
             <div>
               <h1 className="text-5xl font-bold tracking-tighter text-white">FALCON <span className="text-emerald-400">TOW</span></h1>
-              <p className="text-[10px] font-bold text-emerald-100/40 tracking-[0.5em] uppercase mt-4">Autonomous Fleet Intelligence</p>
+              <p className="text-[10px] font-bold text-emerald-100/40 tracking-[0.5em] uppercase mt-4">Fleet Management System</p>
             </div>
           </div>
 
@@ -82,19 +91,19 @@ export default function LoginPage() {
               Management.
             </h2>
             <p className="text-emerald-100/60 text-lg font-medium leading-relaxed max-w-sm">
-              Precision-engineered system for fleet telemetry, automated billing, and operational excellence.
+              Manage your fleet, billing, and staff operations in one place.
             </p>
           </div>
 
           <div className="pt-12 flex items-center justify-center lg:justify-start gap-12 border-t border-white/10">
             <div className="space-y-1">
               <p className="text-4xl font-bold text-emerald-400">99.8%</p>
-              <p className="text-emerald-100/40 text-[9px] font-bold uppercase tracking-[0.2em]">Uptime Protocol</p>
+              <p className="text-emerald-100/40 text-[9px] font-bold uppercase tracking-[0.2em]">System Uptime</p>
             </div>
             <div className="w-px h-12 bg-white/10"></div>
             <div className="space-y-1">
               <p className="text-4xl font-bold text-white">SYNC</p>
-              <p className="text-emerald-100/40 text-[9px] font-bold uppercase tracking-[0.2em]">Real-time Ledger</p>
+              <p className="text-emerald-100/40 text-[9px] font-bold uppercase tracking-[0.2em]">Live Sync</p>
             </div>
           </div>
         </div>
@@ -109,52 +118,51 @@ export default function LoginPage() {
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-emerald-600 font-bold text-[10px] uppercase tracking-[0.3em]">
               <ShieldCheck size={14} className="opacity-80" />
-              <span>Secure Authentication Node</span>
+              <span>Secure Login</span>
             </div>
-            <h2 className="text-5xl font-bold text-emerald-950 tracking-tight">System Login</h2>
-            <p className="text-slate-500 text-sm font-medium">Verify your credentials to establish a session.</p>
+            <h2 className="text-5xl font-bold text-emerald-950 tracking-tight">Login</h2>
+            <p className="text-slate-500 text-sm font-medium">Please enter your details to sign in.</p>
           </div>
 
-          {error && (
-            <div className="p-4 bg-rose-50 border border-rose-100 rounded-xl text-rose-600 text-[10px] font-bold uppercase tracking-widest animate-in slide-in-from-top-2 duration-300">
-              [CRITICAL_FAILURE]: {error}
-            </div>
-          )}
-
-          <form onSubmit={handleLogin} className="space-y-8">
+          <form onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-2.5">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Employee ID / Email</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-600 transition-colors">
-                  <Mail size={18} />
+                   <Mail size={18} />
                 </div>
                 <input
-                  type="email"
-                  required
-                  placeholder="name@falcon.com"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="block w-full pl-14 pr-6 py-5 bg-transparent border-b-2 border-emerald-100 focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400"
+                  type="text"
+                  name="username"
+                  placeholder="EMP-XXX or name@falcon.com"
+                  value={values.username}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`block w-full pl-14 pr-6 py-5 bg-transparent border-b-2 ${touched.username && errors.username ? 'border-red-300' : 'border-emerald-100'} focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400`}
                 />
               </div>
+              {touched.username && errors.username && (
+                <p className="text-[10px] font-bold text-red-500 ml-1 uppercase tracking-widest">{errors.username}</p>
+              )}
             </div>
 
             <div className="space-y-2.5">
               <div className="flex items-center justify-between ml-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Access Key</label>
-                <button type="button" className="text-[9px] font-bold text-emerald-600 hover:text-emerald-500 uppercase tracking-widest">Recovery Mode</button>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Password</label>
+                <button type="button" className="text-[9px] font-bold text-emerald-600 hover:text-emerald-500 uppercase tracking-widest">Forgot Password?</button>
               </div>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-600 transition-colors">
-                  <Lock size={18} />
+                   <Lock size={18} />
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
-                  required
+                  name="password"
                   placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-14 pr-14 py-5 bg-transparent border-b-2 border-emerald-100 focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400"
+                  value={values.password}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`block w-full pl-14 pr-14 py-5 bg-transparent border-b-2 ${touched.password && errors.password ? 'border-red-300' : 'border-emerald-100'} focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400`}
                 />
                 <button
                   type="button"
@@ -164,6 +172,9 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
+              {touched.password && errors.password && (
+                <p className="text-[10px] font-bold text-red-500 ml-1 uppercase tracking-widest">{errors.password}</p>
+              )}
             </div>
 
             <button
@@ -176,7 +187,7 @@ export default function LoginPage() {
                   <Loader2 className="animate-spin" size={22} />
                 ) : (
                   <>
-                    Initialize Session
+                    Login Now
                     <ArrowRight size={20} className="group-hover:translate-x-1.5 transition-transform" />
                   </>
                 )}
@@ -186,11 +197,11 @@ export default function LoginPage() {
 
           <div className="flex items-center justify-between px-2 pt-4 border-t border-emerald-100/50">
             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-              Core OS v5.0.0
+              Version 5.0.0
             </p>
             <div className="flex items-center gap-2 text-slate-400">
               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_#10b981]"></div>
-              <span className="text-[9px] font-bold uppercase tracking-widest">Node Online</span>
+              <span className="text-[9px] font-bold uppercase tracking-widest">System Online</span>
             </div>
           </div>
         </div>

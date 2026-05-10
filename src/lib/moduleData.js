@@ -5,6 +5,7 @@ export const moduleData = {
     nameField: 'name',
     records: [],
     fields: [
+      { name: 'id', label: 'ID', type: 'text', hidden: true },
       { name: 'name', label: 'Full Name', type: 'text' },
       { name: 'email', label: 'Email Address', type: 'email' },
       { name: 'phone', label: 'Contact Number', type: 'tel' },
@@ -18,6 +19,7 @@ export const moduleData = {
     nameField: 'name',
     records: [],
     fields: [
+      { name: 'id', label: 'ID', type: 'text', hidden: true },
       { name: 'name', label: 'Vehicle Name', type: 'text' },
       { name: 'plate', label: 'Plate Number', type: 'text' },
       { name: 'modelRef', label: 'Model Reference', type: 'text', required: false },
@@ -37,6 +39,7 @@ export const moduleData = {
     nameField: 'id',
     records: [],
     fields: [
+      { name: 'id', label: 'ID', type: 'text', hidden: true },
       { name: 'date', label: 'Transaction Date', type: 'date', span: 6 },
       { name: 'amount', label: 'Amount (QAR)', type: 'number', span: 6 },
       { name: 'description', label: 'Description', type: 'text', span: 12 },
@@ -57,6 +60,7 @@ export const moduleData = {
     nameField: 'id',
     records: [],
     fields: [
+      { name: 'id', label: 'ID', type: 'text', hidden: true },
       { name: 'jobId', label: 'Job ID', type: 'select', module: 'tows', required: true, span: 12 },
       { name: 'towId', label: 'Tow Mongo ID', type: 'text', hidden: true, required: false },
       { name: 'customer', label: 'Customer', type: 'text', readOnly: true, span: 4 },
@@ -82,7 +86,7 @@ export const moduleData = {
     nameField: 'id',
     records: [],
     fields: [
-      { name: 'id', label: 'Reference ID', type: 'text', hidden: true },
+      { name: 'id', label: 'ID', type: 'text', hidden: true },
       { name: 'customer', label: 'Customer Name', type: 'select', module: 'customers', span: 8, section: 'Client & Logistics' },
       { name: 'customerId', label: 'Customer Mongo ID', type: 'text', hidden: true, required: false },
       
@@ -105,6 +109,7 @@ export const moduleData = {
     nameField: 'id',
     records: [],
     fields: [
+      { name: 'id', label: 'ID', type: 'text', hidden: true },
       { name: 'date', label: 'Service Date', type: 'date', span: 4 },
       { name: 'driver', label: 'Worker', type: 'select', module: 'users', span: 4 },
       { name: 'driverId', label: 'Worker Mongo ID', type: 'text', hidden: true, required: false },
@@ -140,6 +145,7 @@ export const moduleData = {
     nameField: 'id',
     records: [],
     fields: [
+      { name: 'id', label: 'ID', type: 'text', hidden: true },
       { name: 'month', label: 'Payroll Month', type: 'select', options: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] },
       { name: 'year', label: 'Payroll Year', type: 'select', options: ['2024', '2025', '2026', '2027', '2028', '2029', '2030', '2031', '2032', '2033', '2034', '2035'] },
       { name: 'worker', label: 'Employee Name', type: 'select', module: 'users' },
@@ -181,10 +187,10 @@ export const moduleData = {
       { name: 'id', label: 'Employee ID', type: 'text', hidden: true },
       { name: 'name', label: 'Full Name', type: 'text' },
       { name: 'password', label: 'Password', type: 'password' },
-      { name: 'email', label: 'Email Address', type: 'email' },
+      { name: 'email', label: 'Email Address', type: 'email', required: false },
       { name: 'phone', label: 'Mobile Number', type: 'tel' },
       { name: 'role', label: 'User Role', type: 'select', options: ['Administrator', 'Worker'] },
-      { name: 'salary', label: 'Monthly Base Salary (QAR)', type: 'number', defaultValue: 0 },
+      { name: 'salary', label: 'Monthly Base Salary (QAR)', type: 'number' },
       { name: 'status', label: 'Employment Status', type: 'select', options: ['Active', 'On Leave', 'Inactive'], hidden: true, defaultValue: 'Active' },
     ],
   },

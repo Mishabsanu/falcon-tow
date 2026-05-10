@@ -15,4 +15,13 @@ const CustomerSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// PERFORMANCE INDEXES
+CustomerSchema.index({ name: 1 });
+CustomerSchema.index({ email: 1 });
+CustomerSchema.index({ phone: 1 });
+CustomerSchema.index({ id: 1 });
+
+// TEXT INDEX FOR GLOBAL SEARCH
+CustomerSchema.index({ name: 'text', email: 'text', phone: 'text', id: 'text' });
+
 export default mongoose.models.Customer || mongoose.model('Customer', CustomerSchema);

@@ -3,7 +3,7 @@ import Counter from '@/models/Counter';
 export async function generateNextId(moduleKey) {
   const prefixes = {
     users: 'EMP',
-    tows: 'TOW',
+    tows: 'TWO',
     invoices: 'INV',
     customers: 'CUS',
     vehicles: 'VEH',
@@ -20,6 +20,6 @@ export async function generateNextId(moduleKey) {
     { new: true, upsert: true }
   );
 
-  const sequenceNumber = counter.seq.toString().padStart(4, '0');
+  const sequenceNumber = counter.seq.toString().padStart(3, '0');
   return `${prefix}-${sequenceNumber}`;
 }

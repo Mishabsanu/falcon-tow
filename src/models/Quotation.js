@@ -23,4 +23,13 @@ const QuotationSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// PERFORMANCE INDEXES
+QuotationSchema.index({ id: 1 });
+QuotationSchema.index({ date: -1 });
+QuotationSchema.index({ customerId: 1 });
+QuotationSchema.index({ status: 1 });
+
+// TEXT INDEX FOR GLOBAL SEARCH
+QuotationSchema.index({ id: 'text', customer: 'text', pickup: 'text', dropoff: 'text' });
+
 export default mongoose.models.Quotation || mongoose.model('Quotation', QuotationSchema);

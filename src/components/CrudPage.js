@@ -80,10 +80,10 @@ export default function CrudPage({ moduleKey }) {
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-lg">
             <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-pulse"></div>
-            <span className="text-[9px] font-bold text-emerald-800/60 uppercase tracking-[0.2em]">Live Directory</span>
+            <span className="text-[9px] font-bold text-emerald-800/60 uppercase tracking-[0.2em]">All Records</span>
           </div>
           <h1 className="text-4xl font-black text-emerald-950 tracking-tight flex items-center gap-4">
-            {config.title} <span className="text-emerald-600">Module</span>
+            {config.title}
             {isAdmin && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100/50 border border-emerald-200 rounded-full">
                 <ShieldCheck size={12} className="text-emerald-700" />
@@ -91,74 +91,75 @@ export default function CrudPage({ moduleKey }) {
               </span>
             )}
           </h1>
-          <p className="text-slate-500 text-sm font-medium">Manage your {config.title.toLowerCase()} and operational system records.</p>
+          <p className="text-slate-500 text-sm font-medium">Manage your {config.title.toLowerCase()} here.</p>
         </div>
         <Link href={`${config.path}/new`} className="btn-primary">
           <Plus size={18} />
-          <span>Register New Record</span>
+          <span>Add New</span>
         </Link>
       </header>
 
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-6 bg-white border border-emerald-100/50 rounded-2xl shadow-sm">
-        <div className="relative flex-1 max-w-xl group">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-600 transition-colors">
-            <Search size={18} />
-          </div>
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-6 mb-8">
+        <div className="relative flex-1 group">
+          <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
           <input
             type="text"
-            placeholder={`Search ${config.title.toLowerCase()} repository...`}
+            placeholder={`Search ${config.title.toLowerCase()}...`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="block w-full pl-12 pr-4 py-4 bg-transparent border-b-2 border-emerald-100 focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400"
+            className="w-full pl-16 pr-8 py-5 bg-white border border-slate-100 rounded-[2rem] text-sm font-bold text-emerald-950 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all shadow-xl shadow-slate-200/40"
           />
         </div>
 
-        <div className="flex items-center gap-4">
-          <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-800/40">Filter Node Status</label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className={styles.filterSelect}
-          >
-            <option value="All">All Entities</option>
-            <option value="Pending">Pending Review</option>
-            <option value="In Progress">Active Process</option>
-            <option value="Completed">Completed Task</option>
-            <option value="Cancelled">Terminated</option>
-            <option value="Active">System Active</option>
-            <option value="Inactive">System Inactive</option>
-            <option value="Paid">Cleared Ledger</option>
-            <option value="Unpaid">Pending Balance</option>
-          </select>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 px-8 py-5 bg-white border border-slate-100 rounded-[2rem] shadow-xl shadow-slate-200/40">
+            <Filter size={18} className="text-emerald-600" />
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="bg-transparent border-none text-[11px] font-black uppercase tracking-[0.2em] text-emerald-950 outline-none cursor-pointer"
+            >
+              <option value="All">All Entities</option>
+              <option value="Pending">Pending Review</option>
+              <option value="In Progress">Active Process</option>
+              <option value="Completed">Completed Task</option>
+              <option value="Cancelled">Terminated</option>
+              <option value="Active">System Active</option>
+              <option value="Inactive">System Inactive</option>
+              <option value="Paid">Cleared Ledger</option>
+              <option value="Unpaid">Pending Balance</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="glass-card !p-0">
-        <div className="overflow-x-auto">
-          <table className="data-table">
+      <div className="space-y-6">
+        {/* DESKTOP TABLE VIEW */}
+        <div className="hidden md:block glass-card !p-0 overflow-x-auto">
+          <table className="data-table min-w-[900px]">
             <thead>
               <tr>
-                <th>Identifier</th>
-                <th>System Details</th>
+                <th>ID</th>
+                <th>Details</th>
                 {isAdmin && <th>Created By</th>}
-                <th>Operational Status</th>
-                <th className="text-right">Action Interface</th>
+                <th>Status</th>
+                <th className="text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={isAdmin ? 5 : 4} className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">Synchronizing with global ledger...</td></tr>
+                <tr><td colSpan={isAdmin ? 5 : 4} className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">Loading...</td></tr>
               ) : records.length === 0 ? (
-                <tr><td colSpan={isAdmin ? 5 : 4} className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">No records detected in this cluster.</td></tr>
+                <tr><td colSpan={isAdmin ? 5 : 4} className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">No records found.</td></tr>
               ) : (
                 records.map((record) => (
                   <tr key={record.id}>
                     <td>
                       <div className="space-y-1">
                         <p className="text-sm font-black text-emerald-950 uppercase tracking-tight">
-                          {moduleKey === 'vehicles' ? `${record.name} [${record.modelRef || 'N/A'}]` :
-                            moduleKey === 'tows' ? record.customer :
-                              (record.name || record.customer || record.worker || record.title || record.id)}
+                          {moduleKey === 'vehicles' ? `${record?.name ?? 'Unknown'} [${record?.modelRef || 'N/A'}]` :
+                            moduleKey === 'tows' ? (record?.customer ?? 'Unknown Client') :
+                              (record?.name || record?.customer || record?.worker || record?.title || record?.id || 'No Name')}
                         </p>
                         <div className="flex flex-wrap items-center gap-2">
                           {moduleKey !== 'users' && <span className="text-[10px] font-bold text-emerald-600/40 uppercase tracking-widest">{record.id}</span>}
@@ -169,14 +170,9 @@ export default function CrudPage({ moduleKey }) {
                               • {record.customerVehicle} [{record.customerPlate}]
                             </span>
                           )}
-                          {record.createdAt && (
+                          {record?.createdAt && (
                             <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">
                               • {new Date(record.createdAt).toLocaleDateString()}
-                            </span>
-                          )}
-                          {isAdmin && (
-                            <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest bg-emerald-100/50 px-2 py-0.5 rounded-md border border-emerald-200">
-                              BY: {record.createdBy || 'SYSTEM'}
                             </span>
                           )}
                         </div>
@@ -187,9 +183,9 @@ export default function CrudPage({ moduleKey }) {
                         <p className="text-sm font-bold text-emerald-950">
                           {moduleKey === 'tows' && (
                             <div className="flex flex-col gap-0.5">
-                              <span>{record.driver} • {record.vehicle}</span>
+                              <span>{record?.driver || 'No Driver'} • {record?.vehicle || 'No Truck'}</span>
                               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                                {record.pickup} → {record.dropoff}
+                                {record?.pickup || 'Unknown'} → {record?.dropoff || 'Unknown'}
                               </span>
                             </div>
                           )}
@@ -205,18 +201,6 @@ export default function CrudPage({ moduleKey }) {
                           )}
                           {moduleKey === 'users' && record.phone}
                           {moduleKey === 'customers' && record.phone}
-                        </p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                          {moduleKey === 'vehicles' ? (
-                            <span className="flex items-center gap-3">
-                              <span className={new Date(record.insuranceExpiry) < new Date() ? 'text-rose-500' : 'text-emerald-600'}>INS: {record.insuranceExpiry}</span>
-                              <span className={new Date(record.registrationExpiry) < new Date() ? 'text-rose-500' : 'text-emerald-600'}>REG: {record.registrationExpiry}</span>
-                            </span>
-                          ) : moduleKey === 'tows' ? (
-                            <span className="text-emerald-600 font-bold">DATE: {record.date} • {record.amount || 0} QAR</span>
-                          ) : (
-                            record.email || record.modelRef || record.description || record.date || record.jobId
-                          )}
                         </p>
                       </div>
                     </td>
@@ -238,31 +222,91 @@ export default function CrudPage({ moduleKey }) {
                     </td>
                     <td className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Link href={`${config.path}/${record.id}`} className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title={moduleKey === 'salaries' ? "View Salary Slip" : "View Detail"}>
+                        <Link href={`${config.path}/${record.id}`} className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title={moduleKey === 'salaries' ? "View Salary Slip" : "View"}>
                           {moduleKey === 'salaries' ? <Download size={16} /> : <Eye size={16} />}
                         </Link>
-                        <Link href={`${config.path}/${record.id}/edit`} className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title="Edit Parameters">
+                        <Link href={`${config.path}/${record.id}/edit`} className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title="Edit">
                           <Edit2 size={16} />
                         </Link>
                         <button
                           onClick={() => handleDelete(record.id)}
                           className="p-2.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                          title="Terminate Node"
+                          title="Delete"
                         >
                           <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
                   </tr>
-                )
-                ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
+        {/* MOBILE CARD VIEW */}
+        <div className="md:hidden space-y-4">
+          {loading ? (
+            <div className="text-center py-10 text-slate-400 font-bold uppercase tracking-widest text-[10px] animate-pulse">Loading Intelligence...</div>
+          ) : records.length === 0 ? (
+            <div className="text-center py-10 text-slate-400 font-bold uppercase tracking-widest text-[10px]">No records found.</div>
+          ) : (
+            records.map((record) => (
+              <div key={record.id} className="glass-card p-6 border-l-4 border-l-emerald-600 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{record.id}</p>
+                    <p className="text-sm font-black text-emerald-950 uppercase">
+                      {moduleKey === 'vehicles' ? `${record?.name ?? 'Unknown'}` :
+                        moduleKey === 'tows' ? (record?.customer ?? 'Unknown Client') :
+                          (record?.name || record?.customer || record?.worker || record?.title || record?.id || 'No Name')}
+                    </p>
+                  </div>
+                  <div className={`badge ${record.status === 'Completed' || record.status === 'Paid' || record.status === 'Active' ? 'badge-success' :
+                    ['In Progress', 'Pending'].includes(record.status) ? 'badge-warning' : 'badge-neutral'
+                  }`}>
+                    {record.status || 'Active'}
+                  </div>
+                </div>
+
+                <div className="py-3 border-y border-emerald-50 space-y-2">
+                   <div className="flex justify-between items-center">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Principal Data</span>
+                      <span className="text-xs font-bold text-emerald-950">
+                        {moduleKey === 'expenses' || moduleKey === 'invoices' || moduleKey === 'salaries' || moduleKey === 'quotations' ? `${record.amount || record.total || 0} QAR` : 
+                         moduleKey === 'vehicles' ? record.plate : record.phone || '-'}
+                      </span>
+                   </div>
+                   {moduleKey === 'vehicles' && (
+                     <div className="flex justify-between items-center">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Registry</span>
+                        <span className="text-[9px] font-bold text-emerald-600">{record.modelRef}</span>
+                     </div>
+                   )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Link href={`${config.path}/${record.id}`} className="flex-1 flex items-center justify-center gap-2 p-3 bg-emerald-50 text-emerald-600 rounded-xl font-bold text-[10px] uppercase tracking-widest">
+                    {moduleKey === 'salaries' ? <Download size={14} /> : <Eye size={14} />}
+                    <span>View</span>
+                  </Link>
+                  <Link href={`${config.path}/${record.id}/edit`} className="flex-1 flex items-center justify-center gap-2 p-3 bg-emerald-50 text-emerald-600 rounded-xl font-bold text-[10px] uppercase tracking-widest">
+                    <Edit2 size={14} />
+                    <span>Edit</span>
+                  </Link>
+                  <button onClick={() => handleDelete(record.id)} className="p-3 bg-rose-50 text-rose-600 rounded-xl">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
         <div className="pagination-container">
           <p className="pagination-info">
-            Visualizing {records.length} of {pagination.total || 0} active nodes
+            Showing {records.length} of {pagination.total || 0} records
           </p>
           <div className="flex items-center gap-2">
             <button

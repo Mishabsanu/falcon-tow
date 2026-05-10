@@ -19,8 +19,9 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ExportCsvButton from '@/components/ExportCsvButton';
-import styles from '../invoices/page.module.css';
 import { toast } from 'sonner';
+import ResponsiveTable from '@/modules/common/components/ResponsiveTable';
+import SummaryCard from '@/modules/common/components/SummaryCard';
 
 export default function Quotations() {
   const [quotations, setQuotations] = useState([]);
@@ -136,7 +137,7 @@ export default function Quotations() {
           <h1 className={styles.title}>Quotations</h1>
           <p className={styles.subtitle}>Manage customer quotes and convert them to tow jobs once approved.</p>
         </motion.div>
-        <motion.div variants={item} className={styles.actions}>
+        <motion.div variants={item} className="flex flex-wrap gap-3 md:gap-4 items-center">
           <ExportCsvButton moduleKey="quotations" filename="Quotations_Ledger" />
           <Link href="/dashboard/quotations/new" className="btn-primary">
             <Plus size={18} />
@@ -144,6 +145,27 @@ export default function Quotations() {
           </Link>
         </motion.div>
       </header>
+
+      <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 mt-10">
+        <SummaryCard 
+          label="Sales Pipeline" 
+          value={pagination.total} 
+          icon={FileText} 
+          color="emerald" 
+        />
+        <SummaryCard 
+          label="Pending Approvals" 
+          value={quotations.filter(q => ['Draft', 'Sent'].includes(q.status)).length} 
+          icon={Activity} 
+          color="blue" 
+        />
+        <SummaryCard 
+          label="Active Quote Value" 
+          value={`QAR ${quotations.reduce((sum, q) => sum + Number(q.amount || 0), 0).toLocaleString()}`} 
+          icon={Plus} 
+          color="amber" 
+        />
+      </motion.div>
 
       <motion.div variants={item} className="flex flex-col lg:flex-row items-stretch lg:items-center gap-6 mb-8">
         <div className="relative flex-1 group">
@@ -229,109 +251,119 @@ export default function Quotations() {
             )}
           </div>
         </div>
-      )}
-
-      <motion.div variants={item} className="table-container glass-card">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Quote ID</th>
-              <th>Customer</th>
-              <th>Estimated Date</th>
-              <th>Quoted Amount</th>
-              <th>Status</th>
-              <th>Created By</th>
-              <th style={{ textAlign: 'right' }}>Actions</th>
+      )}      <motion.div variants={item}>
+        <ResponsiveTable
+          headers={[
+            { label: "Quote ID" },
+            { label: "Customer" },
+            { label: "Estimated Date" },
+            { label: "Quoted Amount" },
+            { label: "Status" },
+            { label: "Created By" },
+            { label: "Actions", style: { textAlign: 'right' } }
+          ]}
+          data={quotations}
+          loading={loading}
+          pagination={pagination}
+          onPageChange={handlePageChange}
+          renderRow={(q) => (
+            <tr key={q.id}>
+              <td><span className={styles.invId}>{q.id}</span></td>
+              <td><span className={styles.nameText}>{q.customer}</span></td>
+              <td>{new Date(q.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+              <td className="amount">QAR {Number(q.amount ?? 0).toLocaleString()}</td>
+              <td>
+                <span className={`badge ${
+                  q.status === 'Approved' ? 'badge-success' :
+                  q.status === 'Draft' ? 'badge-info' : 
+                  q.status === 'Cancelled' ? 'badge-error opacity-50' :
+                  q.status === 'Rejected' ? 'badge-error' :
+                  'badge-warning'
+                  }`}>
+                  {q.status}
+                </span>
+              </td>
+              <td><span className={styles.nameText}>{q.createdBy || '—'}</span></td>
+              <td>
+                <div className={styles.actionCell}>
+                  {q.status !== 'Approved' && q.status !== 'Cancelled' && q.status !== 'Rejected' && (
+                    <>
+                      <button
+                        className={styles.payBtn}
+                        style={{ color: '#10b981' }}
+                        title="Approve & Create Tow"
+                        onClick={() => handleApprove(q)}
+                      >
+                        <CheckCircle2 size={16} />
+                      </button>
+                      <button
+                        className={styles.deleteBtn}
+                        style={{ color: '#ef4444' }}
+                        title="Reject"
+                        onClick={() => handleStatusUpdate(q.id, 'Rejected', 'Rejected')}
+                      >
+                        <X size={16} />
+                      </button>
+                    </>
+                  )}
+                  <Link href={`/dashboard/quotations/${q.id}/edit`} className={styles.editBtn} title="Edit"><Edit3 size={16} /></Link>
+                  <Link href={`/dashboard/quotations/${q.id}`} className={styles.payBtn} title="View & Export">
+                    <Eye size={16} />
+                  </Link>
+                  <button className={styles.deleteBtn} title="Delete" onClick={() => handleDelete(q.id)}><Trash2 size={16} /></button>
+                </div>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>Loading quotations...</td></tr>
-            ) : quotations.map((q) => (
-              <motion.tr key={q.id} variants={item}>
-                <td><span className={styles.invId}>{q.id}</span></td>
-                <td><span className={styles.nameText}>{q.customer}</span></td>
-                <td>{new Date(q.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                <td className="amount">QAR {Number(q.amount ?? 0).toLocaleString()}</td>
-                <td>
-                  <span className={`badge ${
-                    q.status === 'Approved' ? 'badge-success' :
-                    q.status === 'Draft' ? 'badge-info' : 
-                    q.status === 'Cancelled' ? 'badge-error opacity-50' :
-                    q.status === 'Rejected' ? 'badge-error' :
-                    'badge-warning'
-                    }`}>
-                    {q.status}
-                  </span>
-                </td>
-                <td><span className={styles.nameText}>{q.createdBy || '—'}</span></td>
-                <td>
-                  <div className={styles.actionCell}>
-                    {q.status !== 'Approved' && q.status !== 'Cancelled' && q.status !== 'Rejected' && (
-                      <>
-                        <button
-                          className={styles.payBtn}
-                          style={{ color: '#10b981' }}
-                          title="Approve & Create Tow"
-                          onClick={() => handleApprove(q)}
-                        >
-                          <CheckCircle2 size={16} />
-                        </button>
-                        <button
-                          className={styles.deleteBtn}
-                          style={{ color: '#ef4444' }}
-                          title="Reject"
-                          onClick={() => handleStatusUpdate(q.id, 'Rejected', 'Rejected')}
-                        >
-                          <X size={16} />
-                        </button>
-                        <button
-                          className={styles.editBtn}
-                          style={{ color: '#64748b' }}
-                          title="Cancel"
-                          onClick={() => handleStatusUpdate(q.id, 'Cancelled', 'Cancelled')}
-                        >
-                          <Activity size={16} className="rotate-90" />
-                        </button>
-                      </>
-                    )}
-                    <Link href={`/dashboard/quotations/${q.id}/edit`} className={styles.editBtn} title="Edit"><Edit3 size={16} /></Link>
-                    <Link href={`/dashboard/quotations/${q.id}`} className={styles.payBtn} title="View & Export">
-                      <Eye size={16} />
-                    </Link>
-                    <button className={styles.deleteBtn} title="Delete" onClick={() => handleDelete(q.id)}><Trash2 size={16} /></button>
+          )}
+          renderMobileCard={(q) => (
+            <div className="space-y-4">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-amber-50 text-amber-600 rounded-lg"><FileText size={16} /></div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">#{q.id}</p>
+                    <p className="text-sm font-black text-emerald-950 uppercase">{q.customer}</p>
                   </div>
-                </td>
-              </motion.tr>
-            ))}
-            {!loading && quotations.length === 0 && (
-              <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>No quotations found.</td></tr>
-            )}
-          </tbody>
-        </table>
+                </div>
+                <span className={`badge ${
+                  q.status === 'Approved' ? 'badge-success' :
+                  q.status === 'Draft' ? 'badge-info' : 
+                  'badge-warning'
+                }`}>
+                  {q.status}
+                </span>
+              </div>
 
-        <div className="pagination">
-          <span className="page-info">
-            Showing {quotations.length} of {pagination.total} quotes
-          </span>
-          <div className="page-controls">
-            <button
-              className="page-btn"
-              disabled={pagination.page <= 1}
-              onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button className="page-btn active">{pagination.page}</button>
-            <button
-              className="page-btn"
-              disabled={pagination.page >= pagination.totalPages}
-              onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+              <div className="grid grid-cols-2 gap-4 py-3 border-y border-emerald-50">
+                 <div>
+                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Quote Value</p>
+                    <p className="text-xs font-black text-emerald-950">QAR {q.amount || 0}</p>
+                 </div>
+                 <div>
+                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Est. Date</p>
+                    <p className="text-xs font-bold text-slate-500">{new Date(q.date).toLocaleDateString()}</p>
+                 </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-2">
+                  {q.status !== 'Approved' && (
+                    <button onClick={() => handleApprove(q)} className="p-3 bg-emerald-600 text-white rounded-xl">
+                      <CheckCircle2 size={18} />
+                    </button>
+                  )}
+                  <Link href={`/dashboard/quotations/${q.id}/edit`} className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                    <Edit3 size={18} />
+                  </Link>
+                  <button onClick={() => handleDelete(q.id)} className="p-3 bg-rose-50 text-rose-600 rounded-xl">
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+                <div className="text-[9px] font-bold text-slate-300 uppercase tracking-widest italic">{q.createdBy || 'System'}</div>
+              </div>
+            </div>
+          )}
+        />
       </motion.div>
     </motion.div>
   );

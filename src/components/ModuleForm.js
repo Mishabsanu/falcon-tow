@@ -39,17 +39,31 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
     return Yup.object().shape(
       Object.fromEntries(
         config.fields.map(field => {
-          if (field.hidden) return [field.name, Yup.string()];
+          if (field.hidden) return [field.name, Yup.string().nullable()];
 
-          let validator = Yup.string();
-          if (field.type === 'number') validator = Yup.number();
-
-          if (field.required !== false) {
-            validator = validator.required(`${field.label} is required`);
-          }
-
-          if (field.type === 'email') {
-            validator = validator.email('Invalid email address');
+          let validator;
+          if (field.type === 'number') {
+            validator = Yup.number()
+              .typeError(`${field.label} must be a number`)
+              .transform((value, originalValue) => originalValue === "" ? null : value);
+            
+            if (field.required !== false) {
+              validator = validator.required(`${field.label} is required`).min(0, `${field.label} cannot be negative`);
+            } else {
+              validator = validator.nullable().min(0, `${field.label} cannot be negative`);
+            }
+          } else if (field.type === 'email') {
+            validator = Yup.string().email('Invalid email address');
+            if (field.required !== false) validator = validator.required(`${field.label} is required`);
+          } else if (field.type === 'tel') {
+            validator = Yup.string()
+              .matches(/^[0-9+\s-]{8,15}$/, 'Invalid phone number format');
+            if (field.required !== false) validator = validator.required(`${field.label} is required`);
+          } else {
+            validator = Yup.string();
+            if (field.required !== false) {
+              validator = validator.required(`${field.label} is required`);
+            }
           }
 
           return [field.name, validator];
@@ -491,14 +505,14 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
               className="group inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-emerald-600 transition-colors"
             >
               <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
-              Return to Node Directory
+              Back to List
             </button>
-            <h1 className="text-4xl font-black text-emerald-950 tracking-tight">
-              {mode === 'edit' ? 'Synchronize ' : 'Initialize '}
+            <h1 className="text-2xl sm:text-4xl font-black text-emerald-950 tracking-tight">
+              {mode === 'edit' ? 'Edit ' : 'Create '}
               <span className="text-emerald-600">{config.title}</span>
             </h1>
             <p className="text-slate-500 text-sm font-medium">
-              {mode === 'edit' ? 'Updating existing parameters in the global ledger.' : 'Establishing a new data record in the system architecture.'}
+              {mode === 'edit' ? 'Update the information below.' : 'Fill in the details to create a new record.'}
             </p>
           </div>
         </div>
@@ -506,22 +520,22 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
 
       <div className={`overflow-hidden ${!isModal ? 'border border-emerald-100/50 bg-white shadow-sm rounded-2xl' : ''}`}>
         {!isModal && (
-          <div className="bg-emerald-50/20 border-b border-emerald-100/30 px-8 py-10">
-            <div className="flex items-center gap-6">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100/50 border border-emerald-200">
-                <FileText className="text-emerald-600" size={32} />
+          <div className="bg-emerald-50/20 border-b border-emerald-100/30 px-6 sm:px-8 py-8 sm:py-10">
+            <div className="flex items-center gap-4 sm:gap-6">
+              <div className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-emerald-100/50 border border-emerald-200">
+                <FileText className="text-emerald-600" size={isModal ? 24 : 32} />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-emerald-950 tracking-tight">
-                  {config.title} <span className="text-emerald-600">Configuration</span>
+                  {config.title} <span className="text-emerald-600">Form</span>
                 </h2>
-                <p className="text-xs font-bold text-emerald-800/40 mt-1 uppercase tracking-widest">Target UUID: {id || 'SYSTEM_NEW_NODE'}</p>
+                <p className="text-xs font-bold text-emerald-800/40 mt-1 uppercase tracking-widest">ID: {id || 'New'}</p>
               </div>
             </div>
           </div>
         )}
 
-        <form className={!isModal ? "p-8 md:p-12 space-y-12" : "p-10 space-y-8"} onSubmit={handleSubmit}>
+        <form className={!isModal ? "p-6 md:p-12 space-y-12" : "p-6 sm:p-10 space-y-8"} onSubmit={handleSubmit}>
           <div className="space-y-10">
             {(() => {
               const sections = [];
@@ -551,23 +565,23 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
                       <div className="h-px flex-1 bg-emerald-50/50"></div>
                     </div>
                   )}
-                  <div className={section.title === 'Financial Split' ? "flex items-start gap-4 -mx-6 bg-emerald-50/10 p-6 rounded-2xl border border-emerald-100/20" : `grid grid-cols-12 ${isModal ? 'gap-4' : 'gap-4 sm:gap-8 md:gap-10'}`}>
+                  <div className={section.title === 'Financial Split' ? "flex flex-col sm:flex-row items-start gap-4 sm:gap-6 bg-emerald-50/10 p-6 rounded-2xl border border-emerald-100/20" : `grid grid-cols-12 ${isModal ? 'gap-4' : 'gap-4 sm:gap-8 md:gap-10'}`}>
                     {section.fields.map((field) => {
                       const spanMap = {
-                        1: 'col-span-1',
-                        2: 'col-span-2',
-                        3: 'col-span-3',
-                        4: 'col-span-4',
-                        5: 'col-span-5',
-                        6: 'col-span-6',
-                        7: 'col-span-7',
-                        8: 'col-span-8',
-                        9: 'col-span-9',
-                        10: 'col-span-10',
-                        11: 'col-span-11',
+                        1: 'col-span-12 md:col-span-1',
+                        2: 'col-span-12 md:col-span-2',
+                        3: 'col-span-12 md:col-span-3',
+                        4: 'col-span-12 md:col-span-4',
+                        5: 'col-span-12 md:col-span-5',
+                        6: 'col-span-12 md:col-span-6',
+                        7: 'col-span-12 md:col-span-7',
+                        8: 'col-span-12 md:col-span-8',
+                        9: 'col-span-12 md:col-span-9',
+                        10: 'col-span-12 md:col-span-10',
+                        11: 'col-span-12 md:col-span-11',
                         12: 'col-span-12',
                       };
-                      const colSpan = section.title === 'Financial Split' ? "flex-1" : (spanMap[field.span] || 'col-span-4');
+                      const colSpan = section.title === 'Financial Split' ? "flex-1" : (spanMap[field.span] || 'col-span-12 md:col-span-4');
                       return (
                         <div key={field.name} className={`space-y-4 ${colSpan}`}>
                           <div className="flex items-center justify-between">
@@ -580,13 +594,14 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
                                 className="flex items-center gap-1.5 text-[9px] font-bold uppercase text-emerald-600 hover:text-emerald-700 transition-colors"
                                 onClick={() => setQuickAdd({ fieldName: field.name, moduleKey: field.module })}
                               >
-                                <Plus size={12} /> Fast Register
+                                <Plus size={12} /> Add New
                               </button>
                             )}
                           </div>
 
                           {field.type === 'select' ? (
-                            <select
+                            <div className="space-y-1">
+                              <select
                               id={field.name}
                               name={field.name}
                               disabled={isWorker && ((moduleKey === 'tows' && field.name === 'driver') || (moduleKey === 'expenses' && field.name === 'worker'))}
@@ -618,6 +633,10 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
                                 );
                               })}
                             </select>
+                              {touched[field.name] && errors[field.name] && (
+                                <p className="text-[9px] font-bold text-red-500 ml-1 uppercase tracking-wider">{errors[field.name]}</p>
+                              )}
+                            </div>
                           ) : field.type === 'textarea' ? (
                             <div className="space-y-1">
                               <textarea
