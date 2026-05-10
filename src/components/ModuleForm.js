@@ -259,7 +259,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
 
   // Worker Self-Selection for Tow Jobs and Expenses
   useEffect(() => {
-    if (mode === 'create' && (moduleKey === 'tows' || moduleKey === 'expenses')) {
+    if ((mode === 'add' || mode === 'create') && (moduleKey === 'tows' || moduleKey === 'expenses')) {
       const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user')) : null;
       if (user && user.role === 'Worker') {
         const fieldName = moduleKey === 'tows' ? 'driver' : 'worker';
