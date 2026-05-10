@@ -41,8 +41,10 @@ export default function DashboardPage() {
    }, [range]);
 
    useEffect(() => {
-      fetchStats();
-   }, [fetchStats]);
+    fetchStats();
+    // Trigger Fleet Scout to check for expiring insurance/registration
+    fetch('/api/cron/fleet-scout').catch(err => console.error('Fleet Scout failed:', err));
+  }, [fetchStats]);
 
    if (loading && !data) return <LoadingSpinner label="Loading Dashboard..." />;
    if (!data) return null;

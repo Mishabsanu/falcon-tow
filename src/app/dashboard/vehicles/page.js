@@ -193,7 +193,7 @@ export default function Vehicles() {
           { label: "Technical Identity" },
           { label: "Compliance Audit" },
           { label: "Status" },
-          { label: "Administrative Audit" },
+          { label: "Created By" },
           { label: "Interface", style: { textAlign: 'right' } }
         ]}
         data={vehicles}

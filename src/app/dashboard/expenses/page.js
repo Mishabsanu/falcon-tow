@@ -352,7 +352,7 @@ export default function Expenses() {
           { label: "Worker" },
           { label: "Vehicle" },
           { label: "Amount" },
-          { label: "Authorized By" },
+          { label: "Created By" },
           { label: "Actions", style: { textAlign: 'right' } }
         ]}
         data={expenses}
@@ -362,7 +362,7 @@ export default function Expenses() {
         renderRow={(exp) => (
           <tr key={exp.id}>
             <td><span className={styles.expId}>{exp.id}</span></td>
-            <td>{exp.date}</td>
+            <td>{new Date(exp.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
             <td><span className={styles.descriptionText}>{exp.description}</span></td>
             <td>
               <div className={styles.workerCell}>
@@ -378,12 +378,8 @@ export default function Expenses() {
             </td>
             <td className={styles.amountText}>QAR {Number(exp.amount ?? 0).toLocaleString()}</td>
             <td>
-               <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-emerald-950 uppercase">{exp.createdBy || 'System'}</span>
-                  <span className="text-[8px] text-slate-400">
-                     {exp.createdBy === 'System' || !exp.createdBy ? 'System Log' : 'Admin Authorized'}
-                  </span>
-               </div>
+              <div className="text-[10px] font-bold text-emerald-950 uppercase tracking-tight">{exp.createdBy || 'System'}</div>
+              <div className="text-[9px] font-bold text-slate-400 mt-1">{exp.createdAt ? new Date(exp.createdAt).toLocaleDateString('en-GB') : 'System Log'}</div>
             </td>
             <td>
               <div className={styles.actionCell}>
@@ -409,7 +405,7 @@ export default function Expenses() {
               </div>
               <div className="text-right">
                 <p className="text-sm font-black text-rose-600">QAR {exp.amount || 0}</p>
-                <p className="text-[8px] font-bold text-slate-400 uppercase">{exp.date}</p>
+                <p className="text-[8px] font-bold text-slate-400 uppercase">{new Date(exp.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
               </div>
             </div>
 

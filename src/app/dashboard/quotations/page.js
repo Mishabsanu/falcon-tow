@@ -288,7 +288,10 @@ export default function Quotations() {
                   {q.status}
                 </span>
               </td>
-              <td><span className={styles.nameText}>{q.createdBy || '—'}</span></td>
+              <td>
+                <div className="text-[10px] font-bold text-emerald-950 uppercase tracking-tight">{q.createdBy || 'System'}</div>
+                <div className="text-[9px] font-bold text-slate-400 mt-1">{q.createdAt ? new Date(q.createdAt).toLocaleDateString('en-GB') : 'Initial Draft'}</div>
+              </td>
               <td>
                 <div className={styles.actionCell}>
                   {q.status !== 'Approved' && q.status !== 'Cancelled' && q.status !== 'Rejected' && (

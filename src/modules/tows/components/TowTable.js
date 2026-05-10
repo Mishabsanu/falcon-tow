@@ -65,12 +65,8 @@ export default function TowTable({ tows, loading, pagination, onPageChange, onDe
         </span>
       </td>
       <td>
-         <div className="flex flex-col">
-            <span className="text-[10px] font-black text-emerald-950 uppercase">{tow.createdBy || 'System'}</span>
-            <span className="text-[8px] text-slate-400">
-               {tow.createdBy === 'System' || !tow.createdBy ? 'Automated Log' : 'Internal Dispatch'}
-            </span>
-         </div>
+        <div className="text-[10px] font-bold text-emerald-950 uppercase tracking-tight">{tow.createdBy || 'System'}</div>
+        <div className="text-[9px] font-bold text-slate-400 mt-1">{tow.createdAt ? new Date(tow.createdAt).toLocaleDateString('en-GB') : 'Automated Log'}</div>
       </td>
       <td>
         <div className={styles.actionCell}>

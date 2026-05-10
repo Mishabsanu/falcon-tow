@@ -264,7 +264,7 @@ export default function Customers() {
           { label: "Contact Number" },
           { label: "Street Address" },
           { label: "Account Status" },
-          { label: "Registered By" },
+          { label: "Created By" },
           { label: "Actions", style: { textAlign: 'right' } }
         ]}
         data={customers}
@@ -289,12 +289,10 @@ export default function Customers() {
                 {c.status}
               </span>
             </td>
-            <td>
-               <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-emerald-950 uppercase">{c.createdBy || 'System'}</span>
-                  <span className="text-[8px] text-slate-400">Admin</span>
-               </div>
-            </td>
+              <td>
+                <div className="text-[10px] font-bold text-emerald-950 uppercase tracking-tight">{c.createdBy || 'System'}</div>
+                <div className="text-[9px] font-bold text-slate-400 mt-1">{c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-GB') : 'Initial Entry'}</div>
+              </td>
             <td>
               <div className={styles.actionCell}>
                 <Link href={`/dashboard/customers/${c.id}/edit`} className={styles.editBtn} title="Edit"><Edit3 size={16} /></Link>

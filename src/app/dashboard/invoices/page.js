@@ -394,7 +394,7 @@ export default function Invoices() {
             { label: "Amount Paid" },
             { label: "Due Balance" },
             { label: "Billing Status" },
-            { label: "Issued By" },
+            { label: "Created By" },
             { label: "Actions", style: { textAlign: 'right' } }
           ]}
           data={invoices}
@@ -405,7 +405,7 @@ export default function Invoices() {
             <tr key={inv.id}>
               <td><span className={styles.invId}>{inv?.id || 'N/A'}</span></td>
               <td><span className={styles.nameText}>{inv?.customer || 'Unknown'}</span></td>
-              <td>{inv?.date || 'N/A'}</td>
+              <td>{inv?.date ? new Date(inv.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</td>
               <td>
                 <div className={styles.typeCell}>
                   {(inv.type ?? 'Credit') === 'Cash' ? <DollarSign size={14} /> : <CreditCard size={14} />}
@@ -424,12 +424,8 @@ export default function Invoices() {
                 </span>
               </td>
               <td>
-                 <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-emerald-950 uppercase">{inv.createdBy || 'System'}</span>
-                    <span className="text-[8px] text-slate-400">
-                       {inv.createdBy === 'System' || !inv.createdBy ? 'System Processed' : 'Billing Staff'}
-                    </span>
-                 </div>
+                <div className="text-[10px] font-bold text-emerald-950 uppercase tracking-tight">{inv.createdBy || 'System'}</div>
+                <div className="text-[9px] font-bold text-slate-400 mt-1">{inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-GB') : 'System Processed'}</div>
               </td>
               <td>
                 <div className={styles.actionCell}>
@@ -450,6 +446,7 @@ export default function Invoices() {
                   <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">#{inv?.id || 'N/A'}</p>
                     <p className="text-sm font-black text-emerald-950 uppercase">{inv?.customer || 'Unknown'}</p>
+                    <p className="text-[8px] font-bold text-slate-400 uppercase mt-1">{inv?.date ? new Date(inv.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</p>
                   </div>
                 </div>
                 <span className={`badge ${

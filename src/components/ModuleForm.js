@@ -3,7 +3,7 @@ import { getModuleRecord, moduleData } from '@/lib/moduleData';
 import { apiService } from '@/services/apiService';
 import { calculateTowShares } from '@/modules/tows/logic/towBusinessLogic';
 import { calculateSalarySettlement } from '@/modules/salaries/logic/salaryBusinessLogic';
-import { Activity, ArrowLeft, FileText, Plus, Save, ShieldCheck } from 'lucide-react';
+import { Activity, ArrowLeft, Eye, EyeOff, FileText, Plus, Save, ShieldCheck, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -33,6 +33,7 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
 
   const [options, setOptions] = useState({});
   const [quickAdd, setQuickAdd] = useState(null);
+  const [showPasswords, setShowPasswords] = useState({});
 
   // Dynamic Validation Schema
   const validationSchema = useMemo(() => {
@@ -157,7 +158,16 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
     const promises = config.fields.map(async (field) => {
       if (field.module) {
         try {
-          const result = await apiService.getRecords(field.module, { limit: 100 });
+          // Optimized: Fetch only needed fields for dropdowns (Projection)
+          let select = 'id,name';
+          if (field.module === 'vehicles') select = 'id,name,plate';
+          if (field.module === 'tows') select = 'id,customer,amount';
+          if (field.module === 'users') select = 'id,name,role,salary';
+
+          const result = await apiService.getRecords(field.module, { 
+            limit: 200, // Balanced limit for lookup
+            extraParams: { select } 
+          });
           if (result.data) {
             let data = result.data;
 
@@ -215,8 +225,11 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
 
     const generateNextId = async () => {
       try {
-        // Fetch all records to find the highest ID
-        const result = await apiService.getRecords(moduleKey, { limit: 1000 });
+        // Optimization: Instead of 1000 records, just fetch the LATEST one to find max ID
+        const result = await apiService.getRecords(moduleKey, { 
+          limit: 1, 
+          extraParams: { sort: 'createdAt', order: -1, select: 'id' } 
+        });
         const records = result.data || [];
 
         const prefix = moduleKey === 'users' ? 'EMP' :
@@ -691,17 +704,33 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
                             </div>
                           ) : (
                             <div className="space-y-1">
-                              <input
-                                type={field.type}
-                                id={field.name}
-                                name={field.name}
-                                value={values[field.name] || ''}
-                                onChange={formik.handleChange}
-                                onBlur={formik.handleBlur}
-                                readOnly={field.readOnly}
-                                className={`block w-full px-1 py-4 bg-transparent border-b-2 ${touched[field.name] && errors[field.name] ? 'border-red-300' : 'border-emerald-100'} focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400 ${field.readOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                placeholder={`Enter ${field.label.toLowerCase()}...`}
-                              />
+                              <div className="relative group">
+                                {field.type === 'password' && (
+                                  <div className="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-600 transition-colors">
+                                    <Lock size={16} />
+                                  </div>
+                                )}
+                                <input
+                                  type={field.type === 'password' ? (showPasswords[field.name] ? 'text' : 'password') : field.type}
+                                  id={field.name}
+                                  name={field.name}
+                                  value={values[field.name] || ''}
+                                  onChange={formik.handleChange}
+                                  onBlur={formik.handleBlur}
+                                  readOnly={field.readOnly}
+                                  className={`block w-full ${field.type === 'password' ? 'pl-10 pr-10' : 'px-1'} py-4 bg-transparent border-b-2 ${touched[field.name] && errors[field.name] ? 'border-red-300' : 'border-emerald-100'} focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400 ${field.readOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                  placeholder={`Enter ${field.label.toLowerCase()}...`}
+                                />
+                                {field.type === 'password' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowPasswords(prev => ({ ...prev, [field.name]: !prev[field.name] }))}
+                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-emerald-600 transition-colors"
+                                  >
+                                    {showPasswords[field.name] ? <EyeOff size={18} /> : <Eye size={18} />}
+                                  </button>
+                                )}
+                              </div>
                               {touched[field.name] && errors[field.name] && (
                                 <p className="text-[9px] font-bold text-red-500 ml-1 uppercase tracking-wider">{errors[field.name]}</p>
                               )}

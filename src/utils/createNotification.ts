@@ -1,4 +1,5 @@
 import Notification from "@/models/Notification";
+import { connectDB } from "@/lib/mongodb";
 
 export const createNotification = async ({
   title,
@@ -7,11 +8,17 @@ export const createNotification = async ({
   userId = null,
   referenceId = null,
 }: any) => {
-  await Notification.create({
-    title,
-    message,
-    type,
-    userId,
-    referenceId,
-  });
+  try {
+    await connectDB();
+    await Notification.create({
+      title,
+      message,
+      type,
+      userId,
+      referenceId,
+    });
+    console.log(`[NOTIFICATION_SENT] ${title}`);
+  } catch (error) {
+    console.error('[NOTIFICATION_FAILURE]', error);
+  }
 };

@@ -10,6 +10,8 @@ import Expense from '@/models/Expense';
 import Quotation from '@/models/Quotation';
 import bcrypt from 'bcryptjs';
 import { generateNextId } from '@/lib/idGenerator';
+import { createNotification } from '@/utils/createNotification';
+import NotificationModel from '@/models/Notification';
 
 const models = {
   users: User,
@@ -20,6 +22,7 @@ const models = {
   invoices: Invoice,
   expenses: Expense,
   quotations: Quotation,
+  notifications: NotificationModel,
 };
 
 export const runtime = 'nodejs';
@@ -86,12 +89,21 @@ export async function GET(request, context) {
       }
     });
 
+    const select = searchParams.get('select') || '';
+    const sort = searchParams.get('sort') || 'createdAt';
+    const order = parseInt(searchParams.get('order')) || -1;
+
     const total = await Model.countDocuments(query);
-    const data = await Model.find(query)
-      .sort({ createdAt: -1 })
+    let dataQuery = Model.find(query)
+      .sort({ [sort]: order })
       .skip(skip)
-      .limit(limit)
-      .lean();
+      .limit(limit);
+
+    if (select) {
+      dataQuery = dataQuery.select(select.split(',').join(' '));
+    }
+
+    const data = await dataQuery.lean();
 
     return NextResponse.json({
       success: true,
@@ -139,6 +151,43 @@ export async function POST(request, context) {
     }
 
     const record = await Model.create(payload);
+
+    // Trigger Notification Hook
+    try {
+      if (moduleKey === 'tows') {
+        await createNotification({
+          title: 'New Tow Job Assigned',
+          message: `Service for ${payload.customer} at ${payload.pickup} has been registered.`,
+          type: 'tow',
+          userId: payload.driverId,
+          referenceId: record.id
+        });
+      } else if (moduleKey === 'expenses') {
+        await createNotification({
+          title: 'New Expense Registered',
+          message: `${payload.description} - QAR ${payload.amount}`,
+          type: 'payment',
+          referenceId: record.id
+        });
+      } else if (moduleKey === 'invoices') {
+        await createNotification({
+          title: 'Invoice Generated',
+          message: `Invoice ${record.id} created for ${payload.customer}`,
+          type: 'payment',
+          referenceId: record.id
+        });
+      } else if (moduleKey === 'vehicles') {
+        await createNotification({
+          title: 'New Fleet Asset Added',
+          message: `${payload.name} (${payload.plate}) registered in the fleet.`,
+          type: 'status',
+          referenceId: record.id
+        });
+      }
+    } catch (notifErr) {
+      console.warn('[NOTIFICATION_HOOK_FAILED]', notifErr.message);
+    }
+
     return NextResponse.json({ success: true, data: record }, { status: 201 });
   } catch (error) {
     console.error(`[API_ERROR] ${request.url}:`, error);
