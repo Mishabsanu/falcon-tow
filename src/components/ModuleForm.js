@@ -238,10 +238,13 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
               date: quote.date ? new Date(quote.date).toISOString().split('T')[0] : values.date
             };
             
-            setValues((prev) => ({
-              ...prev,
-              ...prefill
-            }));
+            // Use resetForm to ensure pre-filled data becomes the new baseline
+            formik.resetForm({
+              values: {
+                ...formik.initialValues,
+                ...prefill
+              }
+            });
             
             toast.success(`System synchronized with Quote ${quote.id}`);
           }
@@ -252,7 +255,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
       };
       loadQuoteData();
     }
-  }, [fromQuote, mode, moduleKey, setFieldValue]);
+  }, [fromQuote, mode, moduleKey, formik.initialValues]);
 
   // Worker Self-Selection for Tow Jobs and Expenses
   useEffect(() => {
