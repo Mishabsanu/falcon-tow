@@ -1,18 +1,17 @@
 'use client';
 import { getModuleRecord, moduleData } from '@/lib/moduleData';
-import { apiService } from '@/services/apiService';
-import { calculateTowShares } from '@/modules/tows/logic/towBusinessLogic';
 import { calculateSalarySettlement } from '@/modules/salaries/logic/salaryBusinessLogic';
-import { Activity, ArrowLeft, Eye, EyeOff, FileText, Plus, Save, ShieldCheck, Lock } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { calculateTowShares } from '@/modules/tows/logic/towBusinessLogic';
+import { apiService } from '@/services/apiService';
 import { useFormik } from 'formik';
+import { Activity, ArrowLeft, Eye, EyeOff, FileText, Lock, Plus, Save } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import * as Yup from 'yup';
 import Modal from './Modal';
-import { toast } from 'sonner';
 
-export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = false }) {
+function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromQuote = searchParams.get('fromQuote');
@@ -792,5 +791,13 @@ export default function ModuleForm({ moduleKey, mode, id, onSuccess, isModal = f
         </form>
       </div>
     </div>
+  );
+}
+
+export default function ModuleForm(props) {
+  return (
+    <Suspense fallback={null}>
+      <ModuleFormContent {...props} />
+    </Suspense>
   );
 }
