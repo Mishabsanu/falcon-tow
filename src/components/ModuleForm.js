@@ -105,11 +105,19 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
 
         // 0. Clean module-based labels before storage (User Requirement: Separate Storage)
         config.fields.forEach(field => {
-          if (field.module && payload[field.name]) {
-            const opt = (options[field.name] || []).find(o => o.value === payload[field.name]);
-            if (opt && opt.raw) {
-              // Store clean name instead of the combined "Name (Info)" label
-              payload[field.name] = opt.raw.name || opt.raw.id || payload[field.name];
+          if (field.module && initialPayload[field.name]) {
+            // Use helper fields if they were populated by the onChange handler
+            if (field.module === 'customers' && values.customerName) {
+              initialPayload[field.name] = values.customerName;
+            } else if (field.module === 'vehicles' && values.vehicleName) {
+              initialPayload[field.name] = values.vehicleName;
+            } else {
+              // Fallback to option searching if helper fields are missing
+              const val = initialPayload[field.name];
+              const opt = (options[field.name] || []).find(o => o.value === val);
+              if (opt && opt.raw) {
+                initialPayload[field.name] = opt.raw.name || opt.raw.id || val;
+              }
             }
           }
         });
@@ -117,12 +125,14 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
         // 0.1 Handle Multi-Job Invoices
         if (moduleKey === 'invoices') {
           initialPayload.towDetails = selectedJobs.map(j => ({
-            towId: j._id,
-            jobId: j.id,
+            towId: j._id || j.towId,
+            jobId: j.id || j.jobId,
             date: j.date,
-            vehicle: j.customerVehicle || j.vehicle,
-            route: `${j.pickup} to ${j.dropoff}`,
-            amount: Number(j.amount || 0) + Number(j.serviceCommission || 0)
+            vehicleName: j.customerVehicle,
+            vehiclePlate: j.customerPlate,
+            route: j.route || `${j.pickup} to ${j.dropoff}`,
+            amount: Number(j.amount || 0),
+            serviceCommission: Number(j.serviceCommission || 0)
           }));
         }
 
@@ -183,20 +193,63 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
     }
   });
 
-  const { values, setValues, setFieldValue, handleSubmit, touched, errors } = formik;
+  const { values, setValues, setFieldValue, handleSubmit, touched, errors, setValues: setFormikValues } = formik;
+
+  // Smart Reconciler: If the database has a "Name" but the dropdown needs an "ID",
+  // we find the ID once options are loaded.
+  useEffect(() => {
+    let hasChanged = false;
+    const nextValues = { ...values };
+
+    config.fields.forEach(field => {
+      if (field.module && values[field.name]) {
+        const val = values[field.name];
+        // If it's a 24-char Mongo ID, it's already reconciled
+        if (/^[0-9a-fA-F]{24}$/.test(val)) return;
+
+        const fieldOptions = options[field.name] || [];
+        // Try to find an option whose raw name matches our stored value
+        const match = fieldOptions.find(opt => 
+          opt.raw?.name === val || opt.raw?.id === val || opt.label === val
+        );
+
+        if (match) {
+          nextValues[field.name] = match.value;
+          hasChanged = true;
+          
+          // Also sync secondary ID fields if they exist and are empty
+          const idField = `${field.name}Id`;
+          if (nextValues[idField] === undefined || nextValues[idField] === '') {
+            nextValues[idField] = match._id;
+          }
+        }
+      }
+    });
+
+    if (hasChanged) {
+      setValues(nextValues);
+    }
+  }, [options, config.fields, moduleKey]);
 
   const fetchOptions = useCallback(async () => {
     // If we are creating an invoice, we want to know which tows are already invoiced
     let invoicedJobIds = [];
-    if (moduleKey === 'invoices') {
+    let billableCustomerIds = [];
+
+    if (moduleKey === 'invoices' && mode !== 'edit') {
       try {
+        // 1. Get already invoiced jobs
         const invResult = await apiService.getRecords('invoices', { limit: 1000 });
         invoicedJobIds = (invResult.data || []).map(inv => {
-          // jobId is stored as "ID - Name"
           return inv.jobId?.split(' - ')[0].trim();
         }).filter(Boolean);
+
+        // 2. Get all tows to find customers with outstanding work
+        const towsResult = await apiService.getRecords('tows', { limit: 2000, status: 'Completed' });
+        const billableTows = (towsResult.data || []).filter(tow => !invoicedJobIds.includes(tow.id));
+        billableCustomerIds = [...new Set(billableTows.map(tow => tow.customerId || tow.customerData?._id).filter(Boolean))];
       } catch (error) {
-        console.error('Failed to fetch existing invoices for filtering:', error);
+        console.error('Failed to fetch filtering data for invoices:', error);
       }
     }
 
@@ -204,7 +257,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
       if (field.module) {
         try {
           const result = await apiService.getRecords(field.module, { 
-            limit: 500, // Increased limit for better coverage
+            limit: 500, 
           });
           if (result.data) {
             let data = result.data;
@@ -214,7 +267,12 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
               data = data.filter(r => !invoicedJobIds.includes(r.id));
             }
 
-            // Filter users to only show Workers in selection fields (Tows, Expenses, etc.)
+            // NEW: Filter customers for invoices (Only show those with billable jobs)
+            if (moduleKey === 'invoices' && field.module === 'customers' && mode !== 'edit') {
+              data = data.filter(r => billableCustomerIds.includes(r._id));
+            }
+
+            // Filter users to only show Workers
             if (field.module === 'users') {
               data = data.filter(r => r.role === 'Worker');
             }
@@ -223,13 +281,13 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
               ...prev,
               [field.name]: data.map(r => {
                 let label = '';
-                if (field.module === 'vehicles') label = `${r.name} - ${r.plate}`;
+                if (field.module === 'vehicles') label = r.name;
                 else if (field.module === 'users') label = r.name;
                 else if (field.module === 'tows') label = `${r.id} - ${r.customer}`;
-                else if (field.module === 'customers') label = r.name + (r.phone ? ` (${r.phone})` : '');
+                else if (field.module === 'customers') label = r.name;
                 else label = r.name || r.id || r.title;
 
-                return { label, value: label, _id: r._id, raw: r };
+                return { label, value: r._id || r.id, _id: r._id, raw: r };
               })
             }));
           }
@@ -261,9 +319,11 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
     async function fetchJobs() {
       try {
         const result = await apiService.getRecords('tows', { 
-          customerId: values.customerId, 
           status: 'Completed',
-          limit: 100 
+          limit: 100,
+          extraParams: {
+            customerId: values.customerId
+          }
         });
         const jobs = result.data || [];
         setBillableJobs(jobs);
@@ -718,18 +778,27 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                   const idFieldName = `${field.name}Id`;
                                   setFieldValue(idFieldName, selectedOpt._id);
 
-                                  // Store vehicle name and plate separately if it's a vehicle selection
+                                  // Store vehicle name and plate separately
                                   if (field.module === 'vehicles' && selectedOpt.raw) {
                                     setFieldValue('vehicleName', selectedOpt.raw.name);
                                     setFieldValue('vehiclePlate', selectedOpt.raw.plate);
+                                    
+                                    // Handle Tows/Quotes specific fields if they exist
+                                    if (values.customerVehicle === undefined) {
+                                       // Only auto-fill if the towed vehicle is empty (rare case)
+                                    }
                                   }
 
                                   if (field.module === 'customers' && selectedOpt.raw) {
-                                    setFieldValue('customerMobile', selectedOpt.raw.phone || '');
-                                    setFieldValue('customerAddress', selectedOpt.raw.address || '');
+                                    const raw = selectedOpt.raw;
+                                    // Handle multiple naming conventions for phone
+                                    setFieldValue('customerMobile', raw.phone || '');
+                                    setFieldValue('customerPhone', raw.phone || '');
+                                    setFieldValue('customerAddress', raw.address || '');
+                                    setFieldValue('customerName', raw.name || '');
                                   }
 
-                                  if (field.name === 'jobId') {
+                                  if (field.name === 'jobId' || field.name === 'job') {
                                     setFieldValue('towId', selectedOpt._id);
                                   }
                                 }
@@ -893,10 +962,10 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                   <span className="text-xs font-bold text-slate-600">{new Date(job.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</span>
                                 </div>
                                 <div className="col-span-2">
-                                  <span className="text-xs font-black text-emerald-800 uppercase leading-none truncate">{job.customerVehicle}</span>
+                                  <span className="text-xs font-black text-emerald-800 uppercase leading-none truncate">{job.customerPlate}</span>
                                 </div>
                                 <div className="col-span-1">
-                                  <span className="text-[10px] font-bold text-slate-400 tracking-wider">{job.customerPlate}</span>
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate">{job.customerVehicle}</span>
                                 </div>
                                 <div className="col-span-2">
                                   <div className="flex items-center gap-1.5 overflow-hidden whitespace-nowrap">

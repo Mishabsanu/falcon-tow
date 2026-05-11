@@ -11,11 +11,13 @@ const InvoiceSchema = new mongoose.Schema({
   
   towDetails: [{
     towId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tow' },
-    jobId: String, // Friendly ID like TOW-001
+    jobId: String,
     date: Date,
-    vehicle: String,
+    vehicleName: String,
+    vehiclePlate: String,
     route: String,
-    amount: Number
+    amount: Number,
+    serviceCommission: Number
   }],
   
   type: { type: String, enum: ['Cash', 'Card', 'Bank Transfer', 'Credit'], default: 'Credit' },

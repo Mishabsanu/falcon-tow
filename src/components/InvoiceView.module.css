@@ -197,9 +197,9 @@
 }
 
 .invoiceTable td {
-  padding: 12px 10px;
+  padding: 4px 8px;
   border: 1px solid #1e293b;
-  font-size: 0.85rem;
+  font-size: 0.7rem;
   text-align: center;
 }
 
@@ -230,7 +230,8 @@
   font-size: 0.85rem;
   font-style: italic;
   color: #64748b;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
+  break-inside: avoid;
 }
 
 .disclaimer {
@@ -245,6 +246,7 @@
   padding: 0 40px 60px 40px;
   display: flex;
   justify-content: space-between;
+  break-inside: avoid;
 }
 
 .signBox {

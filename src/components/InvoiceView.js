@@ -116,7 +116,7 @@ export default function InvoiceView({ id }) {
               </div>
               <div className={styles.metaItem}>
                 <span>Billing Date:</span>
-                <span>{new Date(invoice.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                <span>{new Date(invoice.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
               </div>
               <div className={styles.metaItem}>
                 <span>Status:</span>
@@ -134,37 +134,47 @@ export default function InvoiceView({ id }) {
           <table className={styles.invoiceTable}>
             <thead>
               <tr>
-                <th width="60">SI No.</th>
-                <th>Job Description</th>
-                <th>Route Details</th>
-                <th width="120">Amount</th>
+                <th width="40">Sr.No</th>
+                <th width="80">Date</th>
+                <th>Vehicle Name</th>
+                <th width="100">Plate No</th>
+                <th>Route</th>
+                <th width="100">Amount</th>
               </tr>
             </thead>
             <tbody>
               {(invoice.towDetails || invoice.jobs || []).map((job, index) => (
                 <tr key={index}>
-                  <td>{(index + 1).toString().padStart(2, '0')}</td>
-                  <td>
-                    <div style={{ fontWeight: '900', color: '#064e3b' }}>#{job.jobId}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px', textTransform: 'uppercase', fontWeight: 'bold' }}>{job.vehicle}</div>
+                  <td style={{ fontSize: '0.65rem' }}>{(index + 1).toString().padStart(2, '0')}</td>
+                  <td style={{ fontSize: '0.65rem', fontWeight: 'bold' }}>
+                    {job.date ? new Date(job.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' }) : 'N/A'}
                   </td>
-                  <td>
-                    <div style={{ fontSize: '0.8rem', fontWeight: '500' }}>{job.route}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{job.date ? new Date(job.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : ''}</div>
+                  <td style={{ textAlign: 'left', fontWeight: '900', color: '#064e3b', fontSize: '0.7rem', textTransform: 'uppercase' }}>
+                    {job.vehicleName || job.vehicle || 'Standard Service'}
                   </td>
-                  <td style={{ fontWeight: '800' }}>{Number(job.amount || 0).toLocaleString()}</td>
+                  <td style={{ fontWeight: 'bold', fontSize: '0.65rem' }}>
+                    {job.vehiclePlate || 'N/A'}
+                  </td>
+                  <td style={{ textAlign: 'left', fontSize: '0.65rem', color: '#475569' }}>
+                    {job.route}
+                  </td>
+                  <td style={{ fontWeight: '900', fontSize: '0.75rem' }}>
+                    {(Number(job.amount || 0) + Number(job.serviceCommission || 0)).toLocaleString()}
+                  </td>
                 </tr>
               ))}
               {(!(invoice.towDetails || invoice.jobs) || (invoice.towDetails || invoice.jobs).length === 0) && (
                 <tr>
                   <td>01</td>
-                  <td><strong>Standard Towing Service</strong></td>
+                  <td>{new Date(invoice.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
+                  <td style={{ textAlign: 'left' }}>Standard Towing Service</td>
                   <td>N/A</td>
-                  <td>{Number(invoice.total || 0).toLocaleString()}</td>
+                  <td>N/A</td>
+                  <td style={{ fontWeight: '900' }}>{Number(invoice.total || 0).toLocaleString()}</td>
                 </tr>
               )}
               <tr>
-                <td colSpan="3" className={styles.totalLabelCell}>Total Amount (QAR)</td>
+                <td colSpan="5" className={styles.totalLabelCell}>Total Amount (QAR)</td>
                 <td className={styles.totalAmountCell}>{Number(invoice.total || 0).toLocaleString()}</td>
               </tr>
             </tbody>

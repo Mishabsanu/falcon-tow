@@ -57,8 +57,8 @@ export default function TowTable({ tows, loading, pagination, onPageChange, onDe
       </td>
       <td>
         <div>
-          <div className="text-[11px] font-black text-emerald-950 uppercase tracking-tight leading-tight">{tow.customerVehicle || 'N/A'}</div>
-          <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{tow.customerPlate || 'N/A'}</div>
+          <div className="text-[11px] font-black text-emerald-950 uppercase tracking-tight leading-tight">{tow.customerPlate || 'N/A'}</div>
+          <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{tow.customerVehicle || 'N/A'}</div>
         </div>
       </td>
       <td>
