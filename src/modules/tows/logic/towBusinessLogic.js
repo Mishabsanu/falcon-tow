@@ -3,12 +3,16 @@
  * These functions are independent of UI and API.
  */
 
-export const calculateTowShares = (totalAmount) => {
-  const amount = Number(totalAmount) || 0;
+export const calculateTowShares = (totalAmount, serviceCommission = 0) => {
+  const total = Number(totalAmount) || 0;
+  const commission = Number(serviceCommission) || 0;
   
-  // Rule: Driver gets 10%, Company gets 90%
-  const driverShare = amount * 0.10;
-  const companyShare = amount * 0.90;
+  // Rule: Actual price is total minus commission (Hidden Charge)
+  const actualPrice = Math.max(0, total - commission);
+  
+  // Rule: Driver gets 10% of Actual Price, Company gets 90%
+  const driverShare = actualPrice * 0.10;
+  const companyShare = actualPrice * 0.90;
   
   return {
     driverShare: Math.round(driverShare * 100) / 100,

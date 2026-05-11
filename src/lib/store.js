@@ -25,15 +25,24 @@ function getConfig(moduleKey) {
   return moduleData[moduleKey] ?? null;
 }
 
-function processPayload(payload) {
+function processPayload(payload, moduleKey) {
   const processed = { ...payload };
+  const config = moduleData[moduleKey];
+
   Object.keys(processed).forEach(key => {
-    // If key ends in 'Id' and is a 24-char hex string, convert to ObjectId
+    // 1. Resolve ObjectIds
     if (key.endsWith('Id') && typeof processed[key] === 'string' && /^[0-9a-fA-F]{24}$/.test(processed[key])) {
       try {
         processed[key] = new ObjectId(processed[key]);
-      } catch (e) {
-        // Not a valid ObjectId format, ignore
+      } catch (e) {}
+    }
+
+    // 2. Resolve Numeric Fields from Module Data
+    if (config) {
+      const field = config.fields.find(f => f.name === key);
+      if (field?.type === 'number' && typeof processed[key] === 'string') {
+        const num = parseFloat(processed[key]);
+        if (!isNaN(num)) processed[key] = num;
       }
     }
   });
@@ -236,7 +245,7 @@ export async function createRecord(moduleKey, payload) {
 
   const record = { 
     id: payload.id || await makeId(moduleKey), 
-    ...processPayload(payload),
+    ...processPayload(payload, moduleKey),
     createdAt: new Date().toISOString()
   };
 
@@ -279,7 +288,7 @@ export async function updateRecord(moduleKey, id, payload) {
 
   const result = await collection.findOneAndUpdate(
     { id },
-    { $set: { ...processPayload(safePayload), id } },
+    { $set: { ...processPayload(safePayload, moduleKey), id } },
     { returnDocument: 'after' }
   );
 
@@ -375,7 +384,7 @@ export async function importRecords(moduleKey, rows) {
 
     const record = { 
       id: existingId || await makeId(moduleKey), 
-      ...processPayload(normalizedRow),
+      ...processPayload(normalizedRow, moduleKey),
       createdAt: new Date().toISOString()
     };
 
@@ -421,9 +430,11 @@ export async function importRecords(moduleKey, rows) {
 
       // 5. Auto-calculate Tow Shares (for Tows)
       if (moduleKey === 'tows' && record.amount) {
-        const amt = Number(record.amount);
-        record.driverShare = Math.round(amt * 0.1);
-        record.companyShare = Math.round(amt * 0.9);
+        const amt = Number(record.amount || 0);
+        const commission = Number(record.serviceCommission || 0);
+        const actualPrice = Math.max(0, amt - commission);
+        record.driverShare = Math.round(actualPrice * 0.1 * 100) / 100;
+        record.companyShare = Math.round(actualPrice * 0.9 * 100) / 100;
       }
     }
     

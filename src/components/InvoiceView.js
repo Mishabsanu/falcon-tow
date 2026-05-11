@@ -100,19 +100,10 @@ export default function InvoiceView({ id }) {
         <section className={styles.detailsSection}>
           <div className={styles.leftDetails}>
             <div style={{ marginBottom: '20px' }}>
-              <span className={styles.sectionTitle}>Customer Details</span>
+              <span className={styles.sectionTitle}>Billing Entity</span>
               <div className={styles.detailRow}><strong>{invoice.customer}</strong></div>
-              <div className={styles.detailRow}>Doha, Qatar</div>
-            </div>
-            <div>
-              <span className={styles.sectionTitle}>Vehicle & Job Details</span>
-              <div className={styles.detailRow}><strong>Vehicle:</strong> {invoice.vehicle}</div>
-              {jobDetails && (
-                <>
-                  <div className={styles.detailRow}><strong>Pickup:</strong> {jobDetails.pickup}</div>
-                  <div className={styles.detailRow}><strong>Drop-off:</strong> {jobDetails.dropoff}</div>
-                </>
-              )}
+              <div className={styles.detailRow}><strong>Mobile:</strong> {invoice.customerMobile || 'N/A'}</div>
+              <div className={styles.detailRow}><strong>Address:</strong> {invoice.customerAddress || 'N/A'}</div>
             </div>
           </div>
 
@@ -121,19 +112,19 @@ export default function InvoiceView({ id }) {
             <div className={styles.metaGrid}>
               <div className={styles.metaItem}>
                 <span>Invoice No:</span>
-                <span>{id}</span>
+                <span>{invoice.id}</span>
               </div>
               <div className={styles.metaItem}>
-                <span>Date:</span>
-                <span>{invoice.date}</span>
+                <span>Billing Date:</span>
+                <span>{new Date(invoice.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
               </div>
               <div className={styles.metaItem}>
                 <span>Status:</span>
                 <span>{invoice.status}</span>
               </div>
               <div className={styles.metaItem}>
-                <span>Job Ref:</span>
-                <span>{invoice.jobId?.split(' - ')[0] || 'N/A'}</span>
+                <span>Payment:</span>
+                <span>{invoice.type}</span>
               </div>
             </div>
           </div>
@@ -144,34 +135,41 @@ export default function InvoiceView({ id }) {
             <thead>
               <tr>
                 <th width="60">SI No.</th>
-                <th>Item Description</th>
-                <th width="80">Unit</th>
-                <th width="80">Qty</th>
+                <th>Job Description</th>
+                <th>Route Details</th>
                 <th width="120">Amount</th>
               </tr>
             </thead>
             <tbody>
+              {(invoice.towDetails || invoice.jobs || []).map((job, index) => (
+                <tr key={index}>
+                  <td>{(index + 1).toString().padStart(2, '0')}</td>
+                  <td>
+                    <div style={{ fontWeight: '900', color: '#064e3b' }}>#{job.jobId}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px', textTransform: 'uppercase', fontWeight: 'bold' }}>{job.vehicle}</div>
+                  </td>
+                  <td>
+                    <div style={{ fontSize: '0.8rem', fontWeight: '500' }}>{job.route}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{job.date ? new Date(job.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : ''}</div>
+                  </td>
+                  <td style={{ fontWeight: '800' }}>{Number(job.amount || 0).toLocaleString()}</td>
+                </tr>
+              ))}
+              {(!(invoice.towDetails || invoice.jobs) || (invoice.towDetails || invoice.jobs).length === 0) && (
+                <tr>
+                  <td>01</td>
+                  <td><strong>Standard Towing Service</strong></td>
+                  <td>N/A</td>
+                  <td>{Number(invoice.total || 0).toLocaleString()}</td>
+                </tr>
+              )}
               <tr>
-                <td>01</td>
-                <td>
-                  <strong>Towing Service / Roadside Assistance</strong>
-                  {jobDetails && (
-                    <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '5px' }}>
-                      Transport from {jobDetails.pickup} to {jobDetails.dropoff}
-                    </div>
-                  )}
-                </td>
-                <td>Nos</td>
-                <td>1</td>
-                <td>{Number(invoice.total || 0).toLocaleString()}</td>
-              </tr>
-              <tr>
-                <td colSpan="4" className={styles.totalLabelCell}>Total Amount (QAR)</td>
+                <td colSpan="3" className={styles.totalLabelCell}>Total Amount (QAR)</td>
                 <td className={styles.totalAmountCell}>{Number(invoice.total || 0).toLocaleString()}</td>
               </tr>
             </tbody>
-        </table>
-      </div>
+          </table>
+        </div>
 
       <div className={styles.summarySection}>
         <div className={styles.wordsBox}>

@@ -152,8 +152,8 @@ export default function Sidebar() {
               <img src="/logo-1.png" alt="Falcon Tow" className="h-full w-full object-contain brightness-0 invert" />
             </div>
           </Link>
-          
-          <button 
+
+          <button
             onClick={handleLogout}
             className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all border border-white/5 active:scale-95"
             title="Immediate Logout"
@@ -161,7 +161,7 @@ export default function Sidebar() {
             <LogOut size={16} />
           </button>
         </div>
-        
+
       </div>
 
       {/* NAVIGATION */}

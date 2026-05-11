@@ -261,6 +261,7 @@ export default function Customers() {
 
       <ResponsiveTable
         headers={[
+          { label: "ID" },
           { label: "Full Name" },
           { label: "Email Address" },
           { label: "Contact Number" },
@@ -275,6 +276,9 @@ export default function Customers() {
         onPageChange={handlePageChange}
         renderRow={(c) => (
           <tr key={c.id}>
+            <td>
+              <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">{c.id}</span>
+            </td>
             <td>
               <div className={styles.nameCell}>
                 <div className={styles.avatarMini}>{c.name?.charAt(0) ?? 'C'}</div>
@@ -316,6 +320,7 @@ export default function Customers() {
                   {c.name?.charAt(0) ?? 'C'}
                 </div>
                 <div>
+                  <p className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">{c.id}</p>
                   <p className="text-sm font-black text-emerald-950 uppercase">{c.name}</p>
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{c.phone}</p>
                 </div>

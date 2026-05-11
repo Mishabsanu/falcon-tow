@@ -79,7 +79,7 @@ export default function Quotations() {
 
   const handleApprove = async (q) => {
     toast(`Finalize Approval for ${q.id}?`, {
-      description: "This will unlock the 'Sync to Tow' feature for this record.",
+      description: `This will mark quotation ${q.id} as finalized and approved.`,
       action: {
         label: 'Confirm Approval',
         onClick: async () => {
@@ -138,7 +138,7 @@ export default function Quotations() {
       <header className={styles.header}>
         <motion.div variants={item}>
           <h1 className={styles.title}>Quotations</h1>
-          <p className={styles.subtitle}>Manage customer quotes and convert them to tow jobs once approved.</p>
+          <p className={styles.subtitle}>Manage customer quotes and finalize project approvals in the sales pipeline.</p>
         </motion.div>
         <motion.div variants={item} className="flex flex-wrap gap-3 md:gap-4 items-center">
           <ExportCsvButton moduleKey="quotations" filename="Quotations_Ledger" />
@@ -299,16 +299,6 @@ export default function Quotations() {
               </td>
               <td>
                 <div className={styles.actionCell}>
-                  {q.status === 'Approved' && (
-                    <Link
-                      href={`/dashboard/tows/new?fromQuote=${q.id}`}
-                      className={styles.payBtn}
-                      style={{ color: '#059669' }}
-                      title="Sync to Tow Job"
-                    >
-                      <Truck size={16} />
-                    </Link>
-                  )}
                   {q.status !== 'Approved' && q.status !== 'Cancelled' && q.status !== 'Rejected' && (
                     <>
                       <button

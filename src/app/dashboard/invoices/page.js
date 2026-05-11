@@ -407,7 +407,7 @@ export default function Invoices() {
               <td>
                 <span className={styles.nameText}>{inv?.customer || 'Unknown'}</span>
                 <div className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mt-1">
-                  {inv?.customerData?.id || 'CUS-REF'}
+                  {inv?.companyName || 'Corporate Client'}
                 </div>
               </td>
               <td>{inv?.date ? new Date(inv.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</td>

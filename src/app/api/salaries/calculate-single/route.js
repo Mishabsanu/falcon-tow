@@ -51,6 +51,7 @@ export async function GET(request) {
           driver: 1,
           vehicle: 1,
           amount: 1,
+          serviceCommission: 1,
           paymentMethod: 1
         }
       }
@@ -85,9 +86,15 @@ export async function GET(request) {
       .filter(t => t.paymentMethod === 'Cash')
       .reduce((sum, t) => sum + Number(t.amount || 0), 0);
     
-    const allServicesTotal = tows.reduce((sum, t) => sum + Number(t.amount || 0), 0);
-    const totalCommission = allServicesTotal * 0.10;
-    const cashDeduction90 = totalCashCollected * 0.90;
+    const totalActualPrice = tows.reduce((sum, t) => sum + (Number(t.amount || 0) - Number(t.serviceCommission || 0)), 0);
+    const totalCommissions = tows.reduce((sum, t) => sum + Number(t.serviceCommission || 0), 0);
+    
+    const totalCommission = totalActualPrice * 0.10;
+    const cashDeduction90 = totalCashCollected - (totalCommission); // Worker keeps their 10% from cash if available
+    // OR simply:
+    // const cashDeduction90 = (totalCashCollected - totalCommissions) * 0.90 + totalCommissions; 
+    // Wait, let's keep it simple as per user's split logic.
+    
     const totalExpensesAmount = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
     return NextResponse.json({
@@ -97,8 +104,10 @@ export async function GET(request) {
         expenses,
         stats: {
           cashCollected: totalCashCollected,
+          totalActualPrice,
+          totalCommissions,
           totalCommission,
-          cashDeduction90,
+          cashDeduction90: totalActualPrice * 0.90, // We track what the company should have received
           totalExpensesAmount
         }
       }

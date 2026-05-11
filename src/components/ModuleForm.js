@@ -4,7 +4,7 @@ import { calculateSalarySettlement } from '@/modules/salaries/logic/salaryBusine
 import { calculateTowShares } from '@/modules/tows/logic/towBusinessLogic';
 import { apiService } from '@/services/apiService';
 import { useFormik } from 'formik';
-import { Activity, ArrowLeft, Eye, EyeOff, FileText, Lock, Plus, Save } from 'lucide-react';
+import { Activity, ArrowLeft, Check, Eye, EyeOff, FileText, Lock, Plus, Save, Square } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { toast } from 'sonner';
@@ -14,7 +14,6 @@ import Modal from './Modal';
 function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const fromQuote = searchParams.get('fromQuote');
   const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user')) : null;
   const isWorker = currentUser?.role === 'Worker';
   const config = moduleData[moduleKey];
@@ -44,6 +43,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
   const [options, setOptions] = useState({});
   const [quickAdd, setQuickAdd] = useState(null);
   const [showPasswords, setShowPasswords] = useState({});
+  const [initialRecord, setInitialRecord] = useState(null);
 
   // Dynamic Validation Schema
   const validationSchema = useMemo(() => {
@@ -114,12 +114,36 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
           }
         });
 
+        // 0.1 Handle Multi-Job Invoices
+        if (moduleKey === 'invoices') {
+          initialPayload.towDetails = selectedJobs.map(j => ({
+            towId: j._id,
+            jobId: j.id,
+            date: j.date,
+            vehicle: j.customerVehicle || j.vehicle,
+            route: `${j.pickup} to ${j.dropoff}`,
+            amount: Number(j.amount || 0) + Number(j.serviceCommission || 0)
+          }));
+        }
+
         // 1. Create/Update record immediately
         const result = mode === 'edit'
           ? await apiService.updateRecord(moduleKey, id, initialPayload)
           : await apiService.createRecord(moduleKey, initialPayload);
 
         const recordId = result?._id || id;
+
+        // 1.1 If creating an invoice, mark all selected tow jobs as 'Closed'
+        if (moduleKey === 'invoices' && mode !== 'edit' && selectedJobs.length > 0) {
+          try {
+            await Promise.all(selectedJobs.map(job => 
+              apiService.updateRecord('tows', job._id || job.towId, { status: 'Closed' })
+            ));
+            console.log(`[INVOICE_SYNC] ${selectedJobs.length} tows marked as Closed`);
+          } catch (err) {
+            console.error('[INVOICE_SYNC_FAILURE] Failed to close tow jobs:', err);
+          }
+        }
 
         // 2. IMMEDIATE REDIRECTION (NO WAIT)
         toast.success(`${config.title} ${mode === 'edit' ? 'updated' : 'created'} successfully.`);
@@ -221,52 +245,65 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
     fetchOptions();
   }, [fetchOptions]);
 
-  const hasPrefilled = useRef(false);
+  const [billableJobs, setBillableJobs] = useState([]);
+  const [selectedJobs, setSelectedJobs] = useState([]);
 
-  // Pre-fill from Quote Logic
   useEffect(() => {
-    if (fromQuote && mode === 'add' && moduleKey === 'tows' && !hasPrefilled.current) {
-      const loadQuoteData = async () => {
-        hasPrefilled.current = true;
-        try {
-          const quote = await apiService.getRecord('quotations', fromQuote);
-          if (quote) {
-            // Bulk set values from quote
-            const prefill = {
-              customer: quote.customer,
-              customerId: quote.customerId,
-              customerVehicle: quote.customerVehicle,
-              customerPlate: quote.customerPlate,
-              vehicle: quote.vehicle,
-              vehicleId: quote.vehicleId,
-              vehicleName: quote.vehicleName,
-              vehiclePlate: quote.vehiclePlate,
-              driver: quote.driver,
-              driverId: quote.driverId,
-              pickup: quote.pickup,
-              dropoff: quote.dropoff,
-              amount: quote.amount,
-              date: quote.date ? new Date(quote.date).toISOString().split('T')[0] : values.date
-            };
-            
-            // Use resetForm to ensure pre-filled data becomes the new baseline
-            formik.resetForm({
-              values: {
-                ...formik.initialValues,
-                ...prefill
-              }
-            });
-            
-            toast.success(`System synchronized with Quote ${quote.id}`);
-          }
-        } catch (error) {
-          console.error('Failed to pre-fill from quote:', error);
-          toast.error('Data synchronization failed.');
-        }
-      };
-      loadQuoteData();
+    if (moduleKey !== 'invoices' || !values.customerId) {
+      setBillableJobs([]);
+      // Only clear selected jobs if we are not in edit mode or if the customer actually changed
+      if (mode !== 'edit' || (initialRecord && values.customerId !== initialRecord.customerId)) {
+        setSelectedJobs([]);
+      }
+      return;
     }
-  }, [fromQuote, mode, moduleKey, formik.initialValues]);
+
+    async function fetchJobs() {
+      try {
+        const result = await apiService.getRecords('tows', { 
+          customerId: values.customerId, 
+          status: 'Completed',
+          limit: 100 
+        });
+        const jobs = result.data || [];
+        setBillableJobs(jobs);
+        
+        // Auto-select all jobs by default when fetching new billable jobs (except in edit mode initial load)
+        if (mode !== 'edit' || (initialRecord && values.customerId !== initialRecord.customerId)) {
+          setSelectedJobs(jobs);
+        }
+      } catch (error) {
+        console.error('Failed to fetch billable jobs:', error);
+      }
+    }
+    fetchJobs();
+  }, [moduleKey, values.customerId, mode, initialRecord]);
+
+  // Handle pre-selecting jobs when editing an invoice
+  useEffect(() => {
+    if (mode === 'edit' && initialRecord?.towDetails && moduleKey === 'invoices' && selectedJobs.length === 0) {
+      setSelectedJobs(initialRecord.towDetails.map(j => ({ ...j, _id: j.towId, id: j.jobId })));
+    }
+  }, [mode, initialRecord, moduleKey, selectedJobs.length]);
+
+  useEffect(() => {
+    if (moduleKey !== 'invoices') return;
+    const total = selectedJobs.reduce((sum, j) => sum + (Number(j.amount || 0) + Number(j.serviceCommission || 0)), 0);
+    // Use non-strict inequality to handle string/number comparisons from Formik
+    if (values.total != total) {
+      setFieldValue('total', total);
+    }
+  }, [moduleKey, selectedJobs, values.total, setFieldValue]);
+
+  const toggleJob = (job) => {
+    setSelectedJobs(prev => {
+      const exists = prev.find(j => (j._id || j.towId) === (job._id || job.towId));
+      if (exists) return prev.filter(j => (j._id || j.towId) !== (job._id || job.towId));
+      return [...prev, job];
+    });
+  };
+
+  const hasPrefilled = useRef(false);
 
   // Worker Self-Selection for Tow Jobs and Expenses
   useEffect(() => {
@@ -309,6 +346,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
       try {
         const result = await apiService.getRecord(moduleKey, id);
         if (result) {
+          setInitialRecord(result);
           formik.setValues((prev) => ({
             ...prev,
             ...Object.fromEntries(
@@ -368,13 +406,13 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
   useEffect(() => {
     if (moduleKey !== 'tows') return;
 
-    const shares = calculateTowShares(values.amount);
+    const shares = calculateTowShares(values.amount, values.serviceCommission);
 
     if (values.driverShare !== shares.driverShare || values.companyShare !== shares.companyShare) {
       setFieldValue('driverShare', shares.driverShare);
       setFieldValue('companyShare', shares.companyShare);
     }
-  }, [moduleKey, values.amount, setFieldValue, values.driverShare, values.companyShare]);
+  }, [moduleKey, values.amount, values.serviceCommission, setFieldValue, values.driverShare, values.companyShare]);
 
   useEffect(() => {
     if (moduleKey !== 'tows' || !values.driver) return;
@@ -687,7 +725,8 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                   }
 
                                   if (field.module === 'customers' && selectedOpt.raw) {
-                                    setFieldValue('customerPhone', selectedOpt.raw.phone || '');
+                                    setFieldValue('customerMobile', selectedOpt.raw.phone || '');
+                                    setFieldValue('customerAddress', selectedOpt.raw.address || '');
                                   }
 
                                   if (field.name === 'jobId') {
@@ -800,6 +839,90 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                       );
                     })}
                   </div>
+
+                  {/* Dynamic Tow Selection Table for Invoices */}
+                  {moduleKey === 'invoices' && section.title === 'Billing Entity' && values.customerId && (
+                    <div className="col-span-12 mt-12 space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
+                            <Activity size={20} />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-black text-emerald-950 uppercase tracking-tight">Select Completed Tows</h3>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Choose jobs to include in this invoice</p>
+                          </div>
+                        </div>
+                        {selectedJobs.length > 0 && (
+                          <div className="px-4 py-2 bg-emerald-950 text-emerald-400 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg">
+                            {selectedJobs.length} Jobs Selected
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                        {/* Header Row - Styled like section dividers */}
+                        <div className="grid grid-cols-12 gap-4 px-2 py-4 border-b border-emerald-100/50 bg-slate-50/30 sticky top-0 z-10 backdrop-blur-sm">
+                          <div className="col-span-1 text-[9px] font-black uppercase tracking-widest text-emerald-900/40">Select</div>
+                          <div className="col-span-2 text-[9px] font-black uppercase tracking-widest text-emerald-900/40">Job ID</div>
+                          <div className="col-span-2 text-[9px] font-black uppercase tracking-widest text-emerald-900/40">Date</div>
+                          <div className="col-span-2 text-[9px] font-black uppercase tracking-widest text-emerald-900/40">Vehicle Name</div>
+                          <div className="col-span-1 text-[9px] font-black uppercase tracking-widest text-emerald-900/40">Plate No</div>
+                          <div className="col-span-2 text-[9px] font-black uppercase tracking-widest text-emerald-900/40">Route</div>
+                          <div className="col-span-2 text-right text-[9px] font-black uppercase tracking-widest text-emerald-900/40">Fee (QAR)</div>
+                        </div>
+
+                        {billableJobs.length > 0 ? (
+                          billableJobs.map((job) => {
+                            const isSelected = selectedJobs.some(j => (j._id || j.towId) === (job._id || job.towId));
+                            return (
+                              <div 
+                                key={job._id} 
+                                onClick={() => toggleJob(job)}
+                                className={`grid grid-cols-12 gap-4 items-center px-2 py-5 cursor-pointer transition-all duration-300 border-b-2 ${isSelected ? 'border-emerald-600 bg-emerald-50/30' : 'border-emerald-50 hover:border-emerald-200'}`}
+                              >
+                                <div className="col-span-1">
+                                  <div className={`w-5 h-5 rounded flex items-center justify-center transition-all duration-300 ${isSelected ? 'bg-emerald-600 text-white' : 'border-2 border-emerald-100 text-transparent'}`}>
+                                    <Check size={12} strokeWidth={4} />
+                                  </div>
+                                </div>
+                                <div className="col-span-2">
+                                  <span className="text-sm font-black text-emerald-950">#{job.id}</span>
+                                </div>
+                                <div className="col-span-2">
+                                  <span className="text-xs font-bold text-slate-600">{new Date(job.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</span>
+                                </div>
+                                <div className="col-span-2">
+                                  <span className="text-xs font-black text-emerald-800 uppercase leading-none truncate">{job.customerVehicle}</span>
+                                </div>
+                                <div className="col-span-1">
+                                  <span className="text-[10px] font-bold text-slate-400 tracking-wider">{job.customerPlate}</span>
+                                </div>
+                                <div className="col-span-2">
+                                  <div className="flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
+                                    <span className="text-[10px] font-medium text-slate-500 truncate">{job.pickup}</span>
+                                    <span className="text-[10px] text-emerald-200">→</span>
+                                    <span className="text-[10px] font-medium text-slate-500 truncate">{job.dropoff}</span>
+                                  </div>
+                                </div>
+                                <div className="col-span-2 text-right">
+                                  <span className={`text-sm font-black transition-colors ${isSelected ? 'text-emerald-600' : 'text-emerald-950'}`}>
+                                    {(Number(job.amount || 0) + Number(job.serviceCommission || 0)).toLocaleString()}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="py-12 flex flex-col items-center justify-center border-b-2 border-dashed border-emerald-100">
+                            <Activity size={24} className="text-emerald-100 mb-2" />
+                            <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">No matching assets found</p>
+                          </div>
+                        )}
+                      </div>
+                      
+                    </div>
+                  )}
                 </div>
               ));
             })()}

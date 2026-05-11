@@ -30,10 +30,11 @@ const TowSchema = new mongoose.Schema({
   // Financials
   paymentMethod: { type: String, enum: ['Cash', 'Credit'], default: 'Credit' },
   amount: { type: Number, required: true },
+  serviceCommission: { type: Number, default: 0 }, // Hidden Charge/Company Person Commission
   driverShare: { type: Number, default: 0 },
   companyShare: { type: Number, default: 0 },
   
-  status: { type: String, enum: ['Pending', 'In Progress', 'Completed', 'Cancelled'], default: 'Completed', index: true },
+  status: { type: String, enum: ['Pending', 'In Progress', 'Completed', 'Cancelled', 'Closed'], default: 'Completed', index: true },
   
   createdBy: { type: String },
   createdById: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+@utility custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--garage-accent) 20%, transparent);
+    border-radius: 20px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--garage-accent);
+  }
+}
+
 @utility hide-scrollbar {
   &::-webkit-scrollbar {
     display: none;
