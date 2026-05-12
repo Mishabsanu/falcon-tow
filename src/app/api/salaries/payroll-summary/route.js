@@ -19,8 +19,6 @@ export async function GET(request) {
     ]);
 
     // 2. Aggregate tows for all workers in that month
-    // month is 0-indexed from frontend (0 = Jan)
-    // MongoDB $month is 1-indexed (1 = Jan)
     const towsSummary = await aggregateRecords('tows', [
       {
         $addFields: {
@@ -34,7 +32,8 @@ export async function GET(request) {
               { $eq: [{ $month: "$dateObj" }, month + 1] },
               { $eq: [{ $year: "$dateObj" }, year] }
             ]
-          }
+          },
+          status: 'Completed'
         }
       },
       {
@@ -45,6 +44,15 @@ export async function GET(request) {
             $sum: {
               $cond: [
                 { $eq: ["$paymentMethod", "Cash"] },
+                { $toDouble: { $ifNull: ["$amount", 0] } },
+                0
+              ]
+            }
+          },
+          creditRevenue: {
+            $sum: {
+              $cond: [
+                { $ne: ["$paymentMethod", "Cash"] },
                 { $toDouble: { $ifNull: ["$amount", 0] } },
                 0
               ]
@@ -81,23 +89,35 @@ export async function GET(request) {
 
     // 4. Combine data
     const payrollData = workers.map(worker => {
-      // Find matching stats by name or id (since driver field might contain either)
-      const towStats = towsSummary.find(t => t._id === worker.name || t._id === worker.id) || { totalTows: 0, cashCollected: 0 };
+      // Find matching stats by name or id
+      const towStats = towsSummary.find(t => t._id === worker.name || t._id === worker.id) || { totalTows: 0, cashCollected: 0, creditRevenue: 0 };
       const expenseStats = expensesSummary.find(e => e._id === worker.name || e._id === worker.id) || { totalExpenses: 0 };
       
       const baseSalary = Number(worker.salary || 0);
-      const retention = towStats.cashCollected * 0.90;
-      const netSalary = baseSalary - retention - expenseStats.totalExpenses;
+      const cashCollected = towStats.cashCollected;
+      const creditRevenue = towStats.creditRevenue;
+      
+      // Formula: 
+      // 1. Worker is entitled to Base Salary + 10% Commission on ALL revenue.
+      // 2. Worker already has 100% of Cash Collected.
+      // 3. We subtract 90% of Cash Collected (so they keep 10%).
+      // 4. we add 10% of Credit Revenue.
+      const commission = (cashCollected + creditRevenue) * 0.10;
+      const retention = cashCollected * 0.90;
+      
+      const netSalary = baseSalary + (creditRevenue * 0.10) - (cashCollected * 0.90) - expenseStats.totalExpenses;
 
       return {
         id: worker.id,
         name: worker.name,
         salary: baseSalary,
         totalTows: towStats.totalTows,
-        cashCollected: towStats.cashCollected,
+        cashCollected: cashCollected,
+        creditRevenue: creditRevenue,
+        commission,
         retention,
         totalExpenses: expenseStats.totalExpenses,
-        netSalary
+        netSalary: Math.round(netSalary * 100) / 100
       };
     });
 

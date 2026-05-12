@@ -348,7 +348,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
 
   useEffect(() => {
     if (moduleKey !== 'invoices') return;
-    const total = selectedJobs.reduce((sum, j) => sum + (Number(j.amount || 0) + Number(j.serviceCommission || 0)), 0);
+    const total = selectedJobs.reduce((sum, j) => sum + Number(j.amount || 0), 0);
     // Use non-strict inequality to handle string/number comparisons from Formik
     if (values.total != total) {
       setFieldValue('total', total);
@@ -577,19 +577,20 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
         const worker = usersResult.data?.find(w => w.id === workerId || w.name === workerName || w.username === workerId);
         const baseSalary = Number(worker?.salary || 0);
 
-        // 2. Fetch completed cash tows for this worker/month/year
+        // 2. Fetch completed tows for this worker/month/year
         const towsResult = await apiService.getRecords('tows', { limit: 1000 });
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         const monthIndex = monthNames.indexOf(month);
 
         const workerTows = (towsResult.data || []).filter(tow => {
           const towWorkerId = extractId(tow.driver || '');
-          if (towWorkerId !== workerId || tow.status !== 'Completed' || tow.paymentMethod !== 'Cash') return false;
+          if (towWorkerId !== workerId || tow.status !== 'Completed') return false;
           const towDate = new Date(tow.date);
           return towDate.getMonth() === monthIndex && towDate.getFullYear().toString() === year;
         });
 
-        const cashCollected = workerTows.reduce((sum, tow) => sum + Number(tow.amount || 0), 0);
+        const cashCollected = workerTows.filter(t => t.paymentMethod === 'Cash').reduce((sum, tow) => sum + Number(tow.amount || 0), 0);
+        const creditRevenue = workerTows.filter(t => t.paymentMethod !== 'Cash').reduce((sum, tow) => sum + Number(tow.amount || 0), 0);
 
         // 3. Fetch expenses for this worker/month/year
         const expensesResult = await apiService.getRecords('expenses', { limit: 1000 });
@@ -604,7 +605,8 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
 
         // 4. Calculate using the Official Formula
         const settlement = calculateSalarySettlement({
-          totalTowAmount: cashCollected,
+          cashAmount: cashCollected,
+          creditAmount: creditRevenue,
           baseSalary: baseSalary,
           expenses: totalExpenses
         });
@@ -612,10 +614,12 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
         setValues({
           ...values,
           baseSalary: settlement.baseSalary.toString(),
-          cashCollected: settlement.totalTowAmount.toString(),
-          retention: settlement.worker10Share.toString(), // 10% Commission
+          cashCollected: settlement.cashAmount.toString(),
+          creditRevenue: settlement.creditAmount.toString(),
+          retention: settlement.workerCommission.toString(), // 10% Total Commission
+          cashDeduction90: (settlement.cashAmount * 0.9).toString(),
           expenses: settlement.expenses.toString(),
-          amount: settlement.finalSettlement.toString() // This is the "Final Settlement"
+          amount: settlement.netPayout.toString() // Final Payout
         });
 
       } catch (error) {
@@ -976,7 +980,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                 </div>
                                 <div className="col-span-2 text-right">
                                   <span className={`text-sm font-black transition-colors ${isSelected ? 'text-emerald-600' : 'text-emerald-950'}`}>
-                                    {(Number(job.amount || 0) + Number(job.serviceCommission || 0)).toLocaleString()}
+                                    {Number(job.amount || 0).toLocaleString()}
                                   </span>
                                 </div>
                               </div>

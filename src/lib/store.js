@@ -410,7 +410,11 @@ export async function importRecords(moduleKey, rows) {
         const vehicleDoc = await db.collection('vehicles').findOne({ 
           $or: [{ name: vehicleName }, { plate: vehicleName }, { id: vehicleName.split(' - ')[0] }] 
         });
-        if (vehicleDoc) record.vehicleId = vehicleDoc._id;
+        if (vehicleDoc) {
+          record.vehicleId = vehicleDoc._id;
+          record.vehicleName = vehicleDoc.name;
+          record.vehiclePlate = vehicleDoc.plate;
+        }
       }
 
       // 3. Resolve Customer
@@ -419,7 +423,10 @@ export async function importRecords(moduleKey, rows) {
         const customerDoc = await db.collection('customers').findOne({ 
           $or: [{ name: customerName }, { phone: customerName }, { id: customerName.split(' - ')[0] }] 
         });
-        if (customerDoc) record.customerId = customerDoc._id;
+        if (customerDoc) {
+          record.customerId = customerDoc._id;
+          record.customerPhone = customerDoc.phone;
+        }
       }
 
       // 4. Resolve Tow Job (for Invoices)
@@ -428,7 +435,13 @@ export async function importRecords(moduleKey, rows) {
         if (towDoc) record.towId = towDoc._id;
       }
 
-      // 5. Auto-calculate Tow Shares (for Tows)
+      // 5. Explicit Date Parsing (Crucial for CSV)
+      if (record.date && typeof record.date === 'string') {
+        const parsedDate = new Date(record.date);
+        if (!isNaN(parsedDate.getTime())) record.date = parsedDate;
+      }
+
+      // 6. Auto-calculate Tow Shares (for Tows)
       if (moduleKey === 'tows' && record.amount) {
         const amt = Number(record.amount || 0);
         const commission = Number(record.serviceCommission || 0);

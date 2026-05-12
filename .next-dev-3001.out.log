@@ -1,0 +1,12 @@
+
+> tow-admin@0.1.0 dev
+> next dev -p 3001
+
+   ▲ Next.js 15.5.7
+   - Local:        http://localhost:3001
+   - Network:      http://192.168.56.1:3001
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 389.7s
+[?25h

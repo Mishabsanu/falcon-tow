@@ -293,3 +293,30 @@
   min-height: 400px;
   font-weight: 700;
 }
+
+/* Tab Styles handled via Tailwind in JS, but adding some local overrides if needed */
+.ledgerTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ledgerHeader {
+  background: var(--slate-50);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.ledgerRow:hover {
+  background: var(--slate-50);
+}
+
+.tabContent {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+

@@ -8,7 +8,7 @@
     background: transparent;
   }
   &::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--garage-accent) 20%, transparent);
+    background: rgba(5, 150, 105, 0.2);
     border-radius: 20px;
   }
   &::-webkit-scrollbar-thumb:hover {
@@ -70,8 +70,8 @@ table {
 }
 
 thead tr {
-  background: color-mix(in srgb, var(--garage-line) 28%, transparent);
-  color: color-mix(in srgb, var(--garage-muted) 72%, transparent);
+  background: rgba(226, 232, 240, 0.28);
+  color: rgba(71, 85, 105, 0.72);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: .14em;
@@ -98,7 +98,7 @@ tbody tr {
 }
 
 tbody tr:hover {
-  background: color-mix(in srgb, var(--garage-accent) 8%, transparent);
+  background: rgba(5, 150, 105, 0.08);
 }
 
 @media (max-width: 768px) {
@@ -136,13 +136,13 @@ tbody tr:hover {
 }
 
 .dashboard-control:focus {
-  border-color: color-mix(in srgb, var(--garage-accent) 55%, transparent);
+  border-color: rgba(5, 150, 105, 0.55);
   background: #fff;
   box-shadow: 0 0 0 4px rgba(5, 150, 105, .08);
 }
 
 .dashboard-control::placeholder {
-  color: color-mix(in srgb, var(--garage-muted) 45%, transparent);
+  color: rgba(71, 85, 105, 0.45);
 }
 
 div[class*="fixed"][class*="z-[60]"] {
@@ -345,5 +345,35 @@ div[class*="fixed"][class*="z-[60]"] label {
 
   .date-filter-input {
     @apply bg-white border border-emerald-100 rounded-lg px-4 py-1.5 text-[11px] font-bold text-emerald-950 outline-none focus:border-emerald-600 transition-all;
+  }
+}
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  
+  html, body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide everything except the invoice container */
+  nav, aside, footer:not([class*="contactBar"]), 
+  .no-print, [class*="no-print"],
+  header:not([class*="paperHeader"]),
+  div[class*="Sidebar"], div[class*="Menu"] {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  
+  .garage-workspace {
+    background: white !important;
+    padding: 0 !important;
   }
 }
