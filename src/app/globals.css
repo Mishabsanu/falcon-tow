@@ -362,10 +362,12 @@ div[class*="fixed"][class*="z-[60]"] label {
   }
 
   /* Hide everything except the invoice container */
-  nav, aside, footer:not([class*="contactBar"]), 
+  nav, aside, footer, 
   .no-print, [class*="no-print"],
   header:not([class*="paperHeader"]),
-  div[class*="Sidebar"], div[class*="Menu"] {
+  div[class*="Sidebar"], div[class*="Menu"],
+  div[class*="bottom-nav"], div[class*="MobileNav"],
+  [class*="BottomMenu"] {
     display: none !important;
     visibility: hidden !important;
     width: 0 !important;

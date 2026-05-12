@@ -59,6 +59,7 @@ export default function NotificationsPage() {
 
   const markAllRead = async () => {
      try {
+        await fetch('/api/notifications?id=all', { method: 'PATCH' });
         // Optimistic UI update
         setNotifications(notifications.map(n => ({ ...n, isRead: true })));
         toast.success("All notifications marked as read");

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Printer, Download, ArrowLeft, ShieldCheck, Landmark, User, FileCheck } from 'lucide-react';
+import { Printer, Download, ArrowLeft, ShieldCheck, Landmark, User, FileCheck, Phone, Mail, Globe, MapPin } from 'lucide-react';
 import { apiService } from '@/services/apiService';
 import styles from './InvoiceView.module.css';
 
@@ -86,8 +86,10 @@ export default function SalarySlipView({ id, hideToolbar = false }) {
     return num.toString();
   };
 
-  if (loading) return <div style={{ padding: '80px', textAlign: 'center', fontWeight: '900', color: COLORS.emerald900, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: '10px' }}>Generating Premium Settlement Document...</div>;
-  if (!salary) return <div style={{ padding: '80px', textAlign: 'center', fontWeight: '900', color: COLORS.rose600, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: '10px' }}>Salary record not found.</div>;
+  const currency = (val) => `QAR ${Number(val || 0).toFixed(2)}`;
+
+  if (loading) return <div className={styles.loading}>Generating Settlement Document...</div>;
+  if (!salary) return <div className={styles.error}>Salary record not found.</div>;
 
   return (
     <div className={styles.container}>
@@ -96,112 +98,163 @@ export default function SalarySlipView({ id, hideToolbar = false }) {
           <ArrowLeft size={18} />
           <span>Return to Ledger</span>
         </Link>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button onClick={handlePrint} className={styles.actionBtn}>
-            <Printer size={18} />
+        <div className={styles.toolbarActions}>
+          <button onClick={handlePrint} className={`${styles.actionBtn} no-print`}>
+            <Printer size={16} />
             <span>Print Slip</span>
           </button>
-          <button onClick={handleDownload} className={styles.pdfBtn}>
-            <Download size={18} />
+          <button onClick={handleDownload} className={`${styles.pdfBtn} no-print`}>
+            <Download size={16} />
             <span>Export PDF</span>
           </button>
         </div>
       </div>
 
-      <div className={styles.paper} id="salary-slip-content" style={{ background: COLORS.white, padding: '20mm', color: COLORS.emerald950 }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `2px solid ${COLORS.emerald600}`, paddingBottom: '24px', marginBottom: '40px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-             <img src="/logo-1.png" alt="Falcon" style={{ height: '50px', width: 'auto' }} />
-             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <h1 style={{ fontSize: '20px', fontWeight: '900', color: COLORS.emerald950, margin: 0 }}>FALCON PLUS <span style={{ color: COLORS.emerald600 }}>TOWING</span></h1>
-                <p style={{ fontSize: '9px', fontWeight: '800', color: COLORS.emerald600, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Official Payroll Record</p>
-             </div>
+      <div id="salary-slip-content" className={`${styles.paper} ${styles.invoicePaper}`}>
+        <header className={styles.paperHeader}>
+          <div className={styles.headerBrand}>
+            <div className={styles.logoSection}>
+              <img src="/logo-1.png" alt="Falcon Plus" className={styles.logoImg} />
+            </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-             <p style={{ fontSize: '10px', fontWeight: '900', color: COLORS.emerald950, margin: 0 }}>SLIP #{salary.id}</p>
-             <p style={{ fontSize: '9px', fontWeight: '700', color: COLORS.slate400, textTransform: 'uppercase', margin: '4px 0 0 0' }}>{salary.month} {salary.year}</p>
+          <div className={styles.headerContact}>
+            <span>Official Payroll Record</span>
+            <strong>www.falconplusqa.com</strong>
           </div>
         </header>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '40px', marginBottom: '40px' }}>
-          <div>
-             <h4 style={{ fontSize: '10px', fontWeight: '900', color: COLORS.emerald600, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px', borderBottom: `1px solid ${COLORS.emerald50}`, pb: '4px' }}>Employee Details</h4>
-             <table style={{ width: '100%', fontSize: '11px' }}>
-                <tbody>
-                  <tr>
-                    <td style={{ py: '6px', color: COLORS.slate500, fontWeight: '600' }}>Full Name:</td>
-                    <td style={{ py: '6px', fontWeight: '900', color: COLORS.emerald950 }}>{salary.worker}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ py: '6px', color: COLORS.slate500, fontWeight: '600' }}>Worker ID:</td>
-                    <td style={{ py: '6px', fontWeight: '900', color: COLORS.emerald950 }}>{salary.workerId || 'F-00'+salary.id}</td>
-                  </tr>
-                </tbody>
-             </table>
+        <section className={styles.invoiceMetaSection}>
+          <div className={styles.titleArea}>
+            <h1 style={{ fontSize: '1.8rem' }}>SALARY SLIP</h1>
+            <div className={styles.metaInfo}>
+              <div className={styles.metaRow}>
+                <span className={styles.metaLabel}>Slip #</span>
+                <span className={styles.metaValue}>{salary.id}</span>
+              </div>
+              <div className={styles.metaRow}>
+                <span className={styles.metaLabel}>Period</span>
+                <span className={styles.metaValue}>{salary.month} {salary.year}</span>
+              </div>
+              <div className={styles.metaRow}>
+                <span className={styles.metaLabel}>Status</span>
+                <span className={styles.metaValue} style={{ color: salary.status === 'Paid' ? '#10b981' : '#f59e0b' }}>{salary.status}</span>
+              </div>
+            </div>
           </div>
-          <div>
-             <h4 style={{ fontSize: '10px', fontWeight: '900', color: COLORS.emerald600, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px', borderBottom: `1px solid ${COLORS.emerald50}`, pb: '4px' }}>Status</h4>
-             <div style={{ padding: '12px', background: salary.status === 'Paid' ? COLORS.emerald50 : '#fff7ed', borderRadius: '8px', border: `1px solid ${salary.status === 'Paid' ? COLORS.emerald100 : '#ffedd5'}` }}>
-                <span style={{ fontSize: '12px', fontWeight: '900', color: salary.status === 'Paid' ? COLORS.emerald700 : COLORS.amber600, textTransform: 'uppercase' }}>{salary.status}</span>
-             </div>
+          <div className={styles.clientArea}>
+            <div className={styles.clientRow}>
+              <span className={styles.clientLabel}>Employee</span>
+              <span className={styles.clientValue}>{salary.worker}</span>
+            </div>
+            <div className={styles.clientRow}>
+              <span className={styles.clientLabel}>Worker ID</span>
+              <span className={styles.clientValue}>{salary.workerId || 'F-00'+salary.id}</span>
+            </div>
+            <div className={styles.clientRow}>
+              <span className={styles.clientLabel}>Designation</span>
+              <span className={styles.clientValue}>Service Executive</span>
+            </div>
+          </div>
+        </section>
+
+        <div className={styles.invoiceTableWrapper}>
+          <table className={styles.invoiceTable}>
+            <thead>
+              <tr>
+                <th width="34">SL</th>
+                <th>EARNINGS / DEDUCTIONS DESCRIPTION</th>
+                <th width="120" style={{ textAlign: 'right' }}>AMOUNT (QAR)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>01</td>
+                <td>
+                  <div className={styles.itemDesc}>Monthly Basic Salary</div>
+                  <div className={styles.itemSub}>Standard contractual basic pay</div>
+                </td>
+                <td className={styles.itemAmount}>{currency(salary.baseSalary)}</td>
+              </tr>
+              <tr>
+                <td>02</td>
+                <td>
+                  <div className={styles.itemDesc}>Service Commission (10%)</div>
+                  <div className={styles.itemSub}>Accrued performance-based incentives</div>
+                </td>
+                <td className={styles.itemAmount} style={{ color: '#059669' }}>+{currency(salary.retention)}</td>
+              </tr>
+              <tr>
+                <td>03</td>
+                <td>
+                  <div className={styles.itemDesc}>Cash Advance / Revenue Deduction</div>
+                  <div className={styles.itemSub}>90% Cash reconciliation adjustment</div>
+                </td>
+                <td className={styles.itemAmount} style={{ color: '#dc2626' }}>-{currency(salary.cashDeduction90)}</td>
+              </tr>
+              <tr>
+                <td>04</td>
+                <td>
+                  <div className={styles.itemDesc}>Operational Expenses</div>
+                  <div className={styles.itemSub}>Assigned fuel and maintenance costs</div>
+                </td>
+                <td className={styles.itemAmount} style={{ color: '#dc2626' }}>-{currency(salary.expenses)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className={styles.invoiceTotalsTop}>
+          <div className={styles.totalsArea}>
+            <div className={styles.totalRow}>
+              <span className={styles.totalLabel}>Gross Settlement</span>
+              <span className={styles.totalValue}>{currency(Number(salary.baseSalary || 0) + Number(salary.retention || 0))}</span>
+            </div>
+            <div className={styles.grandTotalRow}>
+              <span className={styles.grandLabel}>Net Payable</span>
+              <span className={styles.grandValue}>{currency(salary.amount)}</span>
+            </div>
           </div>
         </div>
 
-        <table style={{ width: '100%', marginBottom: '40px', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: `2px solid ${COLORS.emerald950}` }}>
-              <th style={{ padding: '12px 0', textAlign: 'left', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase' }}>Description</th>
-              <th style={{ padding: '12px 0', textAlign: 'right', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase' }}>Amount (QAR)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style={{ padding: '16px 0', fontSize: '11px', fontWeight: '700', color: COLORS.emerald950 }}>Basic Salary</td>
-              <td style={{ padding: '16px 0', textAlign: 'right', fontSize: '11px', fontWeight: '900' }}>{Number(salary.baseSalary || 0).toLocaleString()}</td>
-            </tr>
-            <tr>
-              <td style={{ padding: '16px 0', fontSize: '11px', fontWeight: '700', color: COLORS.emerald950 }}>Commission (10%)</td>
-              <td style={{ padding: '16px 0', textAlign: 'right', fontSize: '11px', fontWeight: '900', color: COLORS.emerald600 }}>+{Number(salary.retention || 0).toLocaleString()}</td>
-            </tr>
-            <tr>
-              <td style={{ padding: '16px 0', fontSize: '11px', fontWeight: '700', color: COLORS.rose900 }}>Cash Advance / Deduction</td>
-              <td style={{ padding: '16px 0', textAlign: 'right', fontSize: '11px', fontWeight: '900', color: COLORS.rose600 }}>-{Number(salary.cashDeduction90 || 0).toLocaleString()}</td>
-            </tr>
-            <tr>
-              <td style={{ padding: '16px 0', fontSize: '11px', fontWeight: '700', color: COLORS.rose900 }}>Operational Expenses</td>
-              <td style={{ padding: '16px 0', textAlign: 'right', fontSize: '11px', fontWeight: '900', color: COLORS.rose600 }}>-{Number(salary.expenses || 0).toLocaleString()}</td>
-            </tr>
-          </tbody>
-          <tfoot>
-             <tr style={{ borderTop: `2px solid ${COLORS.emerald950}`, borderBottom: `2px solid ${COLORS.emerald950}` }}>
-                <td style={{ padding: '20px 0' }}>
-                   <span style={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }}>Net Payable Amount</span>
-                </td>
-                <td style={{ padding: '20px 0', textAlign: 'right' }}>
-                   <span style={{ fontSize: '20px', fontWeight: '900', color: COLORS.emerald600 }}>QAR {Number(salary.amount || 0).toLocaleString()}</span>
-                </td>
-             </tr>
-          </tfoot>
-        </table>
+        <div className={styles.bottomGrid}>
+          <div className={styles.notesArea}>
+            <span className={styles.notesTitle}>Administrative Notes</span>
+            <p className={styles.notesText}>
+              This is an official document of Falcon Plus Towing & Recovery.
+              Salary calculations are based on the standard company performance formula.
+              This is a computer generated record.
+            </p>
+            <p className={styles.thankYouText}>FALCON PLUS GARAGE - HR DEPARTMENT</p>
+            
+            <div className={styles.paymentInfoBox}>
+              <span className={styles.notesTitle}>Payment Method</span>
+              <p className={styles.paymentMethodText}>Bank Transfer / Cash Disbursement</p>
+            </div>
 
-        <div style={{ marginTop: '20px', marginBottom: '60px' }}>
-           <p style={{ fontSize: '10px', fontWeight: '700', fontStyle: 'italic', color: COLORS.slate500 }}>
-             Amount in Words: {amountInWords(Math.round(salary.amount || 0))} Qatari Riyals Only
-           </p>
+            <div className={styles.wordsWrapper}>
+              <p className={styles.wordsText}>Amount in words: Qatari Riyal {amountInWords(Math.round(salary.amount || 0))} Only</p>
+            </div>
+          </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '100px' }}>
-           <div style={{ borderTop: `1px solid ${COLORS.slate200}`, pt: '10px', textAlign: 'center' }}>
-              <p style={{ fontSize: '9px', fontWeight: '800', textTransform: 'uppercase', margin: 0 }}>Employee Signature</p>
-           </div>
-           <div style={{ borderTop: `1px solid ${COLORS.slate200}`, pt: '10px', textAlign: 'center' }}>
-              <p style={{ fontSize: '9px', fontWeight: '800', textTransform: 'uppercase', margin: 0 }}>Authorized Signature</p>
-           </div>
-        </div>
 
-        <footer style={{ marginTop: '80px', textAlign: 'center', borderTop: `1px solid ${COLORS.emerald50}`, pt: '20px' }}>
-           <p style={{ fontSize: '9px', fontWeight: '700', color: COLORS.slate400, margin: 0 }}>FALCON PLUS TOWING & RECOVERY | DOHA, QATAR | CR NO. 210580</p>
-           <p style={{ fontSize: '8px', fontWeight: '600', color: COLORS.slate300, mt: '4px' }}>System Generated Record - No Stamp Required Unless Specified</p>
+        <footer className={styles.contactBar}>
+          <div className={styles.contactItem}>
+            <Phone size={14} className={styles.contactIcon} />
+            <span>+974 3074 0770</span>
+          </div>
+          <div className={styles.contactItem}>
+            <Mail size={14} className={styles.contactIcon} />
+            <span>info@falconplusqa.com</span>
+          </div>
+          <div className={styles.contactItem}>
+            <MapPin size={14} className={styles.contactIcon} />
+            <span>Industrial Area, Doha</span>
+          </div>
+          <div className={styles.contactItem}>
+            <Globe size={14} className={styles.contactIcon} />
+            <span>www.falconplusqa.com</span>
+          </div>
         </footer>
       </div>
     </div>

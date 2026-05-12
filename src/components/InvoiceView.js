@@ -243,11 +243,13 @@ export default function InvoiceView({ id }) {
               This is a computer generated document.
             </p>
             <p className={styles.thankYouText}>THANK YOU FOR YOUR BUSINESS</p>
-            <div style={{ marginTop: '20px' }}>
+            <div className={styles.paymentInfoBox}>
               <span className={styles.notesTitle}>Payment Method</span>
-              <p className={styles.notesText}>{invoice.type || invoice.paymentMethod || 'Cash'} Payment</p>
+              <p className={styles.paymentMethodText}>{invoice.type || invoice.paymentMethod || 'Cash'} Payment</p>
             </div>
-            <p className={styles.wordsText}>Amount in words: Qatari Riyal {amountInWords(Math.round(totalAmount))} Only</p>
+            <div className={styles.wordsWrapper}>
+              <p className={styles.wordsText}>Amount in words: Qatari Riyal {amountInWords(Math.round(totalAmount))} Only</p>
+            </div>
           </div>
         </div>
 

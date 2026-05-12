@@ -736,6 +736,37 @@
   display: block;
 }
 
+.paymentInfoBox {
+  margin-top: 25px;
+  padding-left: 5px;
+}
+
+.paymentMethodText {
+  color: #064e3b;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: 5px;
+}
+
+.wordsWrapper {
+  margin: 20px 0 0 -10mm;
+  background: #bbf7d0;
+  padding: 10px 15mm 10px 10mm;
+  border-top-right-radius: 20mm;
+  border-bottom-right-radius: 20mm;
+  display: inline-block;
+  min-width: 70%;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.02);
+}
+
+.wordsText {
+  color: #064e3b;
+  font-size: 0.68rem;
+  font-weight: 700;
+  margin: 0;
+  font-style: italic;
+}
+
 .notesText {
   color: #64748b;
   line-height: 1.6;

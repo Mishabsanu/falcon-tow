@@ -93,7 +93,17 @@ export default function Header() {
     return { main: lastPart, sub: "" };
   };
 
-  const pageTitle = getPageTitle();
+  const handleMarkRead = async (id: string) => {
+    try {
+      const res = await fetch(`/api/notifications?id=${id}`, { method: "PATCH" });
+      const data = await res.json();
+      if (data.success) {
+        fetchNotificationCount();
+      }
+    } catch (error) {
+      console.error("Mark read failed", error);
+    }
+  };
 
   if (!mounted) return null;
 
@@ -174,7 +184,11 @@ export default function Header() {
                     </div>
                   </div>
                 ) : notifications.map(n => (
-                  <div key={n._id} className="px-8 py-5 hover:bg-emerald-50/50 transition-all cursor-pointer group relative">
+                  <div 
+                    key={n._id} 
+                    onClick={() => handleMarkRead(n._id)}
+                    className="px-8 py-5 hover:bg-emerald-50/50 transition-all cursor-pointer group relative"
+                  >
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-600 scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-300"></div>
                     <div className="flex items-center justify-between">
                       <p className="text-[10px] font-black text-emerald-950 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">{n.title}</p>

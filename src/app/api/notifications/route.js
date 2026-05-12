@@ -42,6 +42,14 @@ export async function PATCH(request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
+    if (id === 'all') {
+      await collection.updateMany(
+        { isRead: { $ne: true } },
+        { $set: { isRead: true, unread: false } }
+      );
+      return NextResponse.json({ success: true });
+    }
+
     if (!id) {
       return NextResponse.json({ success: false, error: 'Missing id' }, { status: 400 });
     }
