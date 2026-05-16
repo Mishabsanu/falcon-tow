@@ -50,9 +50,17 @@ export default function QuotationView({ id }) {
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: 'avoid-all' }
     };
+    
+    // Force dimensions for PDF generation
+    element.style.height = '297mm';
+    element.style.overflow = 'hidden';
 
     const html2pdf = (await import('html2pdf.js')).default;
-    html2pdf().set(opt).from(element).save();
+    await html2pdf().set(opt).from(element).save();
+    
+    // Reset dimensions
+    element.style.height = '';
+    element.style.overflow = '';
   };
 
   const handleApprove = async () => {

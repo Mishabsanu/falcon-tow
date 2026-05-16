@@ -131,7 +131,7 @@ export default function Tows() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 mt-10">
         <SummaryCard 
           label={isWorker ? "My Total Dispatches" : "Total Fleet Jobs"} 
-          value={isWorker ? summary.total : summary.global} 
+          value={isWorker ? (summary.total || 0) : (summary.global || 0)} 
           icon={Truck} 
           color="emerald" 
           isLoading={loading}

@@ -69,8 +69,16 @@ export default function InvoiceView({ id }) {
       pagebreak: { mode: 'avoid-all' }
     };
     
+    // Force dimensions for PDF generation
+    element.style.height = '297mm';
+    element.style.overflow = 'hidden';
+    
     const html2pdf = (await import('html2pdf.js')).default;
-    html2pdf().set(opt).from(element).save();
+    await html2pdf().set(opt).from(element).save();
+    
+    // Reset dimensions
+    element.style.height = '';
+    element.style.overflow = '';
   };
 
   const amountInWords = (num) => {
@@ -84,7 +92,14 @@ export default function InvoiceView({ id }) {
     return num.toString();
   };
 
-  if (loading) return <div className={styles.loading}>Loading Invoice...</div>;
+  if (loading) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <div className="w-10 h-10 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
+        <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest animate-pulse">Synchronizing Node...</p>
+      </div>
+    );
+  }
   if (!invoice) return <div className={styles.error}>Invoice not found.</div>;
 
   const lineItems = invoice.towDetails || invoice.jobs || [];

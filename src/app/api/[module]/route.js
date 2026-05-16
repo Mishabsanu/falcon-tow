@@ -117,6 +117,8 @@ export async function GET(request, context) {
 
     if (['invoices', 'expenses', 'salaries', 'tows', 'quotations'].includes(moduleKey)) {
       const fieldToSum = moduleKey === 'invoices' ? 'total' : 'amount';
+      summaryExtra = { totalAmount: 0, paidAmount: 0, dueAmount: 0 };
+      
       const stats = await Model.aggregate([
         { $match: filterQuery },
         { 
@@ -129,9 +131,9 @@ export async function GET(request, context) {
       ]);
       if (stats.length > 0) {
         summaryExtra = {
-          totalAmount: stats[0].totalAmount,
-          paidAmount: stats[0].paidAmount,
-          dueAmount: stats[0].totalAmount - stats[0].paidAmount
+          totalAmount: stats[0].totalAmount || 0,
+          paidAmount: stats[0].paidAmount || 0,
+          dueAmount: (stats[0].totalAmount || 0) - (stats[0].paidAmount || 0)
         };
       }
     }
