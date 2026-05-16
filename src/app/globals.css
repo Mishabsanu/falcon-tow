@@ -346,6 +346,10 @@ div[class*="fixed"][class*="z-[60]"] label {
   .date-filter-input {
     @apply bg-white border border-emerald-100 rounded-lg px-4 py-1.5 text-[11px] font-bold text-emerald-950 outline-none focus:border-emerald-600 transition-all;
   }
+
+  .skeleton {
+    @apply bg-slate-200/50 animate-pulse rounded-lg;
+  }
 }
 @media print {
   @page {

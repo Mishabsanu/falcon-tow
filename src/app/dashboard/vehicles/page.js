@@ -140,23 +140,6 @@ export default function Vehicles() {
         </div>
       </div>
 
-      {/* Active Filter Chips */}
-      {status !== 'All' && (
-        <div className="flex flex-wrap items-center gap-3 mb-8 animate-in fade-in slide-in-from-left-4 duration-500">
-          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mr-2">Fleet Filters:</span>
-          <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
-            <span>Status: {status}</span>
-            <button onClick={() => setStatus('All')} className="hover:text-rose-500 transition-colors"><Plus size={12} className="rotate-45" /></button>
-          </div>
-          <button 
-            onClick={() => setStatus('All')}
-            className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-700 ml-2"
-          >
-            Reset
-          </button>
-        </div>
-      )}
-
       {showFilters && (
         <div className="bg-white border border-emerald-100 rounded-[2rem] p-8 mb-10 shadow-2xl shadow-emerald-900/5 animate-in fade-in slide-in-from-top-4 duration-500 space-y-8">
           <div className="flex flex-col gap-8">
@@ -164,6 +147,23 @@ export default function Vehicles() {
                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-900/40">Fleet Query Engine</span>
             </div>
+
+            {/* Active Filter Chips — Inside Panel */}
+            {status !== 'All' && (
+              <div className="flex flex-wrap items-center gap-3 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mr-2">Fleet Filters:</span>
+                <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
+                  <span>Status: {status}</span>
+                  <button onClick={() => setStatus('All')} className="hover:text-rose-500 transition-colors"><Plus size={12} className="rotate-45" /></button>
+                </div>
+                <button 
+                  onClick={() => setStatus('All')}
+                  className="ml-auto text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-700"
+                >
+                  Reset
+                </button>
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center gap-4">
               <div className="filter-group-premium">

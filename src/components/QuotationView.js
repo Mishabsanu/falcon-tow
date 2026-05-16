@@ -231,14 +231,6 @@ export default function QuotationView({ id }) {
           </div>
         </div>
 
-        <div style={{ marginTop: 'auto', padding: '20px 0', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-           <div className={styles.signatureArea}>
-             <div className={styles.signLine}>Customer Approval</div>
-           </div>
-           <div className={styles.signatureArea}>
-             <div className={styles.signLine}>Authorized Signature</div>
-           </div>
-        </div>
 
         <footer className={styles.contactBar}>
           <div className={styles.contactItem}>

@@ -82,9 +82,33 @@ export default function Salaries() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState('All');
+  
+  // New Filters
+  const [filters, setFilters] = useState({
+    worker: 'All'
+  });
+
+  const [filterOptions, setFilterOptions] = useState({
+    workers: []
+  });
+
   const [showFilters, setShowFilters] = useState(false);
   const [selectedSalary, setSelectedSalary] = useState(null);
   const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    async function loadOptions() {
+      try {
+        const u = await apiService.getAllRecords('users');
+        setFilterOptions({
+          workers: (u || []).filter(user => user.role === 'Worker')
+        });
+      } catch (error) {
+        console.error('Failed to load filter options:', error);
+      }
+    }
+    loadOptions();
+  }, []);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -98,11 +122,15 @@ export default function Salaries() {
   const fetchSalaries = useCallback(async () => {
     setLoading(true);
     try {
+      const extraParams = {};
+      if (filters.worker !== 'All') extraParams.worker = filters.worker;
+
       const result = await apiService.getRecords('salaries', {
         q: searchTerm,
         page: pagination.page,
         limit: pagination.limit,
-        status: status
+        status: status,
+        extraParams
       });
       setSalaries(result.data || []);
       if (result.pagination) {
@@ -113,7 +141,7 @@ export default function Salaries() {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, pagination.page, pagination.limit, status]);
+  }, [searchTerm, pagination.page, pagination.limit, status, filters]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -202,26 +230,9 @@ export default function Salaries() {
           }`}
         >
           <Filter size={18} />
-          <span>{showFilters ? 'Hide Filters' : 'Filter View'}</span>
+          <span>{showFilters ? 'Hide Filter' : 'Show Filter'}</span>
         </button>
       </div>
-
-      {/* Active Filter Chips */}
-      {status !== 'All' && (
-        <div className="flex flex-wrap items-center gap-3 mb-8 animate-in fade-in slide-in-from-left-4 duration-500">
-          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mr-2">Payroll Filters:</span>
-          <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
-            <span>Status: {status}</span>
-            <button onClick={() => setStatus('All')} className="hover:text-rose-500 transition-colors"><Plus size={12} className="rotate-45" /></button>
-          </div>
-          <button 
-            onClick={() => setStatus('All')}
-            className="text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-700 ml-2"
-          >
-            Reset
-          </button>
-        </div>
-      )}
 
       {showFilters && (
         <div className="bg-white border border-emerald-100 rounded-[2rem] p-8 mb-10 shadow-2xl shadow-emerald-900/5 animate-in fade-in slide-in-from-top-4 duration-500 space-y-8">
@@ -230,6 +241,37 @@ export default function Salaries() {
                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-900/40">Payroll Query Engine</span>
             </div>
+
+            {/* Active Filter Chips — Inside Panel */}
+            {(status !== 'All' || filters.worker !== 'All') && (
+              <div className="flex flex-wrap items-center gap-3 animate-in fade-in slide-in-from-left-4 duration-500 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mr-2">Payroll Filters:</span>
+                
+                {status !== 'All' && (
+                  <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
+                    <span>Status: {status}</span>
+                    <button onClick={() => setStatus('All')} className="hover:text-rose-500 transition-colors"><Plus size={12} className="rotate-45" /></button>
+                  </div>
+                )}
+
+                {filters.worker !== 'All' && (
+                  <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] font-bold">
+                    <span>Worker: {filters.worker}</span>
+                    <button onClick={() => setFilters(f => ({ ...f, worker: 'All' }))} className="hover:text-rose-500 transition-colors"><Plus size={12} className="rotate-45" /></button>
+                  </div>
+                )}
+
+                <button 
+                  onClick={() => {
+                    setStatus('All');
+                    setFilters({ worker: 'All' });
+                  }}
+                  className="ml-auto text-[9px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-700"
+                >
+                  Reset
+                </button>
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center gap-4">
               <div className="filter-group-premium">
@@ -244,6 +286,20 @@ export default function Salaries() {
                   <option value="All">All Status</option>
                   <option value="Paid">Settled</option>
                   <option value="Pending">Outstanding</option>
+                </select>
+              </div>
+
+              {/* Worker Filter */}
+              <div className="filter-group-premium">
+                <User size={14} className="text-emerald-600" />
+                <select
+                  value={filters.worker}
+                  onChange={(e) => setFilters(f => ({ ...f, worker: e.target.value }))}
+                >
+                  <option value="All">All Workers</option>
+                  {filterOptions.workers.map(w => (
+                    <option key={w.id || w._id} value={w.name}>{w.name}</option>
+                  ))}
                 </select>
               </div>
             </div>

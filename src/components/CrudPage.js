@@ -27,6 +27,7 @@ export default function CrudPage({ moduleKey }) {
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({});
   const [status, setStatus] = useState('All');
+  const [showFilters, setShowFilters] = useState(false);
 
   const config = {
     customers: { title: 'Customers', path: '/dashboard/customers' },
@@ -65,7 +66,7 @@ export default function CrudPage({ moduleKey }) {
 
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this record? This action is irreversible.')) return;
-    
+
     const toastId = toast.loading('Initiating purge protocol...');
     try {
       await apiService.deleteRecord(moduleKey, id);
@@ -114,26 +115,50 @@ export default function CrudPage({ moduleKey }) {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-3 px-8 py-5 bg-white border border-slate-100 rounded-[2rem] shadow-xl shadow-slate-200/40">
-            <Filter size={18} className="text-emerald-600" />
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="bg-transparent border-none text-[11px] font-black uppercase tracking-[0.2em] text-emerald-950 outline-none cursor-pointer"
-            >
-              <option value="All">All Entities</option>
-              <option value="Pending">Pending Review</option>
-              <option value="In Progress">Active Process</option>
-              <option value="Completed">Completed Task</option>
-              <option value="Cancelled">Terminated</option>
-              <option value="Active">System Active</option>
-              <option value="Inactive">System Inactive</option>
-              <option value="Paid">Cleared Ledger</option>
-              <option value="Unpaid">Pending Balance</option>
-            </select>
-          </div>
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-3 px-10 py-5 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${
+              showFilters 
+                ? 'bg-emerald-950 text-emerald-400 shadow-emerald-900/40 border-transparent' 
+                : 'bg-white text-emerald-700 border border-slate-100 hover:bg-emerald-50 shadow-slate-200/40'
+            }`}
+          >
+            <Filter size={18} className={showFilters ? 'animate-pulse' : ''} />
+            <span>{showFilters ? 'Hide Filter' : 'Show Filter'}</span>
+          </button>
         </div>
       </div>
+
+      {showFilters && (
+        <div className="bg-white border border-emerald-100 rounded-[2rem] p-8 mb-10 shadow-2xl shadow-emerald-900/5 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center gap-3 border-b border-emerald-50 pb-4">
+               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-900/40">Entity Filter Matrix</span>
+            </div>
+
+            <div className="flex flex-wrap gap-4">
+              <div className="filter-group-premium">
+                <Filter size={14} className="text-emerald-600" />
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option value="All">All Entities</option>
+                  <option value="Pending">Pending Review</option>
+                  <option value="In Progress">Active Process</option>
+                  <option value="Completed">Completed Task</option>
+                  <option value="Cancelled">Terminated</option>
+                  <option value="Active">System Active</option>
+                  <option value="Inactive">System Inactive</option>
+                  <option value="Paid">Cleared Ledger</option>
+                  <option value="Unpaid">Pending Balance</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-6">
         {/* DESKTOP TABLE VIEW */}
@@ -216,7 +241,7 @@ export default function CrudPage({ moduleKey }) {
                     )}
                     <td>
                       <div className={`badge ${record.status === 'Completed' || record.status === 'Paid' || record.status === 'Active' ? 'badge-success' :
-                          ['In Progress', 'Pending'].includes(record.status) ? 'badge-warning' : 'badge-neutral'
+                        ['In Progress', 'Pending'].includes(record.status) ? 'badge-warning' : 'badge-neutral'
                         }`}>
                         <div className={`h-1 w-1 rounded-full ${record.status === 'Completed' || record.status === 'Paid' || record.status === 'Active' ? 'bg-emerald-600' : 'bg-emerald-400'}`}></div>
                         {record.status || 'Active'}
@@ -266,25 +291,25 @@ export default function CrudPage({ moduleKey }) {
                   </div>
                   <div className={`badge ${record.status === 'Completed' || record.status === 'Paid' || record.status === 'Active' ? 'badge-success' :
                     ['In Progress', 'Pending'].includes(record.status) ? 'badge-warning' : 'badge-neutral'
-                  }`}>
+                    }`}>
                     {record.status || 'Active'}
                   </div>
                 </div>
 
                 <div className="py-3 border-y border-emerald-50 space-y-2">
-                   <div className="flex justify-between items-center">
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Principal Data</span>
-                      <span className="text-xs font-bold text-emerald-950">
-                        {moduleKey === 'expenses' || moduleKey === 'invoices' || moduleKey === 'salaries' || moduleKey === 'quotations' ? `${record.amount || record.total || 0} QAR` : 
-                         moduleKey === 'vehicles' ? record.plate : record.phone || '-'}
-                      </span>
-                   </div>
-                   {moduleKey === 'vehicles' && (
-                     <div className="flex justify-between items-center">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Registry</span>
-                        <span className="text-[9px] font-bold text-emerald-600">{record.modelRef}</span>
-                     </div>
-                   )}
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Principal Data</span>
+                    <span className="text-xs font-bold text-emerald-950">
+                      {moduleKey === 'expenses' || moduleKey === 'invoices' || moduleKey === 'salaries' || moduleKey === 'quotations' ? `${record.amount || record.total || 0} QAR` :
+                        moduleKey === 'vehicles' ? record.plate : record.phone || '-'}
+                    </span>
+                  </div>
+                  {moduleKey === 'vehicles' && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Registry</span>
+                      <span className="text-[9px] font-bold text-emerald-600">{record.modelRef}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -306,40 +331,55 @@ export default function CrudPage({ moduleKey }) {
         </div>
       </div>
 
-        <div className="pagination-container">
-          <p className="pagination-info">
-            Showing {records.length} of {pagination.total || 0} records
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage(p => p - 1)}
-              className="pagination-btn"
-            >
-              <ChevronLeft size={16} />
-            </button>
+      <div className="pagination-container">
+        <p className="pagination-info">
+          Showing {records.length} of {pagination.total || 0} records
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage(p => p - 1)}
+            className="pagination-btn"
+          >
+            <ChevronLeft size={16} />
+          </button>
 
-            <div className="flex items-center gap-1.5">
-              {Array.from({ length: pagination.totalPages || 1 }, (_, i) => i + 1).map(pageNum => (
-                <button
-                  key={pageNum}
-                  onClick={() => setPage(pageNum)}
-                  className={`pagination-btn ${page === pageNum ? "pagination-btn-active" : ""}`}
-                >
-                  {pageNum}
-                </button>
-              ))}
-            </div>
+          <div className="flex items-center gap-1.5">
+            {(() => {
+              const pages = [];
+              const maxVisible = 5;
+              const totalPages = pagination.totalPages || 1;
+              let start = Math.max(1, page - Math.floor(maxVisible / 2));
+              let end = Math.min(totalPages, start + maxVisible - 1);
 
-            <button
-              disabled={page >= (pagination.totalPages || 1)}
-              onClick={() => setPage(p => p + 1)}
-              className="pagination-btn"
-            >
-              <ChevronRight size={16} />
-            </button>
+              if (end - start + 1 < maxVisible) {
+                start = Math.max(1, end - maxVisible + 1);
+              }
+
+              for (let i = start; i <= end; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    onClick={() => setPage(i)}
+                    className={`pagination-btn ${page === i ? "pagination-btn-active" : ""}`}
+                  >
+                    {i}
+                  </button>
+                );
+              }
+              return pages;
+            })()}
           </div>
+
+          <button
+            disabled={page >= (pagination.totalPages || 1)}
+            onClick={() => setPage(p => p + 1)}
+            className="pagination-btn"
+          >
+            <ChevronRight size={16} />
+          </button>
         </div>
       </div>
-    );
+    </div>
+  );
 }

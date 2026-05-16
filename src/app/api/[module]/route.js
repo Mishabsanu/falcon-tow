@@ -47,27 +47,11 @@ export async function GET(request, context) {
     // Build query
     let query = {};
 
-    // Global Search
-    if (q) {
-      const searchFields = [];
-      if (moduleKey === 'users') searchFields.push('name', 'email', 'id');
-      else if (moduleKey === 'tows') searchFields.push('id', 'customer', 'vehicle', 'driver');
-      else if (moduleKey === 'customers') searchFields.push('id', 'name', 'phone', 'email');
-      else if (moduleKey === 'vehicles') searchFields.push('id', 'name', 'plate');
-      else if (moduleKey === 'expenses') searchFields.push('id', 'description', 'worker', 'vehicle');
-      else if (moduleKey === 'invoices') searchFields.push('id', 'customer', 'worker', 'jobId');
-      else if (moduleKey === 'quotations') searchFields.push('id', 'customer', 'driver', 'pickup', 'dropoff');
-      else searchFields.push('id', 'name');
-      
-      if (searchFields.length > 0) {
-        query.$or = searchFields.map(field => ({ [field]: { $regex: q, $options: 'i' } }));
-      }
-    }
-
-    // 2. Filters & Search
+    // 1. Build Base Filter Query (Excludes search 'q')
+    let filterQuery = {};
     searchParams.forEach((value, key) => {
       // Skip pagination and global search keys
-      if (['q', 'page', 'limit'].includes(key) || value === 'All') return;
+      if (['q', 'page', 'limit', 'sort', 'order', 'select'].includes(key) || value === 'All') return;
 
       // Handle Date Ranges
       if (key === 'startDate' || key === 'endDate') {
@@ -76,26 +60,84 @@ export async function GET(request, context) {
                          moduleKey === 'expenses' ? 'date' : 
                          moduleKey === 'quotations' ? 'date' : 'createdAt';
         
-        if (!query[dateField]) query[dateField] = {};
-        if (key === 'startDate') query[dateField].$gte = value;
-        if (key === 'endDate') query[dateField].$lte = value;
+        if (!filterQuery[dateField]) filterQuery[dateField] = {};
+        if (key === 'startDate') filterQuery[dateField].$gte = value;
+        if (key === 'endDate') filterQuery[dateField].$lte = value;
         return;
       }
 
       // Handle Specific Field Filtering
       if (key.endsWith('Id') || key === '_id') {
-        try { query[key] = value; } catch(e) {}
+        try { filterQuery[key] = value; } catch(e) {}
       } else {
-        query[key] = value;
+        filterQuery[key] = value;
       }
     });
+
+    // 2. Build Global Search Query
+    let searchQuery = {};
+    if (q) {
+      const searchFields = [];
+      if (moduleKey === 'users') searchFields.push('id', 'name', 'email', 'phone', 'role');
+      else if (moduleKey === 'tows') searchFields.push('id', 'customer', 'vehicle', 'driver', 'pickup', 'dropoff', 'customerPlate', 'customerVehicle');
+      else if (moduleKey === 'customers') searchFields.push('id', 'name', 'phone', 'email', 'companyName', 'address');
+      else if (moduleKey === 'vehicles') searchFields.push('id', 'name', 'plate', 'modelRef', 'year');
+      else if (moduleKey === 'expenses') searchFields.push('id', 'description', 'worker', 'vehicle', 'category');
+      else if (moduleKey === 'invoices') searchFields.push('id', 'customer', 'worker', 'jobId', 'companyName', 'status');
+      else if (moduleKey === 'quotations') searchFields.push('id', 'customer', 'driver', 'pickup', 'dropoff', 'customerPlate');
+      else if (moduleKey === 'salaries') searchFields.push('id', 'worker', 'month', 'year', 'status');
+      else searchFields.push('id', 'name');
+      
+      if (searchFields.length > 0) {
+        searchQuery.$or = searchFields.map(field => ({ [field]: { $regex: q, $options: 'i' } }));
+      }
+    }
+
+    // 3. Final Query (Filters + Search)
+    const finalQuery = q ? { $and: [filterQuery, searchQuery] } : filterQuery;
 
     const select = searchParams.get('select') || '';
     const sort = searchParams.get('sort') || 'createdAt';
     const order = parseInt(searchParams.get('order')) || -1;
 
-    const total = await Model.countDocuments(query);
-    let dataQuery = Model.find(query)
+    // 4. Calculate Summary (Based on Filters ONLY, ignores Search 'q')
+    // This satisfies the requirement: "when I search that time widget should not affect"
+    const globalCount = await Model.countDocuments({}); // Truly global
+    const filteredCount = await Model.countDocuments(filterQuery);
+    
+    let summaryExtra = {};
+
+    // Calculate Status-based counts within the filtered set
+    const statusStats = await Model.aggregate([
+      { $match: filterQuery },
+      { $group: { _id: "$status", count: { $sum: 1 } } }
+    ]);
+    const statusCounts = {};
+    statusStats.forEach(s => { if (s._id) statusCounts[s._id] = s.count; });
+
+    if (['invoices', 'expenses', 'salaries', 'tows', 'quotations'].includes(moduleKey)) {
+      const fieldToSum = moduleKey === 'invoices' ? 'total' : 'amount';
+      const stats = await Model.aggregate([
+        { $match: filterQuery },
+        { 
+          $group: { 
+            _id: null, 
+            totalAmount: { $sum: `$${fieldToSum}` },
+            paidAmount: { $sum: { $ifNull: ["$paid", 0] } }
+          } 
+        }
+      ]);
+      if (stats.length > 0) {
+        summaryExtra = {
+          totalAmount: stats[0].totalAmount,
+          paidAmount: stats[0].paidAmount,
+          dueAmount: stats[0].totalAmount - stats[0].paidAmount
+        };
+      }
+    }
+
+    const total = await Model.countDocuments(finalQuery);
+    let dataQuery = Model.find(finalQuery)
       .sort({ [sort]: order })
       .skip(skip)
       .limit(limit);
@@ -142,6 +184,12 @@ export async function GET(request, context) {
     return NextResponse.json({
       success: true,
       data: enrichedData,
+      summary: {
+        global: globalCount,
+        total: filteredCount,
+        statusCounts,
+        ...summaryExtra
+      },
       pagination: {
         total,
         page,

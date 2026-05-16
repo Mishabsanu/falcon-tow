@@ -74,28 +74,28 @@ export default function LoginPage() {
         <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
 
         <div className="relative z-10 text-white space-y-16 max-w-md animate-in fade-in slide-in-from-left-8 duration-1000">
-          <div className="flex flex-col items-center lg:items-start gap-10 group text-center lg:text-left">
+          <div className="flex flex-col items-center gap-10 group text-center">
             <div className="h-32 w-full transition-all duration-700 group-hover:scale-105">
               <img src="/logo-1.png" alt="Falcon Tow" className="h-full w-full object-contain brightness-0 invert" />
             </div>
             <div>
-              <h1 className="text-5xl font-bold tracking-tighter text-white">FALCON <span className="text-emerald-400">TOW</span></h1>
+              <h1 className="text-5xl font-bold tracking-tighter text-white uppercase">FALCON <span className="text-emerald-400">TOW</span></h1>
               <p className="text-[10px] font-bold text-emerald-100/40 tracking-[0.5em] uppercase mt-4">Fleet Management System</p>
             </div>
           </div>
 
-          <div className="space-y-8 text-center lg:text-left">
+          <div className="space-y-8 text-center">
             <h2 className="text-5xl font-bold leading-[1.1] tracking-tight text-white">
               Next-Gen <br />
               <span className="text-emerald-400">Logistics</span> <br />
               Management.
             </h2>
-            <p className="text-emerald-100/60 text-lg font-medium leading-relaxed max-w-sm">
+            <p className="text-emerald-100/60 text-lg font-medium leading-relaxed max-w-sm mx-auto">
               Manage your fleet, billing, and staff operations in one place.
             </p>
           </div>
 
-          <div className="pt-12 flex items-center justify-center lg:justify-start gap-12 border-t border-white/10">
+          <div className="pt-12 flex items-center justify-center gap-12 border-t border-white/10">
             <div className="space-y-1">
               <p className="text-4xl font-bold text-emerald-400">99.8%</p>
               <p className="text-emerald-100/40 text-[9px] font-bold uppercase tracking-[0.2em]">System Uptime</p>

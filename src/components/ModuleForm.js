@@ -44,6 +44,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
   const [quickAdd, setQuickAdd] = useState(null);
   const [showPasswords, setShowPasswords] = useState({});
   const [initialRecord, setInitialRecord] = useState(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(mode === 'edit');
 
   // Dynamic Validation Schema
   const validationSchema = useMemo(() => {
@@ -402,7 +403,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
     if (mode !== 'edit') return;
 
     async function loadRecord() {
-      const loadToast = toast.loading('Retrieving record from database...');
+      setIsInitialLoading(true);
       try {
         const result = await apiService.getRecord(moduleKey, id);
         if (result) {
@@ -424,13 +425,14 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
               })
             )
           }));
-          toast.success('Record synchronized.', { id: loadToast });
         } else {
-          toast.error('Record not found in the system.', { id: loadToast });
+          toast.error('Record not found in the system.');
         }
       } catch (error) {
         console.error('Failed to load record:', error);
-        toast.error('Network error while retrieving record.', { id: loadToast });
+        toast.error('Network error while retrieving record.');
+      } finally {
+        setIsInitialLoading(false);
       }
     }
     loadRecord();
@@ -764,40 +766,42 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                             )}
                           </div>
 
-                          {field.type === 'select' ? (
+                          {isInitialLoading ? (
+                            <div className="h-14 w-full skeleton rounded-xl"></div>
+                          ) : field.type === 'select' ? (
                             <div className="space-y-1">
                               <select
-                              id={field.name}
-                              name={field.name}
-                              disabled={isWorker && ((moduleKey === 'tows' && field.name === 'driver') || (moduleKey === 'expenses' && field.name === 'worker'))}
-                              value={values[field.name]}
-                              onChange={(event) => {
-                                const val = event.target.value;
-                                const fieldOptions = options[field.name] || [];
-                                const selectedOpt = fieldOptions.find(o => o.value === val);
+                                id={field.name}
+                                name={field.name}
+                                disabled={isWorker && ((moduleKey === 'tows' && field.name === 'driver') || (moduleKey === 'expenses' && field.name === 'worker'))}
+                                value={values[field.name]}
+                                onChange={(event) => {
+                                  const val = event.target.value;
+                                  const fieldOptions = options[field.name] || [];
+                                  const selectedOpt = fieldOptions.find(o => o.value === val);
 
-                                setFieldValue(field.name, val);
+                                  setFieldValue(field.name, val);
 
-                                if (selectedOpt && selectedOpt._id) {
-                                  const idFieldName = `${field.name}Id`;
-                                  setFieldValue(idFieldName, selectedOpt._id);
+                                  if (selectedOpt && selectedOpt._id) {
+                                    const idFieldName = `${field.name}Id`;
+                                    setFieldValue(idFieldName, selectedOpt._id);
 
-                                  // Store vehicle name and plate separately
-                                  if (field.module === 'vehicles' && selectedOpt.raw) {
-                                    setFieldValue('vehicleName', selectedOpt.raw.name);
-                                    setFieldValue('vehiclePlate', selectedOpt.raw.plate);
-                                    
-                                    // Handle Tows/Quotes specific fields if they exist
-                                    if (values.customerVehicle === undefined) {
-                                       // Only auto-fill if the towed vehicle is empty (rare case)
+                                    // Store vehicle name and plate separately
+                                    if (field.module === 'vehicles' && selectedOpt.raw) {
+                                      setFieldValue('vehicleName', selectedOpt.raw.name);
+                                      setFieldValue('vehiclePlate', selectedOpt.raw.plate);
+                                      
+                                      // Handle Tows/Quotes specific fields if they exist
+                                      if (values.customerVehicle === undefined) {
+                                         // Only auto-fill if the towed vehicle is empty (rare case)
+                                      }
                                     }
-                                  }
 
-                                  if (field.module === 'customers' && selectedOpt.raw) {
-                                    const raw = selectedOpt.raw;
-                                    // Handle multiple naming conventions for phone
-                                    setFieldValue('customerMobile', raw.phone || '');
-                                    setFieldValue('customerPhone', raw.phone || '');
+                                    if (field.module === 'customers' && selectedOpt.raw) {
+                                      const raw = selectedOpt.raw;
+                                      // Handle multiple naming conventions for phone
+                                      setFieldValue('customerMobile', raw.phone || '');
+                                      setFieldValue('customerPhone', raw.phone || '');
                                     setFieldValue('customerAddress', raw.address || '');
                                     setFieldValue('customerName', raw.name || '');
                                   }
@@ -822,6 +826,8 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                 <p className="text-[9px] font-bold text-red-500 ml-1 uppercase tracking-wider">{errors[field.name]}</p>
                               )}
                             </div>
+                          ) : isInitialLoading ? (
+                            <div className="h-14 w-full skeleton rounded-xl"></div>
                           ) : field.type === 'textarea' ? (
                             <div className="space-y-1">
                               <textarea
@@ -839,37 +845,41 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                 <p className="text-[9px] font-bold text-red-500 ml-1 uppercase tracking-wider">{errors[field.name]}</p>
                               )}
                             </div>
+                          ) : field.type === 'toggle' ? (
+                            <div className="flex items-center gap-4 p-4 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
+                              <button
+                                type="button"
+                                onClick={() => setFieldValue(field.name, !values[field.name])}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${values[field.name] ? 'bg-emerald-600' : 'bg-slate-200'}`}
+                              >
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${values[field.name] ? 'translate-x-6' : 'translate-x-1'}`} />
+                              </button>
+                              <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-widest">{values[field.name] ? 'Active' : 'Inactive'}</span>
+                            </div>
                           ) : field.type === 'file' ? (
                             <div className="space-y-4">
-                              <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-emerald-100 border-dashed rounded-2xl cursor-pointer bg-slate-50 hover:bg-emerald-50 hover:border-emerald-200 transition-all group">
-                                <div className="flex flex-col items-center justify-center pt-4 pb-4">
-                                  <Plus className="w-8 h-8 mb-2 text-emerald-300 group-hover:text-emerald-600 transition-colors" />
-                                  <div>
-                                    <p className="mb-1 text-xs text-slate-500"><span className="font-bold text-slate-700">Proof Image</span></p>
-                                    <p className="text-[8px] text-slate-400 uppercase tracking-widest">Tap to Upload</p>
+                              <input
+                                type="file"
+                                id={field.name}
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => handleFileChange(field.name, e.target.files[0])}
+                              />
+                              <label
+                                htmlFor={field.name}
+                                className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-emerald-200 rounded-2xl bg-emerald-50/20 hover:bg-emerald-50/50 transition-all cursor-pointer group"
+                              >
+                                {values[field.name] ? (
+                                  <img src={values[field.name]} alt="Preview" className="w-full h-full object-cover rounded-2xl" />
+                                ) : (
+                                  <div className="flex flex-col items-center gap-3">
+                                    <div className="p-4 bg-white rounded-2xl shadow-sm text-emerald-600 group-hover:scale-110 transition-transform">
+                                      <Plus size={24} />
+                                    </div>
+                                    <p className="text-[10px] font-bold text-emerald-800/40 uppercase tracking-widest">Upload Attachment</p>
                                   </div>
-                                </div>
-                                <input
-                                  type="file"
-                                  className="hidden"
-                                  onChange={(e) => handleFileChange(field.name, e.target.files[0])}
-                                  accept="image/*"
-                                />
+                                )}
                               </label>
-                              {values[field.name] && (
-                                <div className="relative w-full h-48 rounded-2xl overflow-hidden border border-emerald-100 group shadow-lg">
-                                  <img src={values[field.name]} alt="Preview" className="w-full h-full object-cover" />
-                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <button
-                                      type="button"
-                                      onClick={() => setFieldValue(field.name, '')}
-                                      className="bg-emerald-600 text-white p-2 rounded-xl shadow-xl hover:bg-emerald-700 transition-colors"
-                                    >
-                                      <Plus size={16} className="rotate-45" />
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
                               {touched[field.name] && errors[field.name] && (
                                 <p className="text-[9px] font-bold text-red-500 mt-1 ml-1 uppercase tracking-wider">{errors[field.name]}</p>
                               )}

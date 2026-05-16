@@ -9,6 +9,11 @@ const InvoiceSchema = new mongoose.Schema({
   companyName: { type: String }, // Billing Company Name
   companyNumber: { type: String }, // Billing Contact
   
+  worker: { type: String },
+  workerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  vehicle: { type: String },
+  vehicleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle' },
+  
   towDetails: [{
     towId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tow' },
     jobId: String,

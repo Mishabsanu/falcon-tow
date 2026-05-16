@@ -32,28 +32,76 @@ export default function Quotations() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState('All');
+  const [summary, setSummary] = useState({ global: 0, total: 0, totalAmount: 0, statusCounts: {} });
+  
+  // New Filters
+  const [filters, setFilters] = useState({
+    customer: 'All',
+    vehicle: 'All',
+    worker: 'All',
+    startDate: '',
+    endDate: ''
+  });
+
+  const [filterOptions, setFilterOptions] = useState({
+    customers: [],
+    vehicles: [],
+    workers: []
+  });
+
   const [showFilters, setShowFilters] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    async function loadOptions() {
+      try {
+        const [c, v, u] = await Promise.all([
+          apiService.getAllRecords('customers'),
+          apiService.getAllRecords('vehicles'),
+          apiService.getAllRecords('users')
+        ]);
+        setFilterOptions({
+          customers: c || [],
+          vehicles: v || [],
+          workers: (u || []).filter(user => user.role === 'Worker')
+        });
+      } catch (error) {
+        console.error('Failed to load filter options:', error);
+      }
+    }
+    loadOptions();
+  }, []);
 
   const fetchQuotations = useCallback(async () => {
     setLoading(true);
     try {
+      const extraParams = {};
+      if (filters.customer !== 'All') extraParams.customer = filters.customer;
+      if (filters.vehicle !== 'All') extraParams.vehicle = filters.vehicle;
+      if (filters.worker !== 'All') extraParams.driver = filters.worker; // Quotation model uses 'driver'
+      if (filters.startDate) extraParams.startDate = filters.startDate;
+      if (filters.endDate) extraParams.endDate = filters.endDate;
+
       const result = await apiService.getRecords('quotations', {
         q: searchTerm,
         page: pagination.page,
         limit: pagination.limit,
-        status: status
+        status: status,
+        extraParams
       });
       setQuotations(result.data || []);
       if (result.pagination) {
         setPagination(result.pagination);
+      }
+      if (result.summary) {
+        setSummary(result.summary);
       }
     } catch (error) {
       console.error('Failed to fetch quotations:', error);
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, pagination.page, pagination.limit]);
+  }, [searchTerm, pagination.page, pagination.limit, status, filters]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -152,21 +200,24 @@ export default function Quotations() {
       <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 mt-10">
         <SummaryCard 
           label="Sales Pipeline" 
-          value={pagination.total} 
+          value={summary.global} 
           icon={FileText} 
           color="emerald" 
+          isLoading={loading}
         />
         <SummaryCard 
-          label="Pending Approvals" 
-          value={quotations.filter(q => ['Draft', 'Sent'].includes(q.status)).length} 
+          label="Estimated Pipeline Value" 
+          value={`QAR ${Number(summary.totalAmount || 0).toLocaleString()}`} 
           icon={Activity} 
           color="blue" 
+          isLoading={loading}
         />
         <SummaryCard 
-          label="Active Quote Value" 
-          value={`QAR ${quotations.reduce((sum, q) => sum + Number(q.amount || 0), 0).toLocaleString()}`} 
+          label="Average Quote" 
+          value={`QAR ${summary.total > 0 ? Math.round((summary.totalAmount || 0) / summary.total).toLocaleString() : 0}`} 
           icon={Plus} 
           color="amber" 
+          isLoading={loading}
         />
       </motion.div>
 
@@ -195,7 +246,7 @@ export default function Quotations() {
             }`}
           >
             <Filter size={18} className={showFilters ? 'animate-pulse' : ''} />
-            <span>{showFilters ? 'System Active' : 'Filter Array'}</span>
+            <span>{showFilters ? 'Hide Filter' : 'Show Filter'}</span>
           </button>
         </div>
       </motion.div>
@@ -210,6 +261,7 @@ export default function Quotations() {
             </div>
 
             <div className="flex flex-wrap items-center gap-4">
+              {/* Status Filter */}
               <div className="filter-group-premium">
                 <Activity size={14} className="text-emerald-600" />
                 <select
@@ -227,25 +279,146 @@ export default function Quotations() {
                   <option value="Rejected">Rejected</option>
                 </select>
               </div>
+
+              {/* Customer Filter */}
+              <div className="filter-group-premium">
+                <User size={14} className="text-emerald-600" />
+                <select
+                  value={filters.customer}
+                  onChange={(e) => setFilters(f => ({ ...f, customer: e.target.value }))}
+                >
+                  <option value="All">All Customers</option>
+                  {filterOptions.customers.map(c => (
+                    <option key={c.id || c._id} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Vehicle Filter */}
+              <div className="filter-group-premium">
+                <Truck size={14} className="text-emerald-600" />
+                <select
+                  value={filters.vehicle}
+                  onChange={(e) => setFilters(f => ({ ...f, vehicle: e.target.value }))}
+                >
+                  <option value="All">All Vehicles</option>
+                  {filterOptions.vehicles.map(v => (
+                    <option key={v.id || v._id} value={v.name}>{v.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Worker Filter */}
+              <div className="filter-group-premium">
+                <UserCircle size={14} className="text-emerald-600" />
+                <select
+                  value={filters.worker}
+                  onChange={(e) => setFilters(f => ({ ...f, worker: e.target.value }))}
+                >
+                  <option value="All">All Workers</option>
+                  {filterOptions.workers.map(w => (
+                    <option key={w.id || w._id} value={w.name}>{w.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Date Range Filters */}
+            <div className="flex flex-wrap items-center gap-6 pt-8 border-t border-emerald-50 w-full">
+               <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-emerald-950 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-900/20">
+                    <Calendar size={18} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-950">Date Range</span>
+                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Search by date</span>
+                  </div>
+               </div>
+
+               <div className="flex items-center gap-4">
+                  <div className="flex items-center bg-white border-2 border-emerald-100 rounded-2xl overflow-hidden focus-within:border-emerald-500/50 transition-all shadow-sm">
+                    <input 
+                      type="date" 
+                      className="bg-transparent border-none text-xs font-bold text-emerald-950 p-4 outline-none cursor-pointer"
+                      value={filters.startDate}
+                      onChange={(e) => setFilters(f => ({ ...f, startDate: e.target.value }))}
+                    />
+                    <div className="flex items-center justify-center px-2">
+                      <div className="w-6 h-[2px] bg-emerald-100 rounded-full"></div>
+                    </div>
+                    <input 
+                      type="date" 
+                      className="bg-transparent border-none text-xs font-bold text-emerald-950 p-4 outline-none cursor-pointer"
+                      value={filters.endDate}
+                      onChange={(e) => setFilters(f => ({ ...f, endDate: e.target.value }))}
+                    />
+                  </div>
+
+                  {(filters.startDate || filters.endDate) && (
+                    <button 
+                      onClick={() => setFilters(f => ({ ...f, startDate: '', endDate: '' }))}
+                      className="h-14 px-6 bg-rose-50 text-rose-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-sm active:scale-95"
+                    >
+                      Clear Range
+                    </button>
+                  )}
+               </div>
             </div>
 
             {/* Active Filter Chips — inside panel */}
-            {status !== 'All' && (
-              <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-emerald-50">
+            {(status !== 'All' || filters.customer !== 'All' || filters.vehicle !== 'All' || filters.worker !== 'All' || filters.startDate || filters.endDate) && (
+              <div className="flex flex-wrap items-center gap-3 pt-6 border-t border-emerald-50">
                 <div className="flex items-center gap-2 mr-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-900/40">Active Filters</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <div className="group flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-bold shadow-lg shadow-emerald-600/20 hover:bg-rose-600 transition-all cursor-default">
-                    <span>Status: {status}</span>
-                    <button onClick={() => setStatus('All')} className="p-0.5 hover:bg-white/20 rounded-md transition-colors">
-                      <X size={12} />
-                    </button>
-                  </div>
+                  {status !== 'All' && (
+                    <div className="group flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-bold shadow-lg shadow-emerald-600/20 hover:bg-rose-600 transition-all cursor-default">
+                      <span>Status: {status}</span>
+                      <button onClick={() => setStatus('All')} className="p-0.5 hover:bg-white/20 rounded-md transition-colors">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
+                  {filters.customer !== 'All' && (
+                    <div className="group flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-default">
+                      <span>Customer: {filters.customer}</span>
+                      <button onClick={() => setFilters(f => ({ ...f, customer: 'All' }))} className="p-0.5 hover:bg-rose-100 rounded-md transition-colors">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
+                  {filters.vehicle !== 'All' && (
+                    <div className="group flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-default">
+                      <span>Vehicle: {filters.vehicle}</span>
+                      <button onClick={() => setFilters(f => ({ ...f, vehicle: 'All' }))} className="p-0.5 hover:bg-rose-100 rounded-md transition-colors">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
+                  {filters.worker !== 'All' && (
+                    <div className="group flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-default">
+                      <span>Worker: {filters.worker}</span>
+                      <button onClick={() => setFilters(f => ({ ...f, worker: 'All' }))} className="p-0.5 hover:bg-rose-100 rounded-md transition-colors">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
+                  {(filters.startDate || filters.endDate) && (
+                    <div className="group flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-default">
+                      <span>Period: {filters.startDate || '...'} / {filters.endDate || '...'}</span>
+                      <button onClick={() => setFilters(f => ({ ...f, startDate: '', endDate: '' }))} className="p-0.5 hover:bg-rose-100 rounded-md transition-colors">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <button
-                  onClick={() => setStatus('All')}
+                  onClick={() => {
+                    setStatus('All');
+                    setFilters({ customer: 'All', vehicle: 'All', worker: 'All', startDate: '', endDate: '' });
+                  }}
                   className="ml-auto text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-500 transition-colors"
                 >
                   Clear Pipeline View

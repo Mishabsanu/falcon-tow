@@ -34,6 +34,7 @@ export default function Invoices() {
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 10, totalPages: 1 });
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState({ global: 0, totalAmount: 0, paidAmount: 0, dueAmount: 0 });
 
   // New Filters
   const [filters, setFilters] = useState({
@@ -93,6 +94,9 @@ export default function Invoices() {
       setInvoices(result.data || []);
       if (result.pagination) {
         setPagination(result.pagination);
+      }
+      if (result.summary) {
+        setSummary(result.summary);
       }
     } catch (error) {
       console.error('Failed to fetch invoices:', error);
@@ -161,21 +165,24 @@ export default function Invoices() {
       <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 mt-10">
         <SummaryCard 
           label="Billing Directory" 
-          value={pagination.total} 
+          value={summary.global} 
           icon={Receipt} 
           color="emerald" 
+          isLoading={loading}
         />
         <SummaryCard 
           label="Paid Collections" 
-          value={`QAR ${invoices.reduce((sum, inv) => sum + Number(inv.paid || 0), 0).toLocaleString()}`} 
+          value={`QAR ${Number(summary.paidAmount || 0).toLocaleString()}`} 
           icon={DollarSign} 
           color="blue" 
+          isLoading={loading}
         />
         <SummaryCard 
           label="Outstanding Dues" 
-          value={`QAR ${invoices.reduce((sum, inv) => sum + (Number(inv.total || 0) - Number(inv.paid || 0)), 0).toLocaleString()}`} 
+          value={`QAR ${Number(summary.dueAmount || 0).toLocaleString()}`} 
           icon={Activity} 
           color="rose" 
+          isLoading={loading}
         />
       </motion.div>
 
@@ -204,76 +211,10 @@ export default function Invoices() {
             }`}
           >
             <Filter size={18} className={showFilters ? 'animate-pulse' : ''} />
-            <span>{showFilters ? 'Filtering' : 'Filter'}</span>
+            <span>{showFilters ? 'Hide Filter' : 'Show Filter'}</span>
           </button>
         </div>
       </motion.div>
-
-      {/* Active System Filters */}
-      {(filters.worker !== 'All' || filters.vehicle !== 'All' || filters.customer !== 'All' || filters.type !== 'All' || filters.startDate || filters.endDate) && (
-        <motion.div variants={item} className="flex flex-wrap items-center gap-3 mb-10 p-6 bg-emerald-50/30 rounded-3xl border border-emerald-100/50">
-          <div className="flex items-center gap-2 mr-4">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-900/40">Active Filters</span>
-          </div>
-          
-          <div className="flex flex-wrap gap-2">
-            {filters.worker !== 'All' && (
-              <div className="group flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-default">
-                <span>Worker: {filters.worker}</span>
-                <button onClick={() => setFilters(f => ({ ...f, worker: 'All' }))} className="p-0.5 hover:bg-rose-100 rounded-md transition-colors">
-                  <X size={12} />
-                </button>
-              </div>
-            )}
-
-            {filters.vehicle !== 'All' && (
-              <div className="group flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-default">
-                <span>Vehicle: {filters.vehicle}</span>
-                <button onClick={() => setFilters(f => ({ ...f, vehicle: 'All' }))} className="p-0.5 hover:bg-rose-100 rounded-md transition-colors">
-                  <X size={12} />
-                </button>
-              </div>
-            )}
-
-            {filters.customer !== 'All' && (
-              <div className="group flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-default">
-                <span>Customer: {filters.customer}</span>
-                <button onClick={() => setFilters(f => ({ ...f, customer: 'All' }))} className="p-0.5 hover:bg-rose-100 rounded-md transition-colors">
-                  <X size={12} />
-                </button>
-              </div>
-            )}
-
-            {filters.type !== 'All' && (
-              <div className="group flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-bold shadow-lg shadow-emerald-600/20 hover:bg-rose-600 transition-all cursor-default">
-                <span>Type: {filters.type}</span>
-                <button onClick={() => setFilters(f => ({ ...f, type: 'All' }))} className="p-0.5 hover:bg-white/20 rounded-md transition-colors">
-                  <X size={12} />
-                </button>
-              </div>
-            )}
-
-            {(filters.startDate || filters.endDate) && (
-              <div className="group flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-default">
-                <span>Period: {filters.startDate || '...'} / {filters.endDate || '...'}</span>
-                <button onClick={() => setFilters(f => ({ ...f, startDate: '', endDate: '' }))} className="p-0.5 hover:bg-rose-100 rounded-md transition-colors">
-                  <X size={12} />
-                </button>
-              </div>
-            )}
-          </div>
-
-          <button 
-            onClick={() => {
-              setFilters({ worker: 'All', vehicle: 'All', customer: 'All', type: 'All', startDate: '', endDate: '' });
-            }}
-            className="ml-auto text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-500 transition-colors flex items-center gap-2"
-          >
-            Clear Filters
-          </button>
-        </motion.div>
-      )}
 
       {showFilters && (
         <motion.div 
@@ -287,6 +228,72 @@ export default function Invoices() {
                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-900/40">Filter Options</span>
             </div>
 
+            {/* Active System Filters — Inside Panel */}
+            {(filters.worker !== 'All' || filters.vehicle !== 'All' || filters.customer !== 'All' || filters.type !== 'All' || filters.startDate || filters.endDate) && (
+              <div className="flex flex-wrap items-center gap-3 p-6 bg-emerald-50/50 rounded-3xl border border-emerald-100/50">
+                <div className="flex items-center gap-2 mr-4">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-900/40">Active Filters</span>
+                </div>
+                
+                <div className="flex flex-wrap gap-2">
+                  {filters.worker !== 'All' && (
+                    <div className="group flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-default">
+                      <span>Worker: {filters.worker}</span>
+                      <button onClick={() => setFilters(f => ({ ...f, worker: 'All' }))} className="p-0.5 hover:bg-rose-100 rounded-md transition-colors">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
+
+                  {filters.vehicle !== 'All' && (
+                    <div className="group flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-default">
+                      <span>Vehicle: {filters.vehicle}</span>
+                      <button onClick={() => setFilters(f => ({ ...f, vehicle: 'All' }))} className="p-0.5 hover:bg-rose-100 rounded-md transition-colors">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
+
+                  {filters.customer !== 'All' && (
+                    <div className="group flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-default">
+                      <span>Customer: {filters.customer}</span>
+                      <button onClick={() => setFilters(f => ({ ...f, customer: 'All' }))} className="p-0.5 hover:bg-rose-100 rounded-md transition-colors">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
+
+                  {filters.type !== 'All' && (
+                    <div className="group flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-bold shadow-lg shadow-emerald-600/20 hover:bg-rose-600 transition-all cursor-default">
+                      <span>Type: {filters.type}</span>
+                      <button onClick={() => setFilters(f => ({ ...f, type: 'All' }))} className="p-0.5 hover:bg-white/20 rounded-md transition-colors">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
+
+                  {(filters.startDate || filters.endDate) && (
+                    <div className="group flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-default">
+                      <span>Period: {filters.startDate || '...'} / {filters.endDate || '...'}</span>
+                      <button onClick={() => setFilters(f => ({ ...f, startDate: '', endDate: '' }))} className="p-0.5 hover:bg-rose-100 rounded-md transition-colors">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <button 
+                  onClick={() => {
+                    setFilters({ worker: 'All', vehicle: 'All', customer: 'All', type: 'All', startDate: '', endDate: '' });
+                  }}
+                  className="ml-auto text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-500 transition-colors flex items-center gap-2"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-4">
               {/* Worker Filter */}
               <div className="filter-group-premium">
@@ -296,7 +303,7 @@ export default function Invoices() {
                   onChange={(e) => setFilters(f => ({ ...f, worker: e.target.value }))}
                 >
                   <option value="All">All Workers</option>
-                  {filterOptions.workers.map(w => <option key={w.id} value={w.name}>{w.name}</option>)}
+                  {filterOptions.workers.map(w => <option key={w.id || w._id} value={w.name}>{w.name}</option>)}
                 </select>
               </div>
 
@@ -308,7 +315,7 @@ export default function Invoices() {
                   onChange={(e) => setFilters(f => ({ ...f, vehicle: e.target.value }))}
                 >
                   <option value="All">All Vehicles</option>
-                  {filterOptions.vehicles.map(v => <option key={v.id} value={`${v.name} - ${v.plate}`}>{v.name} - {v.plate}</option>)}
+                  {filterOptions.vehicles.map(v => <option key={v.id || v._id} value={`${v.name} - ${v.plate}`}>{v.name} - {v.plate}</option>)}
                 </select>
               </div>
 
@@ -320,7 +327,7 @@ export default function Invoices() {
                   onChange={(e) => setFilters(f => ({ ...f, customer: e.target.value }))}
                 >
                   <option value="All">All Customers</option>
-                  {filterOptions.customers.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  {filterOptions.customers.map(c => <option key={c.id || c._id} value={c.name}>{c.name}</option>)}
                 </select>
               </div>
 

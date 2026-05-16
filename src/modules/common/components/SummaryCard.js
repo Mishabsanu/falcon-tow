@@ -1,4 +1,4 @@
-export default function SummaryCard({ label, value, icon: Icon, color = "emerald" }) {
+export default function SummaryCard({ label, value, icon: Icon, color = "emerald", isLoading }) {
   const colorMap = {
     emerald: "bg-emerald-50 text-emerald-600 border-emerald-100",
     blue: "bg-blue-50 text-blue-600 border-blue-100",
@@ -13,9 +13,13 @@ export default function SummaryCard({ label, value, icon: Icon, color = "emerald
           <Icon size={24} />
         </div>
       )}
-      <div>
+      <div className="flex-1">
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">{label}</p>
-        <strong className="text-2xl font-black text-emerald-950 tracking-tight">{value}</strong>
+        {isLoading ? (
+          <div className="h-8 w-24 skeleton mt-1"></div>
+        ) : (
+          <strong className="text-2xl font-black text-emerald-950 tracking-tight">{value}</strong>
+        )}
       </div>
     </div>
   );

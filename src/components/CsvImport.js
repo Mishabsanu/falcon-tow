@@ -63,6 +63,34 @@ export default function CsvImport({ moduleKey, onComplete }) {
           labelToNameMap[field.name.toLowerCase()] = field.name;
         });
 
+        const parseImportValue = (val, internalName) => {
+          if (!val) return val;
+          const clean = val.trim();
+          
+          // Detect if this field is likely a date field
+          const isDateField = internalName.toLowerCase().includes('date') || 
+                            ['createdAt', 'updatedAt'].includes(internalName);
+
+          if (isDateField) {
+            // Case 1: DDMMYYYY (8 digits)
+            if (/^\d{8}$/.test(clean)) {
+              const d = clean.substring(0, 2);
+              const m = clean.substring(2, 4);
+              const y = clean.substring(4, 8);
+              return `${y}-${m}-${d}`;
+            }
+            
+            // Case 2: DD/MM/YYYY or DD-MM-YYYY
+            const dmyMatch = clean.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+            if (dmyMatch) {
+              const [_, d, m, y] = dmyMatch;
+              return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+            }
+          }
+          
+          return clean;
+        };
+
         const data = rows.slice(1).filter(r => r.trim()).map(row => {
           const values = splitCsvLine(row);
           const obj = {};
@@ -71,7 +99,7 @@ export default function CsvImport({ moduleKey, onComplete }) {
               const cleanHeader = header.trim().toLowerCase();
               // Map the CSV header back to the internal field name (case-insensitive)
               const internalName = labelToNameMap[cleanHeader] || cleanHeader;
-              obj[internalName] = values[index];
+              obj[internalName] = parseImportValue(values[index], internalName);
             }
           });
           
@@ -227,7 +255,7 @@ export default function CsvImport({ moduleKey, onComplete }) {
                     <div className="flex gap-4">
                       <span className="text-[10px] font-black text-emerald-400 opacity-50">02</span>
                       <p className="text-[10px] font-bold leading-relaxed uppercase text-emerald-100/70">
-                        Ensure dates are <span className="text-emerald-400 font-black underline underline-offset-4">YYYY-MM-DD</span>. Do not change headers.
+                        Supports <span className="text-emerald-400 font-black underline underline-offset-4">YYYY-MM-DD</span>, <span className="text-emerald-400 font-black">DDMMYYYY</span>, or <span className="text-emerald-400 font-black">DD/MM/YYYY</span>.
                       </p>
                     </div>
                     <div className="flex gap-4">

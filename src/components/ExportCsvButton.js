@@ -35,8 +35,13 @@ export default function ExportCsvButton({ moduleKey, filename }) {
       const processedData = data.map(row => {
         const newRow = {};
         Object.keys(row).forEach(key => {
-          // Skip internal MongoDB keys
-          if (key === '_id' || key === '__v' || key.startsWith('_')) return;
+          // Skip internal MongoDB keys and technical/redundant data
+          const skipKeys = [
+            '_id', '__v', 'createdById', 'workerId', 'vehicleId', 
+            'customerId', 'driverId', 'workerData', 'vehicleData', 
+            'customerData', 'driverData', 'createdAt', 'updatedAt'
+          ];
+          if (skipKeys.includes(key) || key.startsWith('_')) return;
           
           let val = row[key];
           
