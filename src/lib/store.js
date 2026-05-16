@@ -388,60 +388,132 @@ export async function importRecords(moduleKey, rows) {
       createdAt: new Date().toISOString()
     };
 
-    // Relation Resolution Logic (Resolve Names to Mongo IDs)
-    if (moduleKey === 'tows' || moduleKey === 'invoices' || moduleKey === 'salaries' || moduleKey === 'expenses') {
+    // Relation Resolution Logic (Resolve Names or IDs to Mongo IDs)
+    if (['tows', 'invoices', 'salaries', 'expenses', 'quotations'].includes(moduleKey)) {
       const db = await getDb();
       
+      // Helper to find document by name, plate, phone or logical system ID
+      const findDoc = async (collection, value) => {
+        if (!value) return null;
+        const cleanVal = String(value).trim();
+        
+        // Build a robust OR query to find the record
+        const orQuery = [
+          { name: cleanVal },
+          { id: cleanVal }
+        ];
+
+        // Add module-specific searchable fields
+        if (collection === 'vehicles') orQuery.push({ plate: cleanVal });
+        if (collection === 'customers') orQuery.push({ phone: cleanVal });
+        if (collection === 'users') orQuery.push({ username: cleanVal });
+
+        // If value is a 24-char hex, try matching native _id
+        if (/^[0-9a-fA-F]{24}$/.test(cleanVal)) {
+          try { orQuery.push({ _id: new ObjectId(cleanVal) }); } catch(e) {}
+        }
+
+        let doc = await db.collection(collection).findOne({ $or: orQuery });
+
+        // Try fallback split match for "Name - ID" or "Name - Plate" format
+        if (!doc && cleanVal.includes(' - ')) {
+          const parts = cleanVal.split(' - ').map(p => p.trim());
+          const first = parts[0];
+          const last = parts[parts.length - 1];
+
+          doc = await db.collection(collection).findOne({ 
+            $or: [
+              { id: first }, { id: last },
+              { name: first }, { plate: last }
+            ] 
+          });
+        }
+        return doc;
+      };
+
       // 1. Resolve Driver/Worker
-      const workerName = normalizedRow.driver || normalizedRow.worker;
-      if (workerName && !record.driverId && !record.workerId) {
-        const workerDoc = await db.collection('users').findOne({ 
-          $or: [{ name: workerName }, { id: workerName.split(' - ')[0] }] 
-        });
+      const workerVal = normalizedRow.driverId || normalizedRow.workerId || normalizedRow.driver || normalizedRow.worker;
+      if (workerVal) {
+        const workerDoc = await findDoc('users', workerVal);
         if (workerDoc) {
-          if (moduleKey === 'tows') record.driverId = workerDoc._id;
-          else record.workerId = workerDoc._id;
+          if (moduleKey === 'tows' || moduleKey === 'quotations') {
+            record.driverId = workerDoc._id;
+            record.driver = workerDoc.name;
+          } else {
+            record.workerId = workerDoc._id;
+            record.worker = workerDoc.name;
+          }
         }
       }
 
       // 2. Resolve Vehicle
-      const vehicleName = normalizedRow.vehicle;
-      if (vehicleName && !record.vehicleId) {
-        const vehicleDoc = await db.collection('vehicles').findOne({ 
-          $or: [{ name: vehicleName }, { plate: vehicleName }, { id: vehicleName.split(' - ')[0] }] 
-        });
+      const vehicleVal = normalizedRow.vehicleId || normalizedRow.vehicle;
+      if (vehicleVal) {
+        const vehicleDoc = await findDoc('vehicles', vehicleVal);
         if (vehicleDoc) {
           record.vehicleId = vehicleDoc._id;
+          record.vehicle = vehicleDoc.name;
           record.vehicleName = vehicleDoc.name;
           record.vehiclePlate = vehicleDoc.plate;
+          // For Tows, ensure customer vehicle info is filled if not provided
+          if (moduleKey === 'tows') {
+            if (!record.customerVehicle) record.customerVehicle = vehicleDoc.name;
+            if (!record.customerPlate) record.customerPlate = vehicleDoc.plate;
+          }
         }
       }
 
       // 3. Resolve Customer
-      const customerName = normalizedRow.customer;
-      if (customerName && !record.customerId) {
-        const customerDoc = await db.collection('customers').findOne({ 
-          $or: [{ name: customerName }, { phone: customerName }, { id: customerName.split(' - ')[0] }] 
-        });
+      const customerVal = normalizedRow.customerId || normalizedRow.customer;
+      if (customerVal) {
+        const customerDoc = await findDoc('customers', customerVal);
         if (customerDoc) {
           record.customerId = customerDoc._id;
+          record.customer = customerDoc.name;
           record.customerPhone = customerDoc.phone;
+          if (moduleKey === 'customers') {
+            // Ensure phone fields are synced
+            record.phone = record.phone || customerDoc.phone;
+          }
         }
       }
 
-      // 4. Resolve Tow Job (for Invoices)
-      if (moduleKey === 'invoices' && normalizedRow.jobId && !record.towId) {
-        const towDoc = await db.collection('tows').findOne({ id: normalizedRow.jobId });
-        if (towDoc) record.towId = towDoc._id;
+      // 4. Resolve Tow Job & Detailed Sync (for Invoices)
+      if (moduleKey === 'invoices') {
+        const towVal = normalizedRow.towId || normalizedRow.jobId;
+        if (towVal) {
+          const towDoc = await findDoc('tows', towVal);
+          if (towDoc) {
+            record.towId = towDoc._id;
+            record.jobId = towDoc.id;
+            // Generate towDetails for professional invoice rendering
+            record.towDetails = [{
+              towId: towDoc._id,
+              jobId: towDoc.id,
+              date: towDoc.date,
+              vehicleName: towDoc.customerVehicle || towDoc.vehicle,
+              vehiclePlate: towDoc.customerPlate || towDoc.vehiclePlate,
+              route: towDoc.route || `${towDoc.pickup} to ${towDoc.dropoff}`,
+              amount: Number(towDoc.amount || 0),
+              serviceCommission: Number(towDoc.serviceCommission || 0)
+            }];
+            // Sync billing info from tow if missing
+            if (!record.customer) record.customer = towDoc.customer;
+            if (!record.customerId) record.customerId = towDoc.customerId;
+            if (!record.total) record.total = Number(towDoc.amount || 0);
+          }
+        }
       }
 
-      // 5. Explicit Date Parsing (Crucial for CSV)
-      if (record.date && typeof record.date === 'string') {
-        const parsedDate = new Date(record.date);
-        if (!isNaN(parsedDate.getTime())) record.date = parsedDate;
-      }
+      // 5. Global Date Casting (Ensure all date strings are BSON Date objects)
+      ['date', 'createdAt', 'updatedAt'].forEach(field => {
+        if (record[field] && typeof record[field] === 'string') {
+          const parsed = new Date(record[field]);
+          if (!isNaN(parsed.getTime())) record[field] = parsed;
+        }
+      });
 
-      // 6. Auto-calculate Tow Shares (for Tows)
+      // 6. Business Logic: Auto-calculate Tow Shares
       if (moduleKey === 'tows' && record.amount) {
         const amt = Number(record.amount || 0);
         const commission = Number(record.serviceCommission || 0);
