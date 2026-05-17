@@ -159,7 +159,7 @@ export const moduleData = {
       { name: 'creditRevenue', label: 'Total Credit Revenue (QAR)', type: 'number', readOnly: true, defaultValue: 0 },
       { name: 'retention', label: 'Total Commission (10%)', type: 'number', readOnly: true, defaultValue: 0 },
       { name: 'cashDeduction90', label: 'Cash Deduction (90%)', type: 'number', readOnly: true, defaultValue: 0 },
-      { name: 'expenses', label: 'Expense Deductions (QAR)', type: 'number', readOnly: true, defaultValue: 0 },
+      { name: 'expenses', label: 'Advance Deductions (QAR)', type: 'number', readOnly: true, defaultValue: 0 },
       { name: 'amount', label: 'Net Payable Amount (QAR)', type: 'number', readOnly: true, defaultValue: 0 },
       { name: 'status', label: 'Payment Status', type: 'select', options: ['Paid', 'Pending'], hidden: true, defaultValue: 'Pending' },
     ],

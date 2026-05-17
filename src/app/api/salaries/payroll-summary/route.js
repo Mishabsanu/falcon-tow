@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { aggregateRecords } from '@/lib/store';
 
+export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET(request) {
@@ -71,6 +72,7 @@ export async function GET(request) {
       },
       {
         $match: {
+          expenseType: 'Worker Advance',
           $expr: {
             $and: [
               { $eq: [{ $month: "$dateObj" }, month + 1] },

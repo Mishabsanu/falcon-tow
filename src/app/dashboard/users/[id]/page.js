@@ -14,6 +14,7 @@ import {
   Download,
   FileText
 } from 'lucide-react';
+import { toast } from 'sonner';
 import styles from './view.module.css';
 
 export default function UserDetail() {
@@ -23,6 +24,12 @@ export default function UserDetail() {
   const [tows, setTows] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Advance Payment State
+  const [advanceAmount, setAdvanceAmount] = useState('');
+  const [advanceDate, setAdvanceDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [advanceRemark, setAdvanceRemark] = useState('');
+  const [isSubmittingAdvance, setIsSubmittingAdvance] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -65,11 +72,11 @@ export default function UserDetail() {
     const totalCommission = totalRevenue * 0.10;
     const cashRetentionByWorker = totalCashCollected * 0.90;
     
-    const totalExpenses = expenses.reduce((acc, e) => acc + Number(e.amount || 0), 0);
+    const advanceExpenses = expenses.filter(e => e.expenseType === 'Worker Advance');
+    const totalAdvances = advanceExpenses.reduce((acc, e) => acc + Number(e.amount || 0), 0);
     
-    // Net Salary = Base + 10% of Credit - 90% of Cash - Expenses
-    // OR: Net Salary = Base + 10% (Cash + Credit) - Cash - Expenses
-    const netSalary = baseSalary + (totalCreditRevenue * 0.10) - (totalCashCollected * 0.90) - totalExpenses;
+    // Net Salary = Base + 10% of Credit - 90% of Cash - Advances
+    const netSalary = baseSalary + (totalCreditRevenue * 0.10) - (totalCashCollected * 0.90) - totalAdvances;
 
     return {
       baseSalary,
@@ -78,7 +85,7 @@ export default function UserDetail() {
       totalCreditRevenue,
       totalCommission,
       cashRetentionByWorker,
-      totalExpenses,
+      totalAdvances,
       netSalary,
       totalTows: tows.length
     };
@@ -100,6 +107,30 @@ export default function UserDetail() {
     });
   }, [expenses, expenseMonth, expenseYear]);
 
+  const handleGrantAdvance = async () => {
+    try {
+      setIsSubmittingAdvance(true);
+      await apiService.createRecord('expenses', {
+        date: new Date(advanceDate).toISOString(),
+        amount: Number(advanceAmount),
+        expenseType: 'Worker Advance',
+        description: advanceRemark || `Advance Payment to ${user.name}`,
+        worker: user.name,
+        workerId: user._id || user.id
+      });
+      toast.success('Advance payment granted successfully');
+      setAdvanceAmount('');
+      setAdvanceRemark('');
+      // refresh expenses data
+      const eData = await apiService.getAllRecords('expenses');
+      setExpenses(eData.filter(e => e.worker === user.name || e.worker === user.id || e.workerId === user.id));
+    } catch (err) {
+      toast.error('Failed to grant advance: ' + err.message);
+    } finally {
+      setIsSubmittingAdvance(false);
+    }
+  };
+
 
   if (loading) return <div className={styles.loading}>Loading User Profile...</div>;
   if (!user) return <div className={styles.error}>User not found</div>;
@@ -120,7 +151,7 @@ export default function UserDetail() {
       </header>
 
       <div className="flex gap-1 mb-8 bg-white/50 p-1 rounded-2xl border border-emerald-100 w-fit">
-        {['overview', 'services', 'expenses'].map((tab) => (
+        {['overview', 'services', 'expenses', 'advances'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -193,8 +224,8 @@ export default function UserDetail() {
                   <span className={styles.amount}>-QAR {salaryBreakup.totalCashCollected.toLocaleString()}</span>
                 </div>
                 <div className={`${styles.breakupRow} ${styles.deduction}`}>
-                  <span>Total Expenses logged</span>
-                  <span className={styles.amount}>-QAR {salaryBreakup.totalExpenses.toLocaleString()}</span>
+                  <span>Worker Advances Issued</span>
+                  <span className={styles.amount}>-QAR {salaryBreakup.totalAdvances.toLocaleString()}</span>
                 </div>
                 <div className={styles.divider}></div>
                 <div className={`${styles.breakupRow} ${styles.total}`}>
@@ -441,6 +472,103 @@ export default function UserDetail() {
         </div>
       )}
 
+      {activeTab === 'advances' && (
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
+          <div className="bg-white p-8 rounded-[2rem] border border-emerald-100 shadow-sm">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                <DollarSign size={20} />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-emerald-950">Issue Cash Advance</h2>
+                <p className="text-slate-500 text-xs font-medium">Direct deduction from next salary payout.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Amount (QAR)</label>
+                <input 
+                  type="number" 
+                  value={advanceAmount}
+                  onChange={e => setAdvanceAmount(e.target.value)}
+                  className="block w-full px-1 py-4 bg-transparent border-b-2 border-emerald-100 focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400"
+                  placeholder="Enter amount..."
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Issue Date</label>
+                <input 
+                  type="date" 
+                  value={advanceDate}
+                  onChange={e => setAdvanceDate(e.target.value)}
+                  className="block w-full px-1 py-4 bg-transparent border-b-2 border-emerald-100 focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Remark / Reason</label>
+                <input 
+                  type="text" 
+                  value={advanceRemark}
+                  onChange={e => setAdvanceRemark(e.target.value)}
+                  className="block w-full px-1 py-4 bg-transparent border-b-2 border-emerald-100 focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400"
+                  placeholder="Enter optional remark..."
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button 
+                onClick={handleGrantAdvance}
+                disabled={isSubmittingAdvance || !advanceAmount}
+                className="bg-emerald-600 text-white font-bold text-sm px-8 py-3 rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isSubmittingAdvance ? 'Processing...' : 'Confirm Advance Payment'}
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-[2rem] border border-emerald-100 overflow-hidden shadow-sm">
+            <div className="p-8 border-b border-emerald-50">
+               <h3 className="text-lg font-black text-emerald-950">Advance Payment History</h3>
+               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Previously issued advances</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-slate-50">
+                    <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400">Date Issued</th>
+                    <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400">Remark / Reason</th>
+                    <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 text-right">Amount Deducted</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-emerald-50">
+                  {expenses.filter(e => e.expenseType === 'Worker Advance').sort((a,b) => new Date(b.date) - new Date(a.date)).map(exp => (
+                    <tr key={exp.id} className="hover:bg-amber-50/20 transition-colors">
+                      <td className="px-8 py-6">
+                        <span className="text-xs font-bold text-slate-600">{new Date(exp.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                      </td>
+                      <td className="px-8 py-6">
+                         <span className="text-sm font-black text-emerald-950">{exp.description}</span>
+                      </td>
+                      <td className="px-8 py-6 text-right">
+                         <span className="text-sm font-black text-amber-600">QAR {Number(exp.amount || 0).toLocaleString()}</span>
+                      </td>
+                    </tr>
+                  ))}
+                  {expenses.filter(e => e.expenseType === 'Worker Advance').length === 0 && (
+                    <tr>
+                      <td colSpan="3" className="px-8 py-12 text-center">
+                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">No advances issued to this worker.</p>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

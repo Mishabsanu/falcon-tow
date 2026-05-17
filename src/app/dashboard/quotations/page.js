@@ -302,9 +302,7 @@ export default function Quotations() {
                   onChange={(e) => setFilters(f => ({ ...f, vehicle: e.target.value }))}
                 >
                   <option value="All">All Vehicles</option>
-                  {filterOptions.vehicles.map(v => (
-                    <option key={v.id || v._id} value={v.name}>{v.name}</option>
-                  ))}
+                  {filterOptions.vehicles.map(v => <option key={v.id || v._id} value={v.name}>{v.name}</option>)}
                 </select>
               </div>
 

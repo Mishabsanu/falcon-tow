@@ -315,7 +315,7 @@ export default function Invoices() {
                   onChange={(e) => setFilters(f => ({ ...f, vehicle: e.target.value }))}
                 >
                   <option value="All">All Vehicles</option>
-                  {filterOptions.vehicles.map(v => <option key={v.id || v._id} value={`${v.name} - ${v.plate}`}>{v.name} - {v.plate}</option>)}
+                  {filterOptions.vehicles.map(v => <option key={v.id || v._id} value={v.name}>{v.name}</option>)}
                 </select>
               </div>
 

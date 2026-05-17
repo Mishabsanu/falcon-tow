@@ -84,6 +84,7 @@ export const apiService = {
        if (moduleKey === 'expenses') {
           payload.worker = user.name;
           payload.workerId = user.id;
+          payload.expenseType = 'Operational';
        }
     }
 

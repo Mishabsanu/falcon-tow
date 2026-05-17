@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const NotificationSchema = new mongoose.Schema({
+  id: { type: String, unique: true, default: () => `NOT-${Date.now()}-${Math.floor(Math.random() * 1000)}` },
   title: { type: String, required: true },
   message: { type: String, required: true },
   type: { 

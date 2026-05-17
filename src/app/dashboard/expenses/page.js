@@ -81,6 +81,7 @@ export default function Expenses() {
       const extraParams = {};
       if (filters.worker !== 'All') extraParams.worker = filters.worker;
       if (filters.vehicle !== 'All') extraParams.vehicle = filters.vehicle;
+      extraParams.expenseType = 'Operational'; // Hardcode to hide Worker Advances from general ledger
       if (filters.startDate) extraParams.startDate = filters.startDate;
       if (filters.endDate) extraParams.endDate = filters.endDate;
 
@@ -249,15 +250,6 @@ export default function Expenses() {
                     </div>
                   )}
 
-                  {filters.type !== 'All' && (
-                    <div className="group flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-default">
-                      <span>Category: {filters.type}</span>
-                      <button onClick={() => setFilters(f => ({ ...f, type: 'All' }))} className="p-0.5 hover:bg-rose-100 rounded-md transition-colors">
-                        <X size={12} />
-                      </button>
-                    </div>
-                  )}
-
                   {(filters.startDate || filters.endDate) && (
                     <div className="group flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl text-[10px] font-bold border border-emerald-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all cursor-default">
                       <span>Period: {filters.startDate || '...'} / {filters.endDate || '...'}</span>
@@ -301,9 +293,10 @@ export default function Expenses() {
                   onChange={(e) => setFilters(f => ({ ...f, vehicle: e.target.value }))}
                 >
                   <option value="All">All Vehicles</option>
-                  {filterOptions.vehicles.map(v => <option key={v.id || v._id} value={`${v.name} - ${v.plate}`}>{v.name} - {v.plate}</option>)}
+                  {filterOptions.vehicles.map(v => <option key={v.id || v._id} value={v.name}>{v.name}</option>)}
                 </select>
               </div>
+
             </div>
 
             {/* Date Range Filters */}
@@ -354,7 +347,8 @@ export default function Expenses() {
       <ResponsiveTable
         headers={[
           { label: "Expense ID" },
-          { label: "Transaction Date" },
+          { label: "Date" },
+          { label: "Category" },
           { label: "Description" },
           { label: "Worker" },
           { label: "Vehicle" },
@@ -370,6 +364,11 @@ export default function Expenses() {
           <tr key={exp.id}>
             <td><span className={styles.expId}>{exp.id}</span></td>
             <td>{new Date(exp.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+            <td>
+              <span className={`px-2 py-1 rounded-md text-[10px] font-bold tracking-widest uppercase ${exp.expenseType === 'Worker Advance' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                {exp.expenseType || 'Operational'}
+              </span>
+            </td>
             <td><span className={styles.descriptionText}>{exp.description}</span></td>
             <td>
               <div className={styles.workerCell}>

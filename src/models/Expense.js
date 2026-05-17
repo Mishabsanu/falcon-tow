@@ -4,6 +4,7 @@ const ExpenseSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   date: { type: Date, default: Date.now, index: true },
   amount: { type: Number, required: true },
+  expenseType: { type: String, enum: ['Operational', 'Worker Advance'], default: 'Operational' },
   description: { type: String },
 
   worker: { type: String },

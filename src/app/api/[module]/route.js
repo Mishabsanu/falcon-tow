@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import { moduleData } from '@/lib/moduleData';
+
+export const dynamic = 'force-dynamic';
 import User from '@/models/User';
 import Tow from '@/models/Tow';
 import Customer from '@/models/Customer';
@@ -124,8 +126,8 @@ export async function GET(request, context) {
         { 
           $group: { 
             _id: null, 
-            totalAmount: { $sum: `$${fieldToSum}` },
-            paidAmount: { $sum: { $ifNull: ["$paid", 0] } }
+            totalAmount: { $sum: { $convert: { input: `$${fieldToSum}`, to: "double", onError: 0, onNull: 0 } } },
+            paidAmount: { $sum: { $convert: { input: { $ifNull: ["$paid", 0] }, to: "double", onError: 0, onNull: 0 } } }
           } 
         }
       ]);
@@ -238,6 +240,15 @@ export async function POST(request, context) {
     // Security: Hash password if creating a user
     if (moduleKey === 'users' && payload.password) {
       payload.password = await bcrypt.hash(payload.password, 10);
+    }
+
+    // Business Logic: Auto-calculate Tow Shares
+    if (moduleKey === 'tows' && payload.amount !== undefined) {
+      const amt = Number(payload.amount || 0);
+      const commission = Number(payload.serviceCommission || 0);
+      const actualPrice = Math.max(0, amt - commission);
+      payload.driverShare = Math.round(actualPrice * 0.1 * 100) / 100;
+      payload.companyShare = Math.round(actualPrice * 0.9 * 100) / 100;
     }
 
     const record = await Model.create(payload);

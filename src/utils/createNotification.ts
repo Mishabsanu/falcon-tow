@@ -11,6 +11,7 @@ export const createNotification = async ({
   try {
     await connectDB();
     await Notification.create({
+      id: `NOT-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
       title,
       message,
       type,

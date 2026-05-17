@@ -317,7 +317,7 @@ export default function ReportsPage() {
                   >
                     <option value="All">All Vehicles</option>
                     {vehicles.map((v, i) => (
-                      <option key={v.id || v._id || i} value={v.name || v.plate}>{v.name || v.plate}</option>
+                      <option key={v.id || v._id || i} value={v.name}>{v.name}</option>
                     ))}
                   </select>
                 </div>

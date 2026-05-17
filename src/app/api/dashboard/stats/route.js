@@ -7,6 +7,7 @@ import Expense from '@/models/Expense'; // I'll ensure this model exists
 import { getDateRange } from '@/lib/dateUtils';
 import { startOfDay, endOfDay } from 'date-fns';
 
+export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET(request) {

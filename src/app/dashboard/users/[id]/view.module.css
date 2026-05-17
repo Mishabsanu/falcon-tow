@@ -18,6 +18,12 @@
   color: var(--primary);
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .profileGrid {
   display: grid;
   grid-template-columns: 400px 1fr;
