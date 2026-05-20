@@ -99,7 +99,7 @@ export async function GET(request, context) {
     const finalQuery = q ? { $and: [filterQuery, searchQuery] } : filterQuery;
 
     const select = searchParams.get('select') || '';
-    const sort = searchParams.get('sort') || 'createdAt';
+    const sort = searchParams.get('sort') || (moduleKey === 'tows' ? 'date' : 'createdAt');
     const order = parseInt(searchParams.get('order')) || -1;
 
     // 4. Calculate Summary (Based on Filters ONLY, ignores Search 'q')
