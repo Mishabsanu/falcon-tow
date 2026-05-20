@@ -249,6 +249,18 @@ export async function createRecord(moduleKey, payload) {
     createdAt: new Date().toISOString()
   };
 
+  // Apply default values from config if missing or empty
+  const config = getConfig(moduleKey);
+  if (config?.fields) {
+    config.fields.forEach(f => {
+      if (f.defaultValue !== undefined) {
+        if (record[f.name] === undefined || record[f.name] === null || record[f.name] === '') {
+          record[f.name] = f.defaultValue;
+        }
+      }
+    });
+  }
+
   // Hash password for users
   if (moduleKey === 'users' && record.password) {
     record.password = await bcrypt.hash(record.password, 10);
@@ -387,6 +399,17 @@ export async function importRecords(moduleKey, rows) {
       ...processPayload(normalizedRow, moduleKey),
       createdAt: new Date().toISOString()
     };
+
+    // Apply default values from config if missing or empty
+    if (config?.fields) {
+      config.fields.forEach(f => {
+        if (f.defaultValue !== undefined) {
+          if (record[f.name] === undefined || record[f.name] === null || record[f.name] === '') {
+            record[f.name] = f.defaultValue;
+          }
+        }
+      });
+    }
 
     // Relation Resolution Logic (Resolve Names or IDs to Mongo IDs)
     if (['tows', 'invoices', 'salaries', 'expenses', 'quotations'].includes(moduleKey)) {

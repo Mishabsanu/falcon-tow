@@ -976,16 +976,16 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                   <span className="text-xs font-bold text-slate-600">{new Date(job.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</span>
                                 </div>
                                 <div className="col-span-2">
-                                  <span className="text-xs font-black text-emerald-800 uppercase leading-none truncate">{job.customerPlate}</span>
+                                  <span className="text-xs font-bold text-emerald-950 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 uppercase leading-none truncate block w-fit">{job.customerVehicle}</span>
                                 </div>
                                 <div className="col-span-1">
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate">{job.customerVehicle}</span>
+                                  <span className="text-xs font-bold text-emerald-950 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 uppercase leading-none truncate block w-fit">{job.customerPlate}</span>
                                 </div>
                                 <div className="col-span-2">
-                                  <div className="flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
-                                    <span className="text-[10px] font-medium text-slate-500 truncate">{job.pickup}</span>
-                                    <span className="text-[10px] text-emerald-200">→</span>
-                                    <span className="text-[10px] font-medium text-slate-500 truncate">{job.dropoff}</span>
+                                  <div className="flex items-center gap-1.5 overflow-hidden bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 w-fit max-w-full">
+                                    <span className="text-[10px] font-bold text-emerald-950 truncate">{job.pickup}</span>
+                                    <span className="text-[10px] text-emerald-600 font-black">→</span>
+                                    <span className="text-[10px] font-bold text-emerald-950 truncate">{job.dropoff}</span>
                                   </div>
                                 </div>
                                 <div className="col-span-2 text-right">

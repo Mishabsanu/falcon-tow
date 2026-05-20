@@ -151,7 +151,7 @@ export default function UserDetail() {
       </header>
 
       <div className="flex gap-1 mb-8 bg-white/50 p-1 rounded-2xl border border-emerald-100 w-fit">
-        {['overview', 'services', 'expenses', 'advances'].map((tab) => (
+        {['overview', 'settlement', 'services', 'expenses', 'advances'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -167,161 +167,166 @@ export default function UserDetail() {
       </div>
 
       {activeTab === 'overview' && (
-        <div className={styles.profileGrid}>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-bottom-4">
           {/* Left Col: Info & Salary Slip */}
-          <div className={styles.leftCol}>
-            <div className={`${styles.card} glass-card`}>
-              <div className={styles.userHeader}>
-                <div className={styles.avatar}>{user.name?.charAt(0)}</div>
+          <div className="lg:col-span-4 space-y-8">
+            <div className="bg-white p-8 rounded-[2rem] border border-emerald-100 shadow-sm">
+              <div className="flex items-center gap-6 pb-8 border-b border-emerald-50 mb-8">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white flex items-center justify-center text-3xl font-black shadow-lg shadow-emerald-500/20">
+                  {user.name?.charAt(0)}
+                </div>
                 <div>
-                  <h1 className={styles.userName}>{user.name}</h1>
-                  <p className={styles.userMeta}>Employee ID: {user.id}</p>
-                </div>
-                <span className={`badge ${user.status === 'Active' ? 'badge-success' : 'badge-warning'}`}>
-                  {user.status}
-                </span>
-              </div>
-              
-              <div className={styles.infoList}>
-                <div className={styles.infoItem}>
-                  <FileText size={18} />
-                  <div>
-                    <label>Email Address</label>
-                    <p>{user.email}</p>
-                  </div>
-                </div>
-                <div className={styles.infoItem}>
-                  <Calendar size={18} />
-                  <div>
-                    <label>Phone Number</label>
-                    <p>{user.phone}</p>
+                  <h1 className="text-2xl font-black text-emerald-950">{user.name}</h1>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Employee ID: {user.id}</p>
+                  <div className="mt-3">
+                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${user.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                      {user.status}
+                    </span>
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div className={`${styles.card} ${styles.salaryCard} glass-card`}>
-              <div className={styles.cardHeader}>
-                <FileText size={20} color="var(--primary)" />
-                <h2>Monthly Settlement Logic</h2>
-              </div>
               
-              <div className={styles.breakup}>
-                <div className={styles.breakupRow}>
-                  <span>Base Monthly Salary</span>
-                  <span className={styles.amount}>QAR {salaryBreakup.baseSalary.toLocaleString()}</span>
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-emerald-600">
+                    <FileText size={18} />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Email Address</label>
+                    <p className="text-sm font-bold text-emerald-950 mt-0.5">{user.email}</p>
+                  </div>
                 </div>
-                <div className={styles.breakupRow}>
-                  <span>Total Tow Revenue</span>
-                  <span className={styles.amount}>QAR {salaryBreakup.totalRevenue.toLocaleString()}</span>
-                </div>
-                <div className={styles.breakupRow}>
-                   <span>Worker Commission (10%)</span>
-                   <span className={styles.amount} style={{color: 'var(--success)'}}>+QAR {salaryBreakup.totalCommission.toLocaleString()}</span>
-                </div>
-                <div className={`${styles.breakupRow} ${styles.deduction}`}>
-                  <span>Cash Already Taken (100%)</span>
-                  <span className={styles.amount}>-QAR {salaryBreakup.totalCashCollected.toLocaleString()}</span>
-                </div>
-                <div className={`${styles.breakupRow} ${styles.deduction}`}>
-                  <span>Worker Advances Issued</span>
-                  <span className={styles.amount}>-QAR {salaryBreakup.totalAdvances.toLocaleString()}</span>
-                </div>
-                <div className={styles.divider}></div>
-                <div className={`${styles.breakupRow} ${styles.total}`}>
-                  <span>Net Payout Due</span>
-                  <span className={styles.amount}>QAR {salaryBreakup.netSalary.toLocaleString()}</span>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-emerald-600">
+                    <Calendar size={18} />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Phone Number</label>
+                    <p className="text-sm font-bold text-emerald-950 mt-0.5">{user.phone}</p>
+                  </div>
                 </div>
               </div>
-              
-              <button className={styles.generateBtn}>
-                <Receipt size={18} />
-                <span>Generate Official Slip</span>
-              </button>
             </div>
           </div>
-
           {/* Right Col: Stats & Highlights */}
-          <div className={styles.rightCol}>
-            <div className={styles.statsRow}>
-              <div className={`${styles.miniCard} glass-card`}>
-                <Truck size={20} color="var(--primary)" />
+          <div className="lg:col-span-8 space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-white p-6 rounded-[2rem] border border-emerald-100 flex items-center gap-6 shadow-sm">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-inner">
+                  <Truck size={24} />
+                </div>
                 <div>
-                  <p className={styles.miniLabel}>Total Tows</p>
-                  <h3 className={styles.miniValue}>{salaryBreakup.totalTows}</h3>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Tows</p>
+                  <h3 className="text-3xl font-black text-emerald-950 mt-1">{salaryBreakup.totalTows}</h3>
                 </div>
               </div>
-              <div className={`${styles.miniCard} glass-card`}>
-                <TrendingUp size={20} color="var(--success)" />
+              <div className="bg-white p-6 rounded-[2rem] border border-emerald-100 flex items-center gap-6 shadow-sm">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-inner">
+                  <TrendingUp size={24} />
+                </div>
                 <div>
-                  <p className={styles.miniLabel}>Efficiency</p>
-                  <h3 className={styles.miniValue}>94%</h3>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Efficiency</p>
+                  <h3 className="text-3xl font-black text-emerald-950 mt-1">94%</h3>
                 </div>
               </div>
             </div>
 
-            <div className={`${styles.card} glass-card`}>
-              <div className={styles.cardHeader}>
-                <History size={20} color="var(--primary)" />
-                <h2>Recent Performance</h2>
-              </div>
-              <div className={styles.historyList}>
-                {tows.slice(0, 5).map(tow => (
-                  <div key={tow.id} className={styles.historyItem}>
-                    <div className={styles.histMain}>
-                      <span className={styles.histId}>{tow.id}</span>
-                      <span className={styles.histDate}>{tow.date}</span>
-                    </div>
-                    <div className={styles.histDetails}>
-                      <span>{tow.vehicle}</span>
-                      <span className={(tow.paymentMethod || 'Credit') === 'Cash' ? styles.cashBadge : styles.otherBadge}>
-                        {tow.paymentMethod || 'Credit'}
-                      </span>
-                      <span className={styles.histAmount}>QAR {tow.amount}</span>
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-white p-8 rounded-[2rem] border border-emerald-100 shadow-sm">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                    <Truck size={16} />
                   </div>
-                ))}
-                {tows.length === 0 && <p className={styles.emptyText}>No tow history found.</p>}
-              </div>
-            </div>
-
-            <div className={styles.reportsGrid}>
-              <div className={`${styles.card} glass-card`}>
-                <div className={styles.cardHeader}>
-                  <Truck size={18} color="var(--primary)" />
-                  <h3>Vehicle Usage</h3>
+                  <h3 className="text-sm font-black text-emerald-950">Vehicle Usage</h3>
                 </div>
-                <div className={styles.miniList}>
+                <div className="space-y-3">
                   {Object.entries(tows.reduce((acc, t) => {
                     acc[t.vehicle] = (acc[t.vehicle] || 0) + 1;
                     return acc;
                   }, {})).map(([vehicle, count]) => (
-                    <div key={vehicle} className={styles.miniListItem}>
-                      <span>{vehicle}</span>
-                      <strong>{count} jobs</strong>
+                    <div key={vehicle} className="flex justify-between items-center text-xs pb-3 border-b border-dashed border-slate-100 last:border-0 last:pb-0">
+                      <span className="font-bold text-slate-500">{vehicle}</span>
+                      <strong className="font-black text-emerald-700">{count} jobs</strong>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className={`${styles.card} glass-card`}>
-                <div className={styles.cardHeader}>
-                  <User size={18} color="var(--accent)" />
-                  <h3>Top Customers</h3>
+              <div className="bg-white p-8 rounded-[2rem] border border-emerald-100 shadow-sm">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                    <User size={16} />
+                  </div>
+                  <h3 className="text-sm font-black text-emerald-950">Top Customers</h3>
                 </div>
-                <div className={styles.miniList}>
+                <div className="space-y-3">
                   {Object.entries(tows.reduce((acc, t) => {
                     acc[t.customer] = (acc[t.customer] || 0) + 1;
                     return acc;
                   }, {})).sort((a,b) => b[1] - a[1]).slice(0, 3).map(([customer, count]) => (
-                    <div key={customer} className={styles.miniListItem}>
-                      <span>{customer}</span>
-                      <strong>{count} jobs</strong>
+                    <div key={customer} className="flex justify-between items-center text-xs pb-3 border-b border-dashed border-slate-100 last:border-0 last:pb-0">
+                      <span className="font-bold text-slate-500">{customer}</span>
+                      <strong className="font-black text-emerald-700">{count} jobs</strong>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'settlement' && (
+        <div className="flex justify-center animate-in fade-in slide-in-from-bottom-4">
+          <div className="w-full max-w-2xl bg-gradient-to-b from-white to-slate-50 p-10 rounded-[2rem] border border-emerald-100 shadow-xl shadow-emerald-900/5 relative overflow-hidden">
+            <div className="flex items-center gap-4 mb-10 relative z-10">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-inner">
+                <FileText size={24} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-emerald-950">Monthly Settlement Logic</h2>
+                <p className="text-slate-500 text-xs font-bold mt-1 uppercase tracking-widest">Calculated for current fiscal period</p>
+              </div>
+            </div>
+            
+            <div className="space-y-6 relative z-10">
+              <div className="flex justify-between items-center text-base p-4 bg-white rounded-xl border border-slate-100">
+                <span className="font-bold text-slate-500 uppercase tracking-widest text-[10px]">Base Monthly Salary</span>
+                <span className="font-black text-emerald-950 text-lg">QAR {salaryBreakup.baseSalary.toLocaleString()}</span>
+              </div>
+              
+              <div className="flex justify-between items-center text-base p-4 bg-white rounded-xl border border-slate-100">
+                <span className="font-bold text-slate-500 uppercase tracking-widest text-[10px]">Total Tow Revenue</span>
+                <span className="font-black text-emerald-950 text-lg">QAR {salaryBreakup.totalRevenue.toLocaleString()}</span>
+              </div>
+
+              <div className="flex justify-between items-center text-base p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                 <span className="font-bold text-emerald-700 uppercase tracking-widest text-[10px]">Worker Commission (10%)</span>
+                 <span className="font-black text-emerald-600 text-lg">+QAR {salaryBreakup.totalCommission.toLocaleString()}</span>
+              </div>
+
+              <div className="flex justify-between items-center text-base p-4 bg-rose-50 rounded-xl border border-rose-100">
+                <span className="font-bold text-rose-700 uppercase tracking-widest text-[10px]">Cash Already Taken (100%)</span>
+                <span className="font-black text-rose-600 text-lg">-QAR {salaryBreakup.totalCashCollected.toLocaleString()}</span>
+              </div>
+
+              <div className="flex justify-between items-center text-base p-4 bg-rose-50 rounded-xl border border-rose-100">
+                <span className="font-bold text-rose-700 uppercase tracking-widest text-[10px]">Worker Advances Issued</span>
+                <span className="font-black text-rose-600 text-lg">-QAR {salaryBreakup.totalAdvances.toLocaleString()}</span>
+              </div>
+
+              <div className="h-0.5 bg-emerald-100 my-8 rounded-full w-full"></div>
+              
+              <div className="flex justify-between items-center bg-emerald-950 p-6 rounded-2xl text-white shadow-xl shadow-emerald-900/20">
+                <span className="font-black uppercase tracking-[0.2em] text-xs text-emerald-400">Net Payout Due</span>
+                <span className="text-3xl font-black">QAR {salaryBreakup.netSalary.toLocaleString()}</span>
+              </div>
+            </div>
+            
+            <button className="w-full mt-8 bg-emerald-600 text-white font-black text-sm uppercase tracking-widest py-5 rounded-2xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-3 relative z-10 shadow-lg shadow-emerald-600/20">
+              <Receipt size={20} />
+              <span>Generate Official Slip</span>
+            </button>
           </div>
         </div>
       )}

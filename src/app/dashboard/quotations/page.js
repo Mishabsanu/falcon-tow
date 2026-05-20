@@ -17,7 +17,10 @@ import {
   Activity,
   X,
   Truck,
-  Loader2
+  Loader2,
+  User,
+  UserCircle,
+  Calendar
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ExportCsvButton from '@/components/ExportCsvButton';

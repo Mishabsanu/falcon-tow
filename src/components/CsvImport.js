@@ -135,7 +135,7 @@ export default function CsvImport({ moduleKey, onComplete }) {
     const config = moduleData[moduleKey];
     if (!config) return;
 
-    const visibleFields = config.fields.filter(f => (!f.hidden || f.name === 'status') && !f.readOnly && f.type !== 'file');
+    const visibleFields = config.fields.filter(f => !f.hidden && !f.readOnly && f.type !== 'file');
     const headers = visibleFields.map(f => f.label).join(',');
 
     // Add 1 sample row based on hints
@@ -146,7 +146,7 @@ export default function CsvImport({ moduleKey, onComplete }) {
       for (const field of dropdownFields) {
         if (field.module) {
           const result = await apiService.getRecords(field.module, { limit: 1 });
-          hintData[field.name] = (result.data || []).map(d => field.module === 'vehicles' ? `${d.name} - ${d.plate}` : d.name)[0] || "";
+          hintData[field.name] = (result.data || []).map(d => d.name)[0] || "";
         } else if (field.options) {
           hintData[field.name] = field.options[0];
         }
@@ -168,14 +168,14 @@ export default function CsvImport({ moduleKey, onComplete }) {
   const downloadReferenceData = async () => {
     toast.loading('Preparing reference data...');
     try {
-      const workers = await apiService.getAllRecords('users');
+      const workers = (await apiService.getAllRecords('users')).filter(w => w.role === 'Worker');
       const vehicles = await apiService.getAllRecords('vehicles');
       const customers = await apiService.getAllRecords('customers');
 
       const headers = "TYPE,VALID_VALUE,EXTRA_INFO";
       const rows = [
         ...workers.map(w => `WORKER,"${w.name}","${w.id}"`),
-        ...vehicles.map(v => `VEHICLE,"${v.name} - ${v.plate}","${v.id}"`),
+        ...vehicles.map(v => `VEHICLE,"${v.name}","${v.id}"`),
         ...customers.map(c => `CUSTOMER,"${c.name}","${c.phone || c.id}"`)
       ];
 
