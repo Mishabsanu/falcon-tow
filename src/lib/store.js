@@ -21,6 +21,10 @@ function cloneRecord(record) {
   return rest;
 }
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function getConfig(moduleKey) {
   return moduleData[moduleKey] ?? null;
 }
@@ -489,7 +493,37 @@ export async function importRecords(moduleKey, rows) {
       // 3. Resolve Customer
       const customerVal = normalizedRow.customerId || normalizedRow.customer;
       if (customerVal) {
-        const customerDoc = await findDoc('customers', customerVal);
+        let customerDoc = await findDoc('customers', customerVal);
+
+        if (!customerDoc && moduleKey === 'tows' && normalizedRow.customer) {
+          const customerName = String(normalizedRow.customer).trim();
+          const customerPhone = normalizedRow.customerPhone ? String(normalizedRow.customerPhone).trim() : '';
+
+          if (customerName) {
+            customerDoc = customerPhone
+              ? await db.collection('customers').findOne({ phone: customerPhone })
+              : null;
+
+            if (!customerDoc) {
+              customerDoc = await db.collection('customers').findOne({
+                name: { $regex: `^${escapeRegExp(customerName)}$`, $options: 'i' }
+              });
+            }
+
+            if (!customerDoc) {
+              const newCustomer = {
+                id: await makeId('customers'),
+                name: customerName,
+                ...(customerPhone ? { phone: customerPhone } : {}),
+                status: 'Active',
+                createdAt: new Date()
+              };
+              const inserted = await db.collection('customers').insertOne(newCustomer);
+              customerDoc = { ...newCustomer, _id: inserted.insertedId };
+            }
+          }
+        }
+
         if (customerDoc) {
           record.customerId = customerDoc._id;
           record.customer = customerDoc.name;

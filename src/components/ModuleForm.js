@@ -125,6 +125,10 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
 
         // 0.1 Handle Multi-Job Invoices
         if (moduleKey === 'invoices') {
+          if (typeof initialPayload.customerId === 'string' && initialPayload.customerId.startsWith('customer-name:')) {
+            initialPayload.customerId = undefined;
+          }
+
           initialPayload.towDetails = selectedJobs.map(j => ({
             towId: j._id || j.towId,
             jobId: j.id || j.jobId,
@@ -236,6 +240,8 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
     // If we are creating an invoice, we want to know which tows are already invoiced
     let invoicedJobIds = [];
     let billableCustomerIds = [];
+    let billableCustomerNames = [];
+    let unlinkedBillableCustomers = [];
 
     if (moduleKey === 'invoices' && mode !== 'edit') {
       try {
@@ -248,7 +254,20 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
         // 2. Get all tows to find customers with outstanding work
         const towsResult = await apiService.getRecords('tows', { limit: 2000, status: 'Completed' });
         const billableTows = (towsResult.data || []).filter(tow => !invoicedJobIds.includes(tow.id));
-        billableCustomerIds = [...new Set(billableTows.map(tow => tow.customerId || tow.customerData?._id).filter(Boolean))];
+        billableCustomerIds = [...new Set(billableTows.map(tow => tow.customerId || tow.customerData?._id).filter(Boolean).map(String))];
+        billableCustomerNames = [...new Set(billableTows.map(tow => tow.customer || tow.customerData?.name).filter(Boolean).map(name => String(name).trim()).filter(Boolean))];
+        unlinkedBillableCustomers = billableTows
+          .filter(tow => !(tow.customerId || tow.customerData?._id) && tow.customer)
+          .reduce((customers, tow) => {
+            const name = String(tow.customer).trim();
+            if (!name || customers.some(customer => customer.name.toLowerCase() === name.toLowerCase())) return customers;
+            customers.push({
+              _id: `customer-name:${encodeURIComponent(name)}`,
+              name,
+              phone: tow.customerPhone || tow.phone || ''
+            });
+            return customers;
+          }, []);
       } catch (error) {
         console.error('Failed to fetch filtering data for invoices:', error);
       }
@@ -270,7 +289,12 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
 
             // NEW: Filter customers for invoices (Only show those with billable jobs)
             if (moduleKey === 'invoices' && field.module === 'customers' && mode !== 'edit') {
-              data = data.filter(r => billableCustomerIds.includes(r._id));
+              data = data.filter(r => billableCustomerIds.includes(String(r._id)) || billableCustomerNames.includes(String(r.name || '').trim()));
+              const existingNames = new Set(data.map(r => String(r.name || '').trim().toLowerCase()).filter(Boolean));
+              data = [
+                ...data,
+                ...unlinkedBillableCustomers.filter(customer => !existingNames.has(customer.name.toLowerCase()))
+              ];
             }
 
             // Filter users to only show Workers
@@ -319,12 +343,14 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
 
     async function fetchJobs() {
       try {
+        const customerToken = String(values.customerId || '');
+        const isUnlinkedCustomer = customerToken.startsWith('customer-name:');
         const result = await apiService.getRecords('tows', { 
           status: 'Completed',
           limit: 100,
-          extraParams: {
-            customerId: values.customerId
-          }
+          extraParams: isUnlinkedCustomer
+            ? { customer: decodeURIComponent(customerToken.replace('customer-name:', '')) }
+            : { customerId: values.customerId }
         });
         const jobs = result.data || [];
         setBillableJobs(jobs);
