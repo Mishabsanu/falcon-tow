@@ -48,12 +48,33 @@ export async function GET(_request, context) {
   }
 }
 
+function trimStrings(obj) {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'string') {
+    return obj.trim();
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(trimStrings);
+  }
+  if (typeof obj === 'object') {
+    const proto = Object.getPrototypeOf(obj);
+    if (proto === null || proto === Object.prototype) {
+      const result = {};
+      Object.keys(obj).forEach(key => {
+        result[key] = trimStrings(obj[key]);
+      });
+      return result;
+    }
+  }
+  return obj;
+}
+
 export async function PUT(request, context) {
   try {
     await connectDB();
     const { module: moduleKey, id } = await context.params;
     const Model = models[moduleKey];
-    const payload = await request.json();
+    const payload = trimStrings(await request.json());
     if (!Model) return NextResponse.json({ error: 'Module not found' }, { status: 404 });
 
     // Protect immutable fields

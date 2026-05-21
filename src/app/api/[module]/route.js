@@ -207,12 +207,36 @@ export async function GET(request, context) {
   }
 }
 
+function trimStrings(obj) {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'string') {
+    return obj.trim();
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(trimStrings);
+  }
+  if (typeof obj === 'object') {
+    const proto = Object.getPrototypeOf(obj);
+    if (proto === null || proto === Object.prototype) {
+      const result = {};
+      Object.keys(obj).forEach(key => {
+        result[key] = trimStrings(obj[key]);
+      });
+      return result;
+    }
+  }
+  return obj;
+}
+
 export async function POST(request, context) {
   try {
     await connectDB();
     const { module: moduleKey } = await context.params;
     const Model = models[moduleKey];
     let payload = await request.json();
+
+    // Trim strings recursively/deeply
+    payload = trimStrings(payload);
 
     // Sanitize Payload: Convert empty strings to undefined to allow Mongoose defaults/validation
     Object.keys(payload).forEach(key => {

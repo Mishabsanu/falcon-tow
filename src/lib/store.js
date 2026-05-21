@@ -29,8 +29,29 @@ function getConfig(moduleKey) {
   return moduleData[moduleKey] ?? null;
 }
 
+function trimStrings(obj) {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'string') {
+    return obj.trim();
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(trimStrings);
+  }
+  if (typeof obj === 'object') {
+    const proto = Object.getPrototypeOf(obj);
+    if (proto === null || proto === Object.prototype) {
+      const result = {};
+      Object.keys(obj).forEach(key => {
+        result[key] = trimStrings(obj[key]);
+      });
+      return result;
+    }
+  }
+  return obj;
+}
+
 function processPayload(payload, moduleKey) {
-  const processed = { ...payload };
+  const processed = trimStrings({ ...payload });
   const config = moduleData[moduleKey];
 
   Object.keys(processed).forEach(key => {
@@ -371,12 +392,12 @@ export async function importRecords(moduleKey, rows) {
   const finalMap = { ...fallbackMap, ...dynamicMap };
 
   const operations = await Promise.all(rows.map(async (row) => {
-    // Normalize keys
+    // Normalize keys and trim string values
     const normalizedRow = {};
     Object.entries(row).forEach(([key, value]) => {
       const lowerKey = key.toLowerCase().trim();
       const targetKey = finalMap[lowerKey] || key;
-      normalizedRow[targetKey] = value;
+      normalizedRow[targetKey] = typeof value === 'string' ? value.trim() : value;
     });
 
     let existingId = normalizedRow.id;
@@ -385,15 +406,24 @@ export async function importRecords(moduleKey, rows) {
     if (!existingId) {
       const db = await getDb();
       if (moduleKey === 'customers' && normalizedRow.phone) {
-        const existing = await db.collection('customers').findOne({ phone: normalizedRow.phone });
+        const existing = await db.collection('customers').findOne({
+          phone: { $regex: `^${escapeRegExp(normalizedRow.phone)}$`, $options: 'i' }
+        });
         if (existing) existingId = existing.id;
       } else if (moduleKey === 'vehicles' && normalizedRow.plate) {
-        const existing = await db.collection('vehicles').findOne({ plate: normalizedRow.plate });
+        const existing = await db.collection('vehicles').findOne({
+          plate: { $regex: `^${escapeRegExp(normalizedRow.plate)}$`, $options: 'i' }
+        });
         if (existing) existingId = existing.id;
       } else if (moduleKey === 'users' && (normalizedRow.email || normalizedRow.phone)) {
-        const existing = await db.collection('users').findOne({ 
-          $or: [{ email: normalizedRow.email }, { phone: normalizedRow.phone }] 
-        });
+        const orConditions = [];
+        if (normalizedRow.email) {
+          orConditions.push({ email: { $regex: `^${escapeRegExp(normalizedRow.email)}$`, $options: 'i' } });
+        }
+        if (normalizedRow.phone) {
+          orConditions.push({ phone: { $regex: `^${escapeRegExp(normalizedRow.phone)}$`, $options: 'i' } });
+        }
+        const existing = await db.collection('users').findOne({ $or: orConditions });
         if (existing) existingId = existing.id;
       }
     }
@@ -423,17 +453,18 @@ export async function importRecords(moduleKey, rows) {
       const findDoc = async (collection, value) => {
         if (!value) return null;
         const cleanVal = String(value).trim();
+        const regexVal = { $regex: `^${escapeRegExp(cleanVal)}$`, $options: 'i' };
         
         // Build a robust OR query to find the record
         const orQuery = [
-          { name: cleanVal },
-          { id: cleanVal }
+          { name: regexVal },
+          { id: regexVal }
         ];
 
         // Add module-specific searchable fields
-        if (collection === 'vehicles') orQuery.push({ plate: cleanVal });
-        if (collection === 'customers') orQuery.push({ phone: cleanVal });
-        if (collection === 'users') orQuery.push({ username: cleanVal });
+        if (collection === 'vehicles') orQuery.push({ plate: regexVal });
+        if (collection === 'customers') orQuery.push({ phone: regexVal });
+        if (collection === 'users') orQuery.push({ username: regexVal });
 
         // If value is a 24-char hex, try matching native _id
         if (/^[0-9a-fA-F]{24}$/.test(cleanVal)) {
@@ -448,10 +479,13 @@ export async function importRecords(moduleKey, rows) {
           const first = parts[0];
           const last = parts[parts.length - 1];
 
+          const regexFirst = { $regex: `^${escapeRegExp(first)}$`, $options: 'i' };
+          const regexLast = { $regex: `^${escapeRegExp(last)}$`, $options: 'i' };
+
           doc = await db.collection(collection).findOne({ 
             $or: [
-              { id: first }, { id: last },
-              { name: first }, { plate: last }
+              { id: regexFirst }, { id: regexLast },
+              { name: regexFirst }, { plate: regexLast }
             ] 
           });
         }

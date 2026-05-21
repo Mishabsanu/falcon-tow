@@ -79,11 +79,11 @@ export const apiService = {
     if (isWorker) {
        if (moduleKey === 'tows') {
           payload.driver = user.name;
-          payload.driverId = user.id;
+          payload.driverId = user._id || user.id;
        }
        if (moduleKey === 'expenses') {
           payload.worker = user.name;
-          payload.workerId = user.id;
+          payload.workerId = user._id || user.id;
           payload.expenseType = 'Operational';
        }
     }

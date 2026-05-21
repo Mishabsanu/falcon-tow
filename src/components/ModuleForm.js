@@ -200,32 +200,66 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
 
   const { values, setValues, setFieldValue, handleSubmit, touched, errors, setValues: setFormikValues } = formik;
 
-  // Smart Reconciler: If the database has a "Name" but the dropdown needs an "ID",
-  // we find the ID once options are loaded.
+  // Smart Reconciler: If the database has a "Name" or "ID" but the dropdown needs the option value,
+  // we reconcile them once options or values are loaded.
   useEffect(() => {
     let hasChanged = false;
     const nextValues = { ...values };
 
     config.fields.forEach(field => {
-      if (field.module && values[field.name]) {
-        const val = values[field.name];
-        // If it's a 24-char Mongo ID, it's already reconciled
-        if (/^[0-9a-fA-F]{24}$/.test(val)) return;
-
+      if (field.module) {
+        const val = values[field.name]; // e.g. values.driver
+        const idField = `${field.name}Id`;
+        const valId = values[idField]; // e.g. values.driverId
+        
         const fieldOptions = options[field.name] || [];
-        // Try to find an option whose raw name matches our stored value
-        const match = fieldOptions.find(opt => 
-          opt.raw?.name === val || opt.raw?.id === val || opt.label === val
-        );
+        if (fieldOptions.length === 0) return;
+
+        // Try to find a matching option
+        let match = null;
+
+        // Case 1: If we have val and it's a 24-char ObjectId string, we can verify it exists in options
+        if (val && /^[0-9a-fA-F]{24}$/.test(val)) {
+          // It's already an ID, but let's make sure driverId matches it if empty
+          if (valId === undefined || valId === '') {
+            nextValues[idField] = val;
+            hasChanged = true;
+          }
+          return;
+        }
+
+        // Case 2: Try to match by the ID field if it's a 24-char hex or employee ID
+        if (valId) {
+          const cleanId = String(valId).trim();
+          match = fieldOptions.find(opt => 
+            String(opt.value).toLowerCase() === cleanId.toLowerCase() || 
+            String(opt._id).toLowerCase() === cleanId.toLowerCase() ||
+            (opt.raw?.id && String(opt.raw.id).toLowerCase() === cleanId.toLowerCase())
+          );
+        }
+
+        // Case 3: Try to match by the string value (name or label)
+        if (!match && val) {
+          const cleanVal = String(val).trim().toLowerCase();
+          match = fieldOptions.find(opt => {
+            const name = String(opt.raw?.name || '').trim().toLowerCase();
+            const id = String(opt.raw?.id || '').trim().toLowerCase();
+            const label = String(opt.label || '').trim().toLowerCase();
+            const value = String(opt.value || '').trim().toLowerCase();
+            return name === cleanVal || id === cleanVal || label === cleanVal || value === cleanVal;
+          });
+        }
 
         if (match) {
-          nextValues[field.name] = match.value;
-          hasChanged = true;
-          
-          // Also sync secondary ID fields if they exist and are empty
-          const idField = `${field.name}Id`;
-          if (nextValues[idField] === undefined || nextValues[idField] === '') {
+          // If the bound value doesn't match the option value, update it
+          if (values[field.name] !== match.value) {
+            nextValues[field.name] = match.value;
+            hasChanged = true;
+          }
+          // Sync secondary ID field if it differs or is empty
+          if (nextValues[idField] !== match._id) {
             nextValues[idField] = match._id;
+            hasChanged = true;
           }
         }
       }
@@ -234,7 +268,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
     if (hasChanged) {
       setValues(nextValues);
     }
-  }, [options, config.fields, moduleKey]);
+  }, [options, config.fields, moduleKey, values, setValues]);
 
   const fetchOptions = useCallback(async () => {
     // If we are creating an invoice, we want to know which tows are already invoiced
