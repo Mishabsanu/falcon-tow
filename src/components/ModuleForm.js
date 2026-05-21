@@ -21,7 +21,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
     const record = mode === 'edit' ? getModuleRecord(moduleKey, id) : {};
     const today = new Date().toISOString().split('T')[0];
 
-    return Object.fromEntries(config.fields.map((field) => {
+    const vals = Object.fromEntries(config.fields.map((field) => {
       let val = record?.[field.name] ?? field.defaultValue ?? '';
       
       // Format static dates for initial load
@@ -38,51 +38,84 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
       }
       return [field.name, val];
     }));
+
+    if (moduleKey === 'users') {
+      vals.confirmPassword = '';
+    }
+
+    return vals;
   }, [config.fields, id, mode, moduleKey]);
 
   const [options, setOptions] = useState({});
   const [quickAdd, setQuickAdd] = useState(null);
   const [showPasswords, setShowPasswords] = useState({});
+  const [changePassword, setChangePassword] = useState(false);
   const [initialRecord, setInitialRecord] = useState(null);
   const [isInitialLoading, setIsInitialLoading] = useState(mode === 'edit');
 
   // Dynamic Validation Schema
   const validationSchema = useMemo(() => {
-    return Yup.object().shape(
-      Object.fromEntries(
-        config.fields.map(field => {
-          if (field.hidden) return [field.name, Yup.string().nullable()];
+    const schemaShape = Object.fromEntries(
+      config.fields.map(field => {
+        if (field.hidden) return [field.name, Yup.string().nullable()];
 
-          let validator;
-          if (field.type === 'number') {
-            validator = Yup.number()
-              .typeError(`${field.label} must be a number`)
-              .transform((value, originalValue) => originalValue === "" ? null : value);
-            
-            if (field.required !== false) {
-              validator = validator.required(`${field.label} is required`).min(0, `${field.label} cannot be negative`);
-            } else {
-              validator = validator.nullable().min(0, `${field.label} cannot be negative`);
-            }
-          } else if (field.type === 'email') {
-            validator = Yup.string().email('Invalid email address');
-            if (field.required !== false) validator = validator.required(`${field.label} is required`);
-          } else if (field.type === 'tel') {
-            validator = Yup.string()
-              .matches(/^[0-9+\s-]{8,15}$/, 'Invalid phone number format');
-            if (field.required !== false) validator = validator.required(`${field.label} is required`);
+        let validator;
+        if (field.type === 'number') {
+          validator = Yup.number()
+            .typeError(`${field.label} must be a number`)
+            .transform((value, originalValue) => originalValue === "" ? null : value);
+          
+          if (field.required !== false) {
+            validator = validator.required(`${field.label} is required`).min(0, `${field.label} cannot be negative`);
           } else {
-            validator = Yup.string();
-            if (field.required !== false) {
+            validator = validator.nullable().min(0, `${field.label} cannot be negative`);
+          }
+        } else if (field.type === 'email') {
+          validator = Yup.string().email('Invalid email address');
+          if (field.required !== false) validator = validator.required(`${field.label} is required`);
+        } else if (field.type === 'tel') {
+          validator = Yup.string()
+            .matches(/^[0-9+\s-]{8,15}$/, 'Invalid phone number format');
+          if (field.required !== false) validator = validator.required(`${field.label} is required`);
+        } else {
+          validator = Yup.string();
+          if (field.required !== false) {
+            if (field.name === 'password') {
+              if (mode === 'edit') {
+                if (changePassword) {
+                  validator = validator.required('New password is required').min(6, 'Password must be at least 6 characters');
+                } else {
+                  validator = validator.nullable();
+                }
+              } else {
+                validator = validator.required('Password is required').min(6, 'Password must be at least 6 characters');
+              }
+            } else {
               validator = validator.required(`${field.label} is required`);
             }
           }
+        }
 
-          return [field.name, validator];
-        })
-      )
+        return [field.name, validator];
+      })
     );
-  }, [config.fields]);
+
+    if (moduleKey === 'users') {
+      if (mode === 'edit') {
+        schemaShape.confirmPassword = changePassword
+          ? Yup.string()
+              .required('Confirm password is required')
+              .oneOf([Yup.ref('password')], 'Passwords must match')
+          : Yup.string().nullable();
+      } else {
+        schemaShape.confirmPassword = Yup.string()
+          .required('Confirm password is required')
+          .oneOf([Yup.ref('password')], 'Passwords must match');
+      }
+    }
+
+    return Yup.object().shape(schemaShape);
+  }, [config.fields, changePassword, mode]);
 
   const formik = useFormik({
     initialValues,
@@ -91,6 +124,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
     onSubmit: async (values) => {
       try {
         const payload = { ...values };
+        delete payload.confirmPassword;
         const fileFields = config.fields.filter(f => f.type === 'file' && payload[f.name]?.startsWith('data:image'));
 
         // Prepare initial payload (images are set to placeholders for background processing)
@@ -522,23 +556,29 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
         const result = await apiService.getRecord(moduleKey, id);
         if (result) {
           setInitialRecord(result);
-          formik.setValues((prev) => ({
-            ...prev,
-            ...Object.fromEntries(
-              config.fields.map((field) => {
-                let val = result[field.name] ?? '';
-                // Robust Date Formatting for HTML5 Inputs
-                if (field.type === 'date' && val) {
-                  const d = new Date(val);
-                  if (!isNaN(d.getTime())) {
-                    val = d.toISOString().split('T')[0];
+          formik.setValues((prev) => {
+            const nextVals = {
+              ...prev,
+              ...Object.fromEntries(
+                config.fields.map((field) => {
+                  let val = result[field.name] ?? '';
+                  // Robust Date Formatting for HTML5 Inputs
+                  if (field.type === 'date' && val) {
+                    const d = new Date(val);
+                    if (!isNaN(d.getTime())) {
+                      val = d.toISOString().split('T')[0];
+                    }
                   }
-                }
-                if (field.name === 'password') val = '';
-                return [field.name, val];
-              })
-            )
-          }));
+                  if (field.name === 'password') val = '';
+                  return [field.name, val];
+                })
+              )
+            };
+            if (moduleKey === 'users') {
+              nextVals.confirmPassword = '';
+            }
+            return nextVals;
+          });
         } else {
           toast.error('Record not found in the system.');
         }
@@ -842,6 +882,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
 
               config.fields.forEach((field) => {
                 if (field.hidden) return;
+                if (mode === 'edit' && field.name === 'password') return;
                 if (moduleKey === 'tows' && (field.name === 'driverShare' || field.name === 'companyShare')) {
                   if (values.paymentMethod !== 'Cash') return;
                 }
@@ -853,6 +894,14 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                   currentSection = { title: field.section, fields: [] };
                 }
                 currentSection.fields.push(field);
+                if (moduleKey === 'users' && mode !== 'edit' && field.name === 'password') {
+                  currentSection.fields.push({
+                    name: 'confirmPassword',
+                    label: 'Confirm Password',
+                    type: 'password',
+                    required: true
+                  });
+                }
               });
               if (currentSection.fields.length > 0) sections.push(currentSection);
 
@@ -881,6 +930,9 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                         12: 'col-span-12',
                       };
                       const colSpan = spanMap[field.span] || 'col-span-12 md:col-span-4';
+
+
+
                       return (
                         <div key={field.name} className={`space-y-4 ${colSpan}`}>
                           <div className="flex items-center justify-between">
@@ -1141,6 +1193,107 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                 </div>
               ));
             })()}
+
+            {/* User Password Update Option (Rendered at the bottom for users in edit mode) */}
+            {moduleKey === 'users' && mode === 'edit' && (
+              <div className="pt-8 border-t border-emerald-100/50 space-y-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-600">Security Credentials</span>
+                  <div className="h-px flex-1 bg-emerald-50/50"></div>
+                </div>
+                
+                <div className="grid grid-cols-12 gap-4 sm:gap-8 md:gap-10">
+                  <div className="col-span-12 md:col-span-4 space-y-4">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">
+                      Update User Password?
+                    </label>
+                    <div className="flex items-center gap-4 p-4 bg-emerald-50/20 rounded-xl border border-emerald-100/50">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextVal = !changePassword;
+                          setChangePassword(nextVal);
+                          if (!nextVal) {
+                            setFieldValue('password', '');
+                            setFieldValue('confirmPassword', '');
+                          }
+                        }}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors duration-300 outline-none ${changePassword ? 'bg-emerald-600' : 'bg-slate-200'}`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${changePassword ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
+                      <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-widest">{changePassword ? 'Yes' : 'No'}</span>
+                    </div>
+                  </div>
+
+                  {changePassword && (
+                    <div className="col-span-12 md:col-span-4 space-y-4 animate-in fade-in duration-300">
+                      <label htmlFor="password" className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">
+                        New Password <span className="text-red-500 ml-1 text-xs">*</span>
+                      </label>
+                      <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-600 transition-colors">
+                          <Lock size={16} />
+                        </div>
+                        <input
+                          type={showPasswords['password'] ? 'text' : 'password'}
+                          id="password"
+                          name="password"
+                          value={values['password'] || ''}
+                          onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
+                          className={`block w-full pl-10 pr-10 py-4 bg-transparent border-b-2 ${touched['password'] && errors['password'] ? 'border-red-300' : 'border-emerald-100'} focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400`}
+                          placeholder="Enter new password..."
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPasswords(prev => ({ ...prev, password: !prev.password }))}
+                          className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-emerald-600 transition-colors"
+                        >
+                          {showPasswords['password'] ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                      {touched['password'] && errors['password'] && (
+                        <p className="text-[9px] font-bold text-red-500 ml-1 uppercase tracking-wider">{errors['password']}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {changePassword && (
+                    <div className="col-span-12 md:col-span-4 space-y-4 animate-in fade-in duration-300">
+                      <label htmlFor="confirmPassword" className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">
+                        Confirm Password <span className="text-red-500 ml-1 text-xs">*</span>
+                      </label>
+                      <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-600 transition-colors">
+                          <Lock size={16} />
+                        </div>
+                        <input
+                          type={showPasswords['confirmPassword'] ? 'text' : 'password'}
+                          id="confirmPassword"
+                          name="confirmPassword"
+                          value={values['confirmPassword'] || ''}
+                          onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
+                          className={`block w-full pl-10 pr-10 py-4 bg-transparent border-b-2 ${touched['confirmPassword'] && errors['confirmPassword'] ? 'border-red-300' : 'border-emerald-100'} focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400`}
+                          placeholder="Confirm new password..."
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPasswords(prev => ({ ...prev, confirmPassword: !prev.confirmPassword }))}
+                          className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-emerald-600 transition-colors"
+                        >
+                          {showPasswords['confirmPassword'] ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                      {touched['confirmPassword'] && errors['confirmPassword'] && (
+                        <p className="text-[9px] font-bold text-red-500 ml-1 uppercase tracking-wider">{errors['confirmPassword']}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Form Actions */}
