@@ -148,15 +148,30 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
 
         const recordId = result?._id || id;
 
-        // 1.1 If creating an invoice, mark all selected tow jobs as 'Closed'
-        if (moduleKey === 'invoices' && mode !== 'edit' && selectedJobs.length > 0) {
+        // 1.1 Synchronize tow jobs' statuses (Closed vs. Completed)
+        if (moduleKey === 'invoices') {
           try {
-            await Promise.all(selectedJobs.map(job => 
-              apiService.updateRecord('tows', job._id || job.towId, { status: 'Closed' })
-            ));
-            console.log(`[INVOICE_SYNC] ${selectedJobs.length} tows marked as Closed`);
+            const oldJobIds = (mode === 'edit' && initialRecord?.towDetails)
+              ? initialRecord.towDetails.map(j => String(j.towId || j._id))
+              : [];
+            const newJobIds = selectedJobs.map(j => String(j._id || j.towId));
+
+            // Jobs to close: in new but not in old
+            const jobsToClose = selectedJobs.filter(j => !oldJobIds.includes(String(j._id || j.towId)));
+            // Jobs to open: in old but not in new
+            const jobsToOpenIds = oldJobIds.filter(id => !newJobIds.includes(id));
+
+            await Promise.all([
+              ...jobsToClose.map(job => 
+                apiService.updateRecord('tows', job._id || job.towId, { status: 'Closed' })
+              ),
+              ...jobsToOpenIds.map(id => 
+                apiService.updateRecord('tows', id, { status: 'Completed' })
+              )
+            ]);
+            console.log(`[INVOICE_SYNC] Closed ${jobsToClose.length} tows, Opened ${jobsToOpenIds.length} tows`);
           } catch (err) {
-            console.error('[INVOICE_SYNC_FAILURE] Failed to close tow jobs:', err);
+            console.error('[INVOICE_SYNC_FAILURE] Failed to sync tow job statuses:', err);
           }
         }
 
@@ -260,6 +275,22 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
           if (nextValues[idField] !== match._id) {
             nextValues[idField] = match._id;
             hasChanged = true;
+          }
+
+          // Auto-fill customer mobile and address on initial load
+          if (field.module === 'customers' && match.raw) {
+            const raw = match.raw;
+            const targetMobile = raw.phone || '';
+            const targetAddress = raw.address || '';
+            
+            if (values.customerMobile !== targetMobile) {
+              nextValues.customerMobile = targetMobile;
+              hasChanged = true;
+            }
+            if (values.customerAddress !== targetAddress) {
+              nextValues.customerAddress = targetAddress;
+              hasChanged = true;
+            }
           }
         }
       }
@@ -387,9 +418,39 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
             : { customerId: values.customerId }
         });
         const jobs = result.data || [];
-        setBillableJobs(jobs);
+        let finalJobs = [...jobs];
+
+        // If in edit mode and loading the original customer, fetch the currently linked jobs (even if Closed)
+        if (mode === 'edit' && initialRecord && values.customerId === initialRecord.customerId) {
+          const linkedJobIds = initialRecord.towDetails?.map(j => j.towId || j._id).filter(Boolean) || [];
+          const linkedJobs = await Promise.all(
+            linkedJobIds.map(async (towId) => {
+              try {
+                return await apiService.getRecord('tows', towId);
+              } catch (err) {
+                console.error(`Failed to fetch linked job ${towId}:`, err);
+                return null;
+              }
+            })
+          );
+          const validLinkedJobs = linkedJobs.filter(Boolean);
+          
+          // Merge linked jobs into finalJobs without duplicates
+          validLinkedJobs.forEach(linkedJob => {
+            if (!finalJobs.some(j => j._id === linkedJob._id)) {
+              finalJobs.push(linkedJob);
+            }
+          });
+
+          // Initialize selectedJobs with the fetched full linked jobs on mount / initial load
+          if (selectedJobs.length === 0) {
+            setSelectedJobs(validLinkedJobs);
+          }
+        }
+
+        setBillableJobs(finalJobs);
         
-        // Auto-select all jobs by default when fetching new billable jobs (except in edit mode initial load)
+        // Auto-select all jobs by default when fetching new billable jobs for a different customer
         if (mode !== 'edit' || (initialRecord && values.customerId !== initialRecord.customerId)) {
           setSelectedJobs(jobs);
         }
@@ -398,14 +459,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
       }
     }
     fetchJobs();
-  }, [moduleKey, values.customerId, mode, initialRecord]);
-
-  // Handle pre-selecting jobs when editing an invoice
-  useEffect(() => {
-    if (mode === 'edit' && initialRecord?.towDetails && moduleKey === 'invoices' && selectedJobs.length === 0) {
-      setSelectedJobs(initialRecord.towDetails.map(j => ({ ...j, _id: j.towId, id: j.jobId })));
-    }
-  }, [mode, initialRecord, moduleKey, selectedJobs.length]);
+  }, [moduleKey, values.customerId, mode, initialRecord, selectedJobs.length]);
 
   useEffect(() => {
     if (moduleKey !== 'invoices') return;
@@ -555,7 +609,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
   }, [moduleKey, values.vehicle, options, setFieldValue]);
 
   useEffect(() => {
-    if (moduleKey !== 'invoices') return;
+    if (moduleKey !== 'invoices' || !config.fields.some(f => f.name === 'jobId')) return;
 
     if (!values.jobId) {
       setValues({
@@ -693,18 +747,36 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
   }, [moduleKey, values.worker, values.month, values.year]);
 
   useEffect(() => {
+    if (moduleKey !== 'invoices' || mode === 'edit') return;
+
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
-      const jobId = urlParams.get('jobId');
-      if (jobId && !values.jobId) {
-        // Try to find the job in options once they are loaded
-        const jobOption = (options.jobId || []).find(opt => opt.value.startsWith(jobId));
-        if (jobOption) {
-          setValues({ ...values, jobId: jobOption.value, towId: jobOption._id });
+      const jobIdParam = urlParams.get('jobId');
+      if (jobIdParam) {
+        async function loadJobAndCustomer() {
+          try {
+            const job = await apiService.getRecord('tows', jobIdParam);
+            if (job) {
+              const custId = job.customerId || (job.customer ? `customer-name:${encodeURIComponent(job.customer)}` : '');
+              
+              setValues((prev) => ({
+                ...prev,
+                customer: job.customer || '',
+                customerId: custId,
+                customerMobile: job.customerPhone || job.phone || '',
+                customerAddress: job.customerAddress || job.address || ''
+              }));
+              
+              setSelectedJobs([job]);
+            }
+          } catch (error) {
+            console.error('Failed to load tow job from URL param:', error);
+          }
         }
+        loadJobAndCustomer();
       }
     }
-  }, [options.jobId, values.jobId]);
+  }, [moduleKey, mode]);
 
   return (
     <div className={!isModal ? "animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out" : ""}>
