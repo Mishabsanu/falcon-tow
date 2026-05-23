@@ -1127,20 +1127,9 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                           try {
                                             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
                                             const data = await res.json();
-                                            if (data) {
-                                              const addr = data.address || {};
-                                              const placeName = data.name || addr.suburb || addr.neighbourhood || addr.quarter || addr.city_district || addr.road || addr.city || addr.town || addr.village || (data.display_name ? data.display_name.split(',')[0] : '');
-                                              
-                                              if (placeName) {
-                                                setFieldValue(field.name, placeName);
-                                                toast.success(`Location locked: ${placeName}`, { id: resolveToastId });
-                                              } else if (data.display_name) {
-                                                setFieldValue(field.name, data.display_name);
-                                                toast.success(`Location locked: ${data.display_name.split(',')[0]}`, { id: resolveToastId });
-                                              } else {
-                                                setFieldValue(field.name, `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
-                                                toast.success(`Coordinates locked: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`, { id: resolveToastId });
-                                              }
+                                            if (data && data.display_name) {
+                                              setFieldValue(field.name, data.display_name);
+                                              toast.success(`Location locked: ${data.name || data.display_name.split(',')[0]}`, { id: resolveToastId });
                                             } else {
                                               setFieldValue(field.name, `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
                                               toast.success(`Coordinates locked: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`, { id: resolveToastId });
