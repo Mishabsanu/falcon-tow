@@ -150,15 +150,22 @@ export const apiService = {
    * Dashboard specific stats fetcher.
    * Automatically applies role-based filtering for Workers.
    */
-  async getDashboardStats() {
+  async getDashboardStats(options = {}) {
     const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user')) : null;
     const isWorker = user?.role === 'Worker';
     
-    let url = `${API_BASE}/dashboard/stats`;
+    const params = new URLSearchParams();
+    if (options.range) params.append('range', options.range);
+    if (options.start) params.append('start', options.start);
+    if (options.end) params.append('end', options.end);
+    
     if (isWorker) {
-      url += `?workerId=${user._id}`;
+      params.append('workerId', user._id);
+    } else if (options.workerId) {
+      params.append('workerId', options.workerId);
     }
 
+    const url = `${API_BASE}/dashboard/stats${params.toString() ? `?${params.toString()}` : ''}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error('Failed to fetch dashboard statistics');
     return await response.json();

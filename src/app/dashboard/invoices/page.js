@@ -20,7 +20,8 @@ import {
   UserCircle,
   Calendar,
   Activity,
-  X
+  X,
+  FileText
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ExportCsvButton from '@/components/ExportCsvButton';
@@ -401,6 +402,7 @@ export default function Invoices() {
             { label: "Amount Paid" },
             { label: "Due Balance" },
             { label: "Billing Status" },
+            { label: "Commission Status" },
             { label: "Created By" },
             { label: "Actions", style: { textAlign: 'right' } }
           ]}
@@ -408,94 +410,148 @@ export default function Invoices() {
           loading={loading}
           pagination={pagination}
           onPageChange={handlePageChange}
-          renderRow={(inv) => (
-            <tr key={inv.id}>
-              <td><span className={styles.invId}>{inv?.id || 'N/A'}</span></td>
-              <td>
-                <span className={styles.nameText}>{inv?.customer || 'Unknown'}</span>
-                <div className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mt-1">
-                  {inv?.companyName || 'Corporate Client'}
-                </div>
-              </td>
-              <td>{inv?.date ? new Date(inv.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</td>
-              <td>
-                <div className={styles.typeCell}>
-                  {(inv.type ?? 'Credit') === 'Cash' ? <DollarSign size={14} /> : <CreditCard size={14} />}
-                  <span>{inv.type ?? 'Credit'}</span>
-                </div>
-              </td>
-              <td className={`amount ${styles.amountText}`}>QAR {Number(inv?.total ?? 0).toLocaleString()}</td>
-              <td className={`amount ${styles.paidText}`}>QAR {Number(inv.paid ?? 0).toLocaleString()}</td>
-              <td className={`amount ${styles.balanceText}`}>QAR {(Number(inv.total ?? 0) - Number(inv.paid ?? 0)).toLocaleString()}</td>
-              <td>
-                <span className={`badge ${
-                  inv?.status === 'Paid' ? 'badge-success' : 
-                  inv?.status === 'Partial' ? 'badge-warning' : 'badge-danger'
-                }`}>
-                  {inv?.status || 'Unpaid'}
-                </span>
-              </td>
-              <td>
-                <div className="text-[10px] font-bold text-emerald-950 uppercase tracking-tight">{inv.createdBy || 'System'}</div>
-                <div className="text-[9px] font-bold text-slate-400 mt-1">{inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-GB') : 'System Processed'}</div>
-              </td>
-              <td>
-                <div className={styles.actionCell}>
-                  <Link href={`/dashboard/invoices/${inv.id}/edit`} className={styles.editBtn} title="Edit"><Edit3 size={16} /></Link>
-                  <Link href={`/dashboard/invoices/${inv.id}`} className={styles.payBtn} title="View & Print">
-                    <Eye size={16} />
-                  </Link>
-                  <button className={styles.deleteBtn} title="Delete" onClick={() => handleDelete(inv.id)}><Trash2 size={16} /></button>
-                </div>
-              </td>
-            </tr>
-          )}
-          renderMobileCard={(inv) => (
-            <div className="space-y-4">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><Receipt size={16} /></div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">#{inv?.id || 'N/A'}</p>
-                    <p className="text-sm font-black text-emerald-950 uppercase">{inv?.customer || 'Unknown'}</p>
-                    <p className="text-[8px] font-bold text-slate-400 uppercase mt-1">{inv?.date ? new Date(inv.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</p>
+          renderRow={(inv) => {
+            const getHiddenCharges = (i) => {
+              if (i.totalHiddenCharges !== undefined && i.totalHiddenCharges !== null) {
+                return Number(i.totalHiddenCharges);
+              }
+              const lines = i.towDetails || i.jobs || [];
+              return lines.reduce((sum, job) => sum + Number(job.serviceCommission || 0), 0);
+            };
+            const hiddenCharges = getHiddenCharges(inv);
+
+            return (
+              <tr key={inv.id}>
+                <td><span className={styles.invId}>{inv?.id || 'N/A'}</span></td>
+                <td>
+                  <span className={styles.nameText}>{inv?.customer || 'Unknown'}</span>
+                  <div className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mt-1">
+                    {inv?.companyName || 'Corporate Client'}
+                  </div>
+                </td>
+                <td>{inv?.date ? new Date(inv.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</td>
+                <td>
+                  <div className={styles.typeCell}>
+                    {(inv.type ?? 'Credit') === 'Cash' ? <DollarSign size={14} /> : <CreditCard size={14} />}
+                    <span>{inv.type ?? 'Credit'}</span>
+                  </div>
+                </td>
+                <td className={`amount ${styles.amountText}`}>QAR {Number(inv?.total ?? 0).toLocaleString()}</td>
+                <td className={`amount ${styles.paidText}`}>QAR {Number(inv.paid ?? 0).toLocaleString()}</td>
+                <td className={`amount ${styles.balanceText}`}>QAR {(Number(inv.total ?? 0) - Number(inv.paid ?? 0)).toLocaleString()}</td>
+                <td>
+                  <span className={`badge ${
+                    inv?.status === 'Paid' ? 'badge-success' : 
+                    inv?.status === 'Partial' ? 'badge-warning' : 'badge-danger'
+                  }`}>
+                    {inv?.status || 'Unpaid'}
+                  </span>
+                </td>
+                <td>
+                  {hiddenCharges > 0 ? (
+                    <span className={`badge ${
+                      inv.commissionStatus === 'Paid' ? 'badge-success' : 'badge-danger'
+                    }`}>
+                      {inv.commissionStatus === 'Paid' ? 'Comm. Paid' : 'Comm. Unpaid'}
+                    </span>
+                  ) : (
+                    <span className="badge badge-neutral">
+                      No Commission
+                    </span>
+                  )}
+                </td>
+                <td>
+                  <div className="text-[10px] font-bold text-emerald-950 uppercase tracking-tight">{inv.createdBy || 'System'}</div>
+                  <div className="text-[9px] font-bold text-slate-400 mt-1">{inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-GB') : 'System Processed'}</div>
+                </td>
+                <td>
+                  <div className={styles.actionCell}>
+                    <Link href={`/dashboard/invoices/${inv.id}/edit`} className={styles.editBtn} title="Edit"><Edit3 size={16} /></Link>
+                    <Link href={`/dashboard/invoices/${inv.id}`} className={styles.payBtn} title="View & Print">
+                      <Eye size={16} />
+                    </Link>
+                    <Link href={`/dashboard/invoices/${inv.id}/report`} className={styles.reportBtn} title="View Report">
+                      <FileText size={16} />
+                    </Link>
+                    <button className={styles.deleteBtn} title="Delete" onClick={() => handleDelete(inv.id)}><Trash2 size={16} /></button>
+                  </div>
+                </td>
+              </tr>
+            );
+          }}
+          renderMobileCard={(inv) => {
+            const getHiddenCharges = (i) => {
+              if (i.totalHiddenCharges !== undefined && i.totalHiddenCharges !== null) {
+                return Number(i.totalHiddenCharges);
+              }
+              const lines = i.towDetails || i.jobs || [];
+              return lines.reduce((sum, job) => sum + Number(job.serviceCommission || 0), 0);
+            };
+            const hiddenCharges = getHiddenCharges(inv);
+
+            return (
+              <div className="space-y-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><Receipt size={16} /></div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">#{inv?.id || 'N/A'}</p>
+                      <p className="text-sm font-black text-emerald-950 uppercase">{inv?.customer || 'Unknown'}</p>
+                      <p className="text-[8px] font-bold text-slate-400 uppercase mt-1">{inv?.date ? new Date(inv.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <span className={`badge ${
+                      inv?.status === 'Paid' ? 'badge-success' : 
+                      inv?.status === 'Partial' ? 'badge-warning' : 'badge-danger'
+                    }`}>
+                      {inv?.status || 'Unpaid'}
+                    </span>
+                    {hiddenCharges > 0 ? (
+                      <span className={`badge ${
+                        inv.commissionStatus === 'Paid' ? 'badge-success' : 'badge-danger'
+                      }`}>
+                        {inv.commissionStatus === 'Paid' ? 'Comm. Paid' : 'Comm. Unpaid'}
+                      </span>
+                    ) : (
+                      <span className="badge badge-neutral">
+                        No Commission
+                      </span>
+                    )}
                   </div>
                 </div>
-                <span className={`badge ${
-                  inv?.status === 'Paid' ? 'badge-success' : 
-                  inv?.status === 'Partial' ? 'badge-warning' : 'badge-danger'
-                }`}>
-                  {inv?.status || 'Unpaid'}
-                </span>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4 py-3 border-y border-emerald-50">
-                 <div>
-                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Billed</p>
-                    <p className="text-xs font-black text-emerald-950">QAR {inv.total || 0}</p>
-                 </div>
-                 <div>
-                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Due Balance</p>
-                    <p className="text-xs font-black text-rose-600">QAR {(inv.total || 0) - (inv.paid || 0)}</p>
-                 </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex items-center gap-2">
-                  <Link href={`/dashboard/invoices/${inv.id}`} className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                    <Eye size={18} />
-                  </Link>
-                  <Link href={`/dashboard/invoices/${inv.id}/edit`} className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                    <Edit3 size={18} />
-                  </Link>
-                  <button onClick={() => handleDelete(inv.id)} className="p-3 bg-rose-50 text-rose-600 rounded-xl">
-                    <Trash2 size={18} />
-                  </button>
+                <div className="grid grid-cols-2 gap-4 py-3 border-y border-emerald-50">
+                   <div>
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Billed</p>
+                      <p className="text-xs font-black text-emerald-950">QAR {inv.total || 0}</p>
+                   </div>
+                   <div>
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Due Balance</p>
+                      <p className="text-xs font-black text-rose-600">QAR {(inv.total || 0) - (inv.paid || 0)}</p>
+                   </div>
                 </div>
-                <div className="text-[9px] font-bold text-slate-300 uppercase tracking-widest italic">{inv.date || 'N/A'}</div>
+
+                <div className="flex items-center justify-between pt-2">
+                  <div className="flex items-center gap-2">
+                    <Link href={`/dashboard/invoices/${inv.id}`} className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                      <Eye size={18} />
+                    </Link>
+                    <Link href={`/dashboard/invoices/${inv.id}/report`} className="p-3 bg-sky-50 text-sky-600 rounded-xl" title="View Report">
+                      <FileText size={18} />
+                    </Link>
+                    <Link href={`/dashboard/invoices/${inv.id}/edit`} className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                      <Edit3 size={18} />
+                    </Link>
+                    <button onClick={() => handleDelete(inv.id)} className="p-3 bg-rose-50 text-rose-600 rounded-xl">
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                  <div className="text-[9px] font-bold text-slate-300 uppercase tracking-widest italic">{inv.date || 'N/A'}</div>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          }}
         />
       </motion.div>
     </motion.div>

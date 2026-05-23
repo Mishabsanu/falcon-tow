@@ -28,20 +28,20 @@ export default function DashboardLayout({
     <div className="flex min-h-screen overflow-hidden bg-emerald-50/20 font-sans antialiased text-emerald-950">
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-[100] bg-emerald-950/40 backdrop-blur-md lg:hidden animate-in fade-in duration-300"
+          className="fixed inset-0 z-[200] bg-emerald-950/40 backdrop-blur-md lg:hidden animate-in fade-in duration-300"
           onClick={() => setSidebarOpen(false)}
         >
           <div
-            className="h-full w-[18.5rem] bg-white shadow-2xl animate-in slide-in-from-left duration-500"
+            className="h-full w-[18.5rem] bg-white shadow-2xl animate-in slide-in-from-left duration-500 relative"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="absolute right-[-3rem] top-5 lg:hidden">
+            <div className="absolute right-4 top-4 z-[210] lg:hidden">
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="p-2.5 bg-emerald-950 text-white rounded-xl shadow-lg border border-white/10 transition-all hover:scale-110 active:scale-90"
+                className="p-2 text-white/80 hover:text-white transition-colors"
                 aria-label="Close navigation"
               >
-                <X size={20} />
+                <X size={24} />
               </button>
             </div>
             <Sidebar />
@@ -50,7 +50,7 @@ export default function DashboardLayout({
       )}
 
       {/* Desktop Sidebar Container */}
-      <div className="hidden lg:block w-[18.5rem] shrink-0 shadow-sm z-50">
+      <div className="hidden lg:block h-screen w-[18.5rem] shrink-0 shadow-sm z-50 sticky top-0">
         <Sidebar />
       </div>
 

@@ -167,11 +167,13 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
             towId: j._id || j.towId,
             jobId: j.id || j.jobId,
             date: j.date,
-            vehicleName: j.customerVehicle,
-            vehiclePlate: j.customerPlate,
+            vehicleName: j.customerVehicle || j.vehicleName,
+            vehiclePlate: j.customerPlate || j.vehiclePlate,
             route: j.route || `${j.pickup} to ${j.dropoff}`,
             amount: Number(j.amount || 0),
-            serviceCommission: Number(j.serviceCommission || 0)
+            serviceCommission: Number(j.serviceCommission || 0),
+            driver: j.driver || 'Unassigned',
+            driverId: j.driverId || null
           }));
         }
 
@@ -497,12 +499,24 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
 
   useEffect(() => {
     if (moduleKey !== 'invoices') return;
-    const total = selectedJobs.reduce((sum, j) => sum + Number(j.amount || 0), 0);
-    // Use non-strict inequality to handle string/number comparisons from Formik
-    if (values.total != total) {
-      setFieldValue('total', total);
+    const totalCharges = selectedJobs.reduce((sum, j) => sum + Number(j.amount || 0), 0);
+    const totalHiddenCharges = selectedJobs.reduce((sum, j) => sum + Number(j.serviceCommission || 0), 0);
+    const netTotal = Math.max(0, totalCharges - totalHiddenCharges);
+    const netPay = netTotal + totalHiddenCharges;
+
+    if (values.totalCharges != totalCharges) {
+      setFieldValue('totalCharges', totalCharges);
     }
-  }, [moduleKey, selectedJobs, values.total, setFieldValue]);
+    if (values.totalHiddenCharges != totalHiddenCharges) {
+      setFieldValue('totalHiddenCharges', totalHiddenCharges);
+    }
+    if (values.total != netTotal) {
+      setFieldValue('total', netTotal);
+    }
+    if (values.netPayable != netPay) {
+      setFieldValue('netPayable', netPay);
+    }
+  }, [moduleKey, selectedJobs, values.totalCharges, values.totalHiddenCharges, values.total, values.netPayable, setFieldValue]);
 
   const toggleJob = (job) => {
     setSelectedJobs(prev => {
@@ -1131,11 +1145,11 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                         {/* Header Row - Styled like section dividers */}
                         <div className="grid grid-cols-12 gap-4 px-2 py-4 border-b border-emerald-100/50 bg-slate-50/30 sticky top-0 z-10 backdrop-blur-sm">
                           <div className="col-span-1 text-[9px] font-black uppercase tracking-widest text-emerald-900/40">Select</div>
-                          <div className="col-span-2 text-[9px] font-black uppercase tracking-widest text-emerald-900/40">Job ID</div>
+                          <div className="col-span-1 text-[9px] font-black uppercase tracking-widest text-emerald-900/40">Job ID</div>
                           <div className="col-span-2 text-[9px] font-black uppercase tracking-widest text-emerald-900/40">Date</div>
-                          <div className="col-span-2 text-[9px] font-black uppercase tracking-widest text-emerald-900/40">Vehicle Name</div>
-                          <div className="col-span-1 text-[9px] font-black uppercase tracking-widest text-emerald-900/40">Plate No</div>
+                          <div className="col-span-2 text-[9px] font-black uppercase tracking-widest text-emerald-900/40">Vehicle & Plate</div>
                           <div className="col-span-2 text-[9px] font-black uppercase tracking-widest text-emerald-900/40">Route</div>
+                          <div className="col-span-2 text-right text-[9px] font-black uppercase tracking-widest text-emerald-900/40">Commission (QAR)</div>
                           <div className="col-span-2 text-right text-[9px] font-black uppercase tracking-widest text-emerald-900/40">Fee (QAR)</div>
                         </div>
 
@@ -1153,17 +1167,17 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                     <Check size={12} strokeWidth={4} />
                                   </div>
                                 </div>
-                                <div className="col-span-2">
+                                <div className="col-span-1">
                                   <span className="text-sm font-black text-emerald-950">#{job.id}</span>
                                 </div>
                                 <div className="col-span-2">
                                   <span className="text-xs font-bold text-slate-600">{new Date(job.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</span>
                                 </div>
                                 <div className="col-span-2">
-                                  <span className="text-xs font-bold text-emerald-950 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 uppercase leading-none truncate block w-fit">{job.customerVehicle}</span>
-                                </div>
-                                <div className="col-span-1">
-                                  <span className="text-xs font-bold text-emerald-950 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 uppercase leading-none truncate block w-fit">{job.customerPlate}</span>
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="text-xs font-bold text-emerald-950 truncate max-w-[120px]">{job.customerVehicle || 'Towing'}</span>
+                                    <span className="text-[10px] font-bold text-slate-400 truncate max-w-[120px]">{job.customerPlate || 'N/A'}</span>
+                                  </div>
                                 </div>
                                 <div className="col-span-2">
                                   <div className="flex items-center gap-1.5 overflow-hidden bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 w-fit max-w-full">
@@ -1173,8 +1187,13 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                   </div>
                                 </div>
                                 <div className="col-span-2 text-right">
+                                  <span className="text-sm font-bold text-rose-600">
+                                    -{Number(job.serviceCommission || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                                <div className="col-span-2 text-right">
                                   <span className={`text-sm font-black transition-colors ${isSelected ? 'text-emerald-600' : 'text-emerald-950'}`}>
-                                    {Number(job.amount || 0).toLocaleString()}
+                                    {Number(job.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                   </span>
                                 </div>
                               </div>

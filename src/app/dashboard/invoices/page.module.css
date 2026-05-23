@@ -75,7 +75,7 @@
   gap: 0.5rem;
 }
 
-.editBtn, .deleteBtn, .payBtn {
+.editBtn, .deleteBtn, .payBtn, .reportBtn {
   width: 34px;
   height: 34px;
   border-radius: 8px;
@@ -103,6 +103,12 @@
   background: rgba(20, 184, 166, 0.1);
   color: var(--accent);
   border-color: rgba(20, 184, 166, 0.2);
+}
+
+.reportBtn:hover {
+  background: rgba(14, 165, 233, 0.1);
+  color: #0284c7;
+  border-color: rgba(14, 165, 233, 0.2);
 }
 @media (max-width: 900px) {
   .header {

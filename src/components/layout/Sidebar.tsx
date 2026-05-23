@@ -136,7 +136,7 @@ export default function Sidebar() {
   if (!mounted) return null;
 
   return (
-    <aside className="flex h-screen w-full flex-col overflow-hidden bg-white border-r border-emerald-100 shadow-sm">
+    <aside className="flex h-full w-full flex-col overflow-hidden bg-white border-r border-emerald-100 shadow-sm">
       {/* BRANDING AREA */}
       <div className="relative px-6 py-10 flex flex-col items-center border-b border-emerald-800 bg-emerald-900 overflow-hidden">
         {/* THEME GRADIENT OVERLAY */}
@@ -148,7 +148,7 @@ export default function Sidebar() {
 
         <div className="flex w-full items-center justify-center relative z-10">
           <Link href="/dashboard" className="group">
-            <div className="h-16 w-32 transition-all duration-500 group-hover:scale-105 flex items-center justify-center">
+            <div className="h-28 w-56 transition-all duration-500 group-hover:scale-105 flex items-center justify-center">
               <img
                 src="/logo-1.png"
                 alt="Falcon Tow"
@@ -216,7 +216,7 @@ export default function Sidebar() {
       </nav>
 
       {/* FOOTER AREA */}
-      <div className="mt-auto border-t border-emerald-100 bg-emerald-50/30 p-6">
+      <div className="mt-auto border-t border-emerald-100 bg-emerald-50/30 p-6 pb-8 lg:pb-6">
         <button
           onClick={handleLogout}
           suppressHydrationWarning={true}

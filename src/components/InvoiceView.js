@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Printer, Download, ArrowLeft, Edit3, Phone, Mail, MapPin, Globe, Calendar, Hash } from 'lucide-react';
+import { Printer, Download, ArrowLeft, Edit3, Phone, Mail, MapPin, Globe, Calendar, Hash, FileText } from 'lucide-react';
 import { apiService } from '@/services/apiService';
 import styles from './InvoiceView.module.css';
 
@@ -116,9 +116,26 @@ export default function InvoiceView({ id }) {
     month: '2-digit',
     year: 'numeric'
   });
-  const totalAmount = lineItems.length > 0
-    ? invoiceRows.reduce((sum, job) => sum + Number(job.amount || 0), 0)
-    : Number(invoice.total || 0);
+  const totalCharges = invoice.totalCharges !== undefined && invoice.totalCharges !== null
+    ? Number(invoice.totalCharges)
+    : (lineItems.length > 0
+        ? invoiceRows.reduce((sum, job) => sum + Number(job.amount || 0), 0)
+        : Number(invoice.total || 0));
+
+  const totalHiddenCharges = invoice.totalHiddenCharges !== undefined && invoice.totalHiddenCharges !== null
+    ? Number(invoice.totalHiddenCharges)
+    : (lineItems.length > 0
+        ? invoiceRows.reduce((sum, job) => sum + Number(job.serviceCommission || 0), 0)
+        : 0);
+
+  const netPayable = invoice.netPayable !== undefined && invoice.netPayable !== null
+    ? Number(invoice.netPayable)
+    : (invoice.totalCharges !== undefined && invoice.totalCharges !== null
+        ? Number(invoice.totalCharges)
+        : (lineItems.length > 0
+            ? invoiceRows.reduce((sum, job) => sum + Number(job.amount || 0), 0)
+            : Number(invoice.total || 0)));
+
   const currency = (value) => `QAR ${Number(value || 0).toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
@@ -134,11 +151,15 @@ export default function InvoiceView({ id }) {
   return (
     <div className={styles.container}>
       <div className={`${styles.toolbar} no-print`}>
-        <button onClick={() => router.back()} className={styles.backBtn}>
+        <button onClick={() => window.history.back()} className={styles.backBtn}>
           <ArrowLeft size={18} />
           <span>Back to Records</span>
         </button>
         <div className={styles.toolbarActions}>
+          <Link href={`/dashboard/invoices/${id}/report`} className={styles.pdfBtn}>
+            <FileText size={16} />
+            <span>View Report</span>
+          </Link>
           <button onClick={handlePrint} className={`${styles.actionBtn} no-print`}>
             <Printer size={16} />
             <span>Print Invoice</span>
@@ -239,14 +260,28 @@ export default function InvoiceView({ id }) {
 
         <div className={styles.invoiceTotalsTop}>
           <div className={styles.totalsArea}>
-            <div className={styles.totalRow}>
-              <span className={styles.totalLabel}>Subtotal</span>
-              <span className={styles.totalValue}>{currency(totalAmount)}</span>
-            </div>
+            {totalHiddenCharges === 0 && (
+              <div className={styles.totalRow}>
+                <span className={styles.totalLabel}>Subtotal (Total Charges)</span>
+                <span className={styles.totalValue}>{currency(totalCharges)}</span>
+              </div>
+            )}
             <div className={styles.grandTotalRow}>
-              <span className={styles.grandLabel}>Total</span>
-              <span className={styles.grandValue}>{currency(totalAmount)}</span>
+              <span className={styles.grandLabel}>Net Payable</span>
+              <span className={styles.grandValue}>{currency(netPayable)}</span>
             </div>
+            {invoice.paid > 0 && (
+              <>
+                <div className={styles.totalRow} style={{ borderTop: '1px dashed rgba(5, 150, 105, 0.15)', marginTop: '6px', paddingTop: '6px' }}>
+                  <span className={styles.totalLabel}>Total Paid Now</span>
+                  <span className={styles.totalValue} style={{ color: '#059669', fontWeight: 'bold' }}>{currency(invoice.paid)}</span>
+                </div>
+                <div className={styles.grandTotalRow} style={{ borderTop: '1px solid rgba(5, 150, 105, 0.15)', marginTop: '4px', paddingTop: '4px' }}>
+                  <span className={styles.grandLabel}>Ending Dues (Balance)</span>
+                  <span className={styles.grandValue} style={{ color: '#e11d48', fontWeight: 'bold' }}>{currency(Math.max(0, netPayable - invoice.paid))}</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -263,8 +298,34 @@ export default function InvoiceView({ id }) {
               <p className={styles.paymentMethodText}>{invoice.type || invoice.paymentMethod || 'Cash'} Payment</p>
             </div>
             <div className={styles.wordsWrapper}>
-              <p className={styles.wordsText}>Amount in words: Qatari Riyal {amountInWords(Math.round(totalAmount))} Only</p>
+              <p className={styles.wordsText}>Amount in words: Qatari Riyal {amountInWords(Math.round(netPayable))} Only</p>
             </div>
+            
+            {invoice.invoicePayments && invoice.invoicePayments.length > 0 && (
+              <div style={{ marginTop: '20px', borderTop: '1px dashed rgba(5, 150, 105, 0.15)', paddingTop: '15px' }}>
+                <span className={styles.notesTitle}>Payment Ledger Receipts</span>
+                <table style={{ width: '100%', marginTop: '10px', fontSize: '11px', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: 'rgba(5, 150, 105, 0.05)', color: '#064e3b', fontSize: '10px', fontWeight: '800' }}>
+                      <th style={{ padding: '6px 8px', textAlign: 'left' }}>SL</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'left' }}>Date</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'left' }}>Method / Note</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoice.invoicePayments.map((p, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid rgba(5, 150, 105, 0.05)', color: '#475569' }}>
+                        <td style={{ padding: '6px 8px' }}>{(idx + 1).toString().padStart(2, '0')}</td>
+                        <td style={{ padding: '6px 8px' }}>{new Date(p.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
+                        <td style={{ padding: '6px 8px' }}>{p.note || 'Payment'}</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 'bold', color: '#064e3b' }}>{currency(p.amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
 
