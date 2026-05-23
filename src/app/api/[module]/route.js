@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import { moduleData } from '@/lib/moduleData';
+import mongoose from 'mongoose';
 
 export const dynamic = 'force-dynamic';
 import User from '@/models/User';
@@ -51,9 +52,14 @@ export async function GET(request, context) {
 
     // 1. Build Base Filter Query (Excludes search 'q')
     let filterQuery = {};
+    const driverId = searchParams.get('driverId');
+    const driverName = searchParams.get('driverName');
+    const workerId = searchParams.get('workerId');
+    const workerName = searchParams.get('workerName');
+
     searchParams.forEach((value, key) => {
-      // Skip pagination and global search keys
-      if (['q', 'page', 'limit', 'sort', 'order', 'select'].includes(key) || value === 'All') return;
+      // Skip pagination, global search, and role-based filtering keys
+      if (['q', 'page', 'limit', 'sort', 'order', 'select', 'driverId', 'driverName', 'workerId', 'workerName'].includes(key) || value === 'All') return;
 
       // Handle Date Ranges
       if (key === 'startDate' || key === 'endDate') {
@@ -70,11 +76,48 @@ export async function GET(request, context) {
 
       // Handle Specific Field Filtering
       if (key.endsWith('Id') || key === '_id') {
-        try { filterQuery[key] = value; } catch(e) {}
+        try { 
+          if (typeof value === 'string' && /^[0-9a-fA-F]{24}$/.test(value)) {
+            filterQuery[key] = new mongoose.Types.ObjectId(value);
+          } else {
+            filterQuery[key] = value;
+          }
+        } catch(e) {}
       } else {
         filterQuery[key] = value;
       }
     });
+
+    // Apply role-based OR queries
+    if (moduleKey === 'tows' && (driverId || driverName)) {
+      const orConditions = [];
+      if (driverId && /^[0-9a-fA-F]{24}$/.test(driverId)) {
+        orConditions.push({ driverId: new mongoose.Types.ObjectId(driverId) });
+      } else if (driverId) {
+        orConditions.push({ driverId: driverId });
+      }
+      if (driverName) {
+        orConditions.push({ driver: driverName });
+      }
+      if (orConditions.length > 0) {
+        filterQuery.$or = orConditions;
+      }
+    }
+
+    if (['expenses', 'salaries', 'invoices'].includes(moduleKey) && (workerId || workerName)) {
+      const orConditions = [];
+      if (workerId && /^[0-9a-fA-F]{24}$/.test(workerId)) {
+        orConditions.push({ workerId: new mongoose.Types.ObjectId(workerId) });
+      } else if (workerId) {
+        orConditions.push({ workerId: workerId });
+      }
+      if (workerName) {
+        orConditions.push({ worker: workerName });
+      }
+      if (orConditions.length > 0) {
+        filterQuery.$or = orConditions;
+      }
+    }
 
     // 2. Build Global Search Query
     let searchQuery = {};

@@ -19,26 +19,44 @@ export async function GET(request) {
     const customStart = searchParams.get('start');
     const customEnd = searchParams.get('end');
     const workerId = searchParams.get('workerId');
+    const workerName = searchParams.get('workerName');
 
     const { start, end } = getDateRange(rangeType, customStart, customEnd);
     const todayStart = startOfDay(new Date());
     const todayEnd = endOfDay(new Date());
 
     // Base match conditions for filters
-    const dateMatch = { date: { $gte: start, $lte: end } };
-    const baseMatch = { date: { $gte: start, $lte: end } };
+    let towMatch = { date: { $gte: start, $lte: end } };
+    let expenseMatch = { date: { $gte: start, $lte: end } };
+    let invoiceMatch = { date: { $gte: start, $lte: end } };
     
     let objectWorkerId = null;
     if (workerId && mongoose.Types.ObjectId.isValid(workerId)) {
       objectWorkerId = new mongoose.Types.ObjectId(workerId);
-      dateMatch.driverId = objectWorkerId;
-      baseMatch.workerId = objectWorkerId;
+      
+      const towConditions = [{ driverId: objectWorkerId }];
+      if (workerName) {
+        towConditions.push({ driver: workerName });
+      }
+      towMatch = { ...towMatch, $or: towConditions };
+
+      const expenseConditions = [{ workerId: objectWorkerId }];
+      if (workerName) {
+        expenseConditions.push({ worker: workerName });
+      }
+      expenseMatch = { ...expenseMatch, $or: expenseConditions };
+
+      const invoiceConditions = [{ workerId: objectWorkerId }];
+      if (workerName) {
+        invoiceConditions.push({ worker: workerName });
+      }
+      invoiceMatch = { ...invoiceMatch, $or: invoiceConditions };
     }
 
     const [tows, invoices, expenses, todayTows, todayInvoices, recentTows, recentInvoices] = await Promise.all([
       // 1. Filtered Tow Stats
       Tow.aggregate([
-        { $match: dateMatch },
+        { $match: towMatch },
         { $group: { 
           _id: null, 
           totalAmount: { $sum: { $convert: { input: "$amount", to: "double", onError: 0, onNull: 0 } } },
@@ -51,19 +69,21 @@ export async function GET(request) {
       ]),
       // 2. Filtered Invoice Stats
       Invoice.aggregate([
-        { $match: baseMatch },
+        { $match: invoiceMatch },
         { $group: { _id: null, total: { $sum: { $convert: { input: "$total", to: "double", onError: 0, onNull: 0 } } }, paid: { $sum: { $convert: { input: "$paid", to: "double", onError: 0, onNull: 0 } } } }}
       ]),
       // 3. Filtered Expenses
       Expense.aggregate([
-        { $match: baseMatch },
+        { $match: expenseMatch },
         { $group: { _id: null, total: { $sum: { $convert: { input: "$amount", to: "double", onError: 0, onNull: 0 } } } }}
       ]),
       // 4. Today's Specific Tows (Aggregate to get both count and driverShare)
       Tow.aggregate([
         { $match: { 
           date: { $gte: todayStart, $lte: todayEnd },
-          ...(objectWorkerId ? { driverId: objectWorkerId } : {})
+          ...(objectWorkerId ? { 
+            $or: workerName ? [{ driverId: objectWorkerId }, { driver: workerName }] : [{ driverId: objectWorkerId }]
+          } : {})
         } },
         { $group: {
           _id: null,
@@ -75,14 +95,20 @@ export async function GET(request) {
       Invoice.aggregate([
         { $match: { 
           date: { $gte: todayStart, $lte: todayEnd },
-          ...(objectWorkerId ? { workerId: objectWorkerId } : {})
+          ...(objectWorkerId ? { 
+            $or: workerName ? [{ workerId: objectWorkerId }, { worker: workerName }] : [{ workerId: objectWorkerId }]
+          } : {})
         } },
         { $group: { _id: null, total: { $sum: { $convert: { input: "$total", to: "double", onError: 0, onNull: 0 } } } }}
       ]),
       // 6. Recent Tows
-      Tow.find(workerId ? { driverId: workerId } : {}).sort({ date: -1 }).limit(5).lean(),
+      Tow.find(objectWorkerId ? { 
+        $or: workerName ? [{ driverId: objectWorkerId }, { driver: workerName }] : [{ driverId: objectWorkerId }]
+      } : {}).sort({ date: -1 }).limit(5).lean(),
       // 7. Recent Invoices
-      Invoice.find(workerId ? { workerId: workerId } : {}).sort({ date: -1 }).limit(5).lean()
+      Invoice.find(objectWorkerId ? { 
+        $or: workerName ? [{ workerId: objectWorkerId }, { worker: workerName }] : [{ workerId: objectWorkerId }]
+      } : {}).sort({ date: -1 }).limit(5).lean()
     ]);
 
     const towData = tows[0] || { totalAmount: 0, totalCash: 0, companyShare: 0, driverShare: 0, serviceCommission: 0, count: 0 };

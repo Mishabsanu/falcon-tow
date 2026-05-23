@@ -4,7 +4,7 @@ import { calculateSalarySettlement } from '@/modules/salaries/logic/salaryBusine
 import { calculateTowShares } from '@/modules/tows/logic/towBusinessLogic';
 import { apiService } from '@/services/apiService';
 import { useFormik } from 'formik';
-import { Activity, ArrowLeft, Check, Eye, EyeOff, FileText, Lock, Plus, Save, Square } from 'lucide-react';
+import { Activity, ArrowLeft, Check, Eye, EyeOff, FileText, Lock, Plus, Save, Square, MapPin } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { toast } from 'sonner';
@@ -1098,7 +1098,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                   onChange={formik.handleChange}
                                   onBlur={formik.handleBlur}
                                   readOnly={field.readOnly}
-                                  className={`block w-full ${field.type === 'password' ? 'pl-10 pr-10' : 'px-1'} py-4 bg-transparent border-b-2 ${touched[field.name] && errors[field.name] ? 'border-red-300' : 'border-emerald-100'} focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400 ${field.readOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                  className={`block w-full ${field.type === 'password' ? 'pl-10 pr-10' : (field.name === 'pickup' || field.name === 'dropoff') ? 'pr-12' : 'px-1'} py-4 bg-transparent border-b-2 ${touched[field.name] && errors[field.name] ? 'border-red-300' : 'border-emerald-100'} focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400 ${field.readOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
                                   placeholder={`Enter ${field.label.toLowerCase()}...`}
                                 />
                                 {field.type === 'password' && (
@@ -1108,6 +1108,59 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                     className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-emerald-600 transition-colors"
                                   >
                                     {showPasswords[field.name] ? <EyeOff size={18} /> : <Eye size={18} />}
+                                  </button>
+                                )}
+                                {(field.name === 'pickup' || field.name === 'dropoff') && (
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      if (!navigator.geolocation) {
+                                        toast.error("Geolocation is not supported by your browser");
+                                        return;
+                                      }
+                                      
+                                      const resolveToastId = toast.loading(`Scanning satellite nodes to lock GPS coordinate...`);
+                                      
+                                      navigator.geolocation.getCurrentPosition(
+                                        async (position) => {
+                                          const { latitude, longitude } = position.coords;
+                                          try {
+                                            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+                                            const data = await res.json();
+                                            if (data) {
+                                              const addr = data.address || {};
+                                              const placeName = data.name || addr.suburb || addr.neighbourhood || addr.quarter || addr.city_district || addr.road || addr.city || addr.town || addr.village || (data.display_name ? data.display_name.split(',')[0] : '');
+                                              
+                                              if (placeName) {
+                                                setFieldValue(field.name, placeName);
+                                                toast.success(`Location locked: ${placeName}`, { id: resolveToastId });
+                                              } else if (data.display_name) {
+                                                setFieldValue(field.name, data.display_name);
+                                                toast.success(`Location locked: ${data.display_name.split(',')[0]}`, { id: resolveToastId });
+                                              } else {
+                                                setFieldValue(field.name, `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+                                                toast.success(`Coordinates locked: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`, { id: resolveToastId });
+                                              }
+                                            } else {
+                                              setFieldValue(field.name, `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+                                              toast.success(`Coordinates locked: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`, { id: resolveToastId });
+                                            }
+                                          } catch (err) {
+                                            setFieldValue(field.name, `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+                                            toast.success(`Coordinates locked: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`, { id: resolveToastId });
+                                          }
+                                        },
+                                        (error) => {
+                                          console.error("Geolocation error:", error);
+                                          toast.error(`Unable to capture location: ${error.message || 'Permission denied'}`, { id: resolveToastId });
+                                        },
+                                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                                      );
+                                    }}
+                                    className="absolute inset-y-0 right-0 pr-2 flex items-center text-slate-400 hover:text-emerald-600 transition-colors"
+                                    title="Capture Current GPS Location"
+                                  >
+                                    <MapPin size={18} className="hover:scale-110 active:scale-95 transition-transform" />
                                   </button>
                                 )}
                               </div>

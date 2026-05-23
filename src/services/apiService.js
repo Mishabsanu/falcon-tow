@@ -20,8 +20,14 @@ export const apiService = {
     const extraParams = { ...options.extraParams };
     if (isWorker) {
       // Role-based filtering: Workers only see their OWN data (linked via native _id)
-      if (moduleKey === 'tows') extraParams.driverId = user._id;
-      if (['expenses', 'salaries'].includes(moduleKey)) extraParams.workerId = user._id;
+      if (moduleKey === 'tows') {
+        if (user?._id) extraParams.driverId = user._id;
+        if (user?.name) extraParams.driverName = user.name;
+      }
+      if (['expenses', 'salaries'].includes(moduleKey)) {
+        if (user?._id) extraParams.workerId = user._id;
+        if (user?.name) extraParams.workerName = user.name;
+      }
     }
 
     const params = new URLSearchParams({
@@ -47,8 +53,16 @@ export const apiService = {
     
     let url = `${API_BASE}/${moduleKey}?limit=1000`;
     if (isWorker) {
-      if (moduleKey === 'tows') url += `&driverId=${user._id}`;
-      if (['expenses', 'salaries'].includes(moduleKey)) url += `&workerId=${user._id}`;
+      if (moduleKey === 'tows') {
+        const idParam = user?._id ? `&driverId=${user._id}` : '';
+        const nameParam = user?.name ? `&driverName=${encodeURIComponent(user.name)}` : '';
+        url += `${idParam}${nameParam}`;
+      }
+      if (['expenses', 'salaries'].includes(moduleKey)) {
+        const idParam = user?._id ? `&workerId=${user._id}` : '';
+        const nameParam = user?.name ? `&workerName=${encodeURIComponent(user.name)}` : '';
+        url += `${idParam}${nameParam}`;
+      }
     }
 
     const response = await fetch(url);
@@ -160,9 +174,11 @@ export const apiService = {
     if (options.end) params.append('end', options.end);
     
     if (isWorker) {
-      params.append('workerId', user._id);
+      if (user?._id) params.append('workerId', user._id);
+      if (user?.name) params.append('workerName', user.name);
     } else if (options.workerId) {
       params.append('workerId', options.workerId);
+      if (options.workerName) params.append('workerName', options.workerName);
     }
 
     const url = `${API_BASE}/dashboard/stats${params.toString() ? `?${params.toString()}` : ''}`;
