@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
 @utility custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(5, 150, 105, 0.2) transparent;
   &::-webkit-scrollbar {
-    width: 4px;
+    width: 6px;
+    height: 6px;
   }
   &::-webkit-scrollbar-track {
     background: transparent;

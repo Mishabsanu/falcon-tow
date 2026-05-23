@@ -162,113 +162,115 @@ export default function CrudPage({ moduleKey }) {
 
       <div className="space-y-6">
         {/* DESKTOP TABLE VIEW */}
-        <div className="hidden md:block glass-card !p-0 overflow-x-auto">
-          <table className="data-table min-w-[900px]">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Details</th>
-                {isAdmin && <th>Created By</th>}
-                <th>Status</th>
-                <th className="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={isAdmin ? 5 : 4} className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">Loading...</td></tr>
-              ) : records.length === 0 ? (
-                <tr><td colSpan={isAdmin ? 5 : 4} className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">No records found.</td></tr>
-              ) : (
-                records.map((record) => (
-                  <tr key={record.id}>
-                    <td>
-                      <div className="space-y-1">
-                        <p className="text-sm font-black text-emerald-950 uppercase tracking-tight">
-                          {moduleKey === 'vehicles' ? `${record?.name ?? 'Unknown'} [${record?.modelRef || 'N/A'}]` :
-                            moduleKey === 'tows' ? (record?.customer ?? 'Unknown Client') :
-                              (record?.name || record?.customer || record?.worker || record?.title || record?.id || 'No Name')}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-2">
-                          {moduleKey !== 'users' && <span className="text-[10px] font-bold text-emerald-600/40 uppercase tracking-widest">{record.id}</span>}
-                          {record.role && moduleKey !== 'users' && <span className="h-1 w-1 rounded-full bg-emerald-200"></span>}
-                          {record.role && <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">{record.role}</span>}
-                          {moduleKey === 'tows' && (
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                              • {record.customerVehicle} [{record.customerPlate}]
-                            </span>
-                          )}
-                          {record?.createdAt && (
-                            <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">
-                              • {new Date(record.createdAt).toLocaleDateString()}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="space-y-1">
-                        <p className="text-sm font-bold text-emerald-950">
-                          {moduleKey === 'tows' && (
-                            <div className="flex flex-col gap-0.5">
-                              <span>{record?.driver || 'No Driver'} • {record?.vehicle || 'No Truck'}</span>
-                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                                {record?.pickup || 'Unknown'} → {record?.dropoff || 'Unknown'}
-                              </span>
-                            </div>
-                          )}
-                          {moduleKey === 'expenses' && `${record.amount || 0} QAR`}
-                          {moduleKey === 'invoices' && `${record.total || 0} QAR`}
-                          {moduleKey === 'salaries' && `${record.amount || 0} QAR`}
-                          {moduleKey === 'quotations' && `${record.amount || 0} QAR`}
-                          {moduleKey === 'vehicles' && (
-                            <div className="flex flex-col gap-0.5">
-                              <span>{record.plate} • {record.modelRef}</span>
-                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{record.year || 'N/A'}</span>
-                            </div>
-                          )}
-                          {moduleKey === 'users' && record.phone}
-                          {moduleKey === 'customers' && record.phone}
-                        </p>
-                      </div>
-                    </td>
-                    {isAdmin && (
+        <div className="hidden md:block glass-card !p-0 overflow-hidden">
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="data-table min-w-[1100px]">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Details</th>
+                  {isAdmin && <th>Created By</th>}
+                  <th>Status</th>
+                  <th className="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan={isAdmin ? 5 : 4} className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">Loading...</td></tr>
+                ) : records.length === 0 ? (
+                  <tr><td colSpan={isAdmin ? 5 : 4} className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">No records found.</td></tr>
+                ) : (
+                  records.map((record) => (
+                    <tr key={record.id}>
                       <td>
-                        <div className="flex flex-col">
-                          <span className="text-xs font-bold text-emerald-900">{record.createdBy || 'System'}</span>
-                          <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Operational User</span>
+                        <div className="space-y-1">
+                          <p className="text-sm font-black text-emerald-950 uppercase tracking-tight">
+                            {moduleKey === 'vehicles' ? `${record?.name ?? 'Unknown'} [${record?.modelRef || 'N/A'}]` :
+                              moduleKey === 'tows' ? (record?.customer ?? 'Unknown Client') :
+                                (record?.name || record?.customer || record?.worker || record?.title || record?.id || 'No Name')}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {moduleKey !== 'users' && <span className="text-[10px] font-bold text-emerald-600/40 uppercase tracking-widest">{record.id}</span>}
+                            {record.role && moduleKey !== 'users' && <span className="h-1 w-1 rounded-full bg-emerald-200"></span>}
+                            {record.role && <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">{record.role}</span>}
+                            {moduleKey === 'tows' && (
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                • {record.customerVehicle} [{record.customerPlate}]
+                              </span>
+                            )}
+                            {record?.createdAt && (
+                              <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">
+                                • {new Date(record.createdAt).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </td>
-                    )}
-                    <td>
-                      <div className={`badge ${record.status === 'Completed' || record.status === 'Paid' || record.status === 'Active' ? 'badge-success' :
-                        ['In Progress', 'Pending'].includes(record.status) ? 'badge-warning' : 'badge-neutral'
-                        }`}>
-                        <div className={`h-1 w-1 rounded-full ${record.status === 'Completed' || record.status === 'Paid' || record.status === 'Active' ? 'bg-emerald-600' : 'bg-emerald-400'}`}></div>
-                        {record.status || 'Active'}
-                      </div>
-                    </td>
-                    <td className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link href={`${config.path}/${record.id}`} className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title={moduleKey === 'salaries' ? "View Salary Slip" : "View"}>
-                          {moduleKey === 'salaries' ? <Download size={16} /> : <Eye size={16} />}
-                        </Link>
-                        <Link href={`${config.path}/${record.id}/edit`} className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title="Edit">
-                          <Edit2 size={16} />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(record.id)}
-                          className="p-2.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                          title="Delete"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                      <td>
+                        <div className="space-y-1">
+                          <p className="text-sm font-bold text-emerald-950">
+                            {moduleKey === 'tows' && (
+                              <div className="flex flex-col gap-0.5">
+                                <span>{record?.driver || 'No Driver'} • {record?.vehicle || 'No Truck'}</span>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                                  {record?.pickup || 'Unknown'} → {record?.dropoff || 'Unknown'}
+                                </span>
+                              </div>
+                            )}
+                            {moduleKey === 'expenses' && `${record.amount || 0} QAR`}
+                            {moduleKey === 'invoices' && `${record.total || 0} QAR`}
+                            {moduleKey === 'salaries' && `${record.amount || 0} QAR`}
+                            {moduleKey === 'quotations' && `${record.amount || 0} QAR`}
+                            {moduleKey === 'vehicles' && (
+                              <div className="flex flex-col gap-0.5">
+                                <span>{record.plate} • {record.modelRef}</span>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{record.year || 'N/A'}</span>
+                              </div>
+                            )}
+                            {moduleKey === 'users' && record.phone}
+                            {moduleKey === 'customers' && record.phone}
+                          </p>
+                        </div>
+                      </td>
+                      {isAdmin && (
+                        <td>
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-emerald-900">{record.createdBy || 'System'}</span>
+                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Operational User</span>
+                          </div>
+                        </td>
+                      )}
+                      <td>
+                        <div className={`badge ${record.status === 'Completed' || record.status === 'Paid' || record.status === 'Active' ? 'badge-success' :
+                          ['In Progress', 'Pending'].includes(record.status) ? 'badge-warning' : 'badge-neutral'
+                          }`}>
+                          <div className={`h-1 w-1 rounded-full ${record.status === 'Completed' || record.status === 'Paid' || record.status === 'Active' ? 'bg-emerald-600' : 'bg-emerald-400'}`}></div>
+                          {record.status || 'Active'}
+                        </div>
+                      </td>
+                      <td className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link href={`${config.path}/${record.id}`} className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title={moduleKey === 'salaries' ? "View Salary Slip" : "View"}>
+                            {moduleKey === 'salaries' ? <Download size={16} /> : <Eye size={16} />}
+                          </Link>
+                          <Link href={`${config.path}/${record.id}/edit`} className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title="Edit">
+                            <Edit2 size={16} />
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(record.id)}
+                            className="p-2.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                            title="Delete"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* MOBILE CARD VIEW */}

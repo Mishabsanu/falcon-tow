@@ -59,8 +59,8 @@ export default function DashboardLayout({
           <Header />
         </div>
 
-        <main className="garage-workspace flex-1 overflow-y-auto overflow-x-hidden p-5 scroll-smooth md:p-7 lg:p-10 pb-24 lg:pb-10">
-          <div className="max-w-[1600px] mx-auto w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
+        <main className="garage-workspace flex-1 overflow-y-auto overflow-x-hidden px-3 py-5 scroll-smooth md:px-5 md:py-7 lg:px-6 lg:py-8 pb-24 lg:pb-10">
+          <div className="max-w-[1700px] mx-auto w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
             {children}
           </div>
           <div className="h-8" />

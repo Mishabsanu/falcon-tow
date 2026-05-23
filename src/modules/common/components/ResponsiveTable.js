@@ -14,36 +14,38 @@ export default function ResponsiveTable({
     <div className="w-full">
       {/* DESKTOP TABLE VIEW (Visible on tablets and desktops) */}
       <div className="hidden md:block table-container glass-card !p-0 overflow-hidden">
-        <table className="data-table">
-          <thead>
-            <tr>
-              {headers.map((h, i) => (
-                <th key={i} style={h.style}>{h.label}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              [...Array(5)].map((_, i) => (
-                <tr key={i} className="animate-pulse">
-                  {headers.map((_, j) => (
-                    <td key={j} className="px-10 py-7">
-                      <div className="h-4 bg-slate-100 rounded-md w-full skeleton"></div>
-                    </td>
-                  ))}
-                </tr>
-              ))
-            ) : data.length === 0 ? (
+        <div className="overflow-x-auto custom-scrollbar">
+          <table className="data-table min-w-[1100px]">
+            <thead>
               <tr>
-                <td colSpan={headers.length} className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">
-                  {emptyMessage}
-                </td>
+                {headers.map((h, i) => (
+                  <th key={i} style={h.style}>{h.label}</th>
+                ))}
               </tr>
-            ) : (
-              data.map((item, i) => renderRow(item, i))
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {loading ? (
+                [...Array(5)].map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    {headers.map((_, j) => (
+                      <td key={j} className="px-10 py-7">
+                        <div className="h-4 bg-slate-100 rounded-md w-full skeleton"></div>
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : data.length === 0 ? (
+                <tr>
+                  <td colSpan={headers.length} className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+                    {emptyMessage}
+                  </td>
+                </tr>
+              ) : (
+                data.map((item, i) => renderRow(item, i))
+              )}
+            </tbody>
+          </table>
+        </div>
         
         {pagination && (
           <div className="flex flex-wrap items-center justify-between gap-4 p-6 border-t border-emerald-50">

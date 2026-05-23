@@ -132,7 +132,7 @@ export default function NotificationsPage() {
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-10 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-1000 ease-out">
+    <div className="max-w-[1760px] mx-auto space-y-10 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-1000 ease-out">
       
       {/* HEADER SECTION */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 border-b border-emerald-100 pb-10">

@@ -10,33 +10,35 @@ export default function DataTable({
   emptyMessage = "No records found."
 }) {
   return (
-    <div className="table-container glass-card !p-0">
-      <table className="data-table">
-        <thead>
-          <tr>
-            {headers.map((h, i) => (
-              <th key={i} style={h.style}>{h.label}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {loading ? (
+    <div className="table-container glass-card !p-0 overflow-hidden">
+      <div className="overflow-x-auto custom-scrollbar">
+        <table className="data-table min-w-[1100px]">
+          <thead>
             <tr>
-              <td colSpan={headers.length} className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px] animate-pulse">
-                Synchronizing Ledger Data...
-              </td>
+              {headers.map((h, i) => (
+                <th key={i} style={h.style}>{h.label}</th>
+              ))}
             </tr>
-          ) : data.length === 0 ? (
-            <tr>
-              <td colSpan={headers.length} className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">
-                {emptyMessage}
-              </td>
-            </tr>
-          ) : (
-            data.map((item, i) => renderRow(item, i))
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={headers.length} className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px] animate-pulse">
+                  Synchronizing Ledger Data...
+                </td>
+              </tr>
+            ) : data.length === 0 ? (
+              <tr>
+                <td colSpan={headers.length} className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+                  {emptyMessage}
+                </td>
+              </tr>
+            ) : (
+              data.map((item, i) => renderRow(item, i))
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {pagination && pagination.totalPages > 1 && (
         <div className="pagination p-6 border-t border-emerald-50 bg-emerald-50/10">
