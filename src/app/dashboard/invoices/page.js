@@ -151,7 +151,7 @@ export default function Invoices() {
     >
       <header className={styles.header}>
         <motion.div variants={item}>
-          <h1 className={styles.title}>Invoices</h1>
+          <h1 className="text-4xl font-bold text-emerald-950 tracking-tight">Invoice <span className="text-emerald-600">Ledger</span></h1>
           <p className={styles.subtitle}>Track payments and manage invoices.</p>
         </motion.div>
         <motion.div variants={item} className="flex flex-wrap gap-3 md:gap-4 items-center">

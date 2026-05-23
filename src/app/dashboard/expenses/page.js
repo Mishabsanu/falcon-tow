@@ -139,7 +139,7 @@ export default function Expenses() {
     <div className="animate-fade-in">
       <header className={styles.header}>
         <div>
-          <h1 className={styles.title}>Expense Management</h1>
+          <h1 className="text-4xl font-bold text-emerald-950 tracking-tight">Expense <span className="text-emerald-600">Management</span></h1>
           <p className={styles.subtitle}>{isWorker ? 'View and track your business-related expenses.' : 'Track business costs, fuel, and maintenance expenses.'}</p>
         </div>
         <div className="flex flex-wrap gap-3 md:gap-4 items-center">

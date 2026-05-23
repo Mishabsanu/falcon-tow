@@ -115,7 +115,7 @@ export default function Tows() {
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className={styles.header}>
         <div>
-          <h1 className={styles.title}>Tow Jobs</h1>
+          <h1 className="text-4xl font-bold text-emerald-950 tracking-tight">Tow <span className="text-emerald-600">Jobs</span></h1>
           <p className={styles.subtitle}>{isWorker ? 'Manage your assigned jobs and status.' : 'View all tow jobs and fleet activity.'}</p>
         </div>
         <div className="flex flex-wrap gap-3 md:gap-4 items-center">

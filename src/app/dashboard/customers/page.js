@@ -93,7 +93,7 @@ export default function Customers() {
     <div className="animate-fade-in">
       <header className={styles.header}>
         <div>
-          <h1 className={styles.title}>Customers</h1>
+          <h1 className="text-4xl font-bold text-emerald-950 tracking-tight">Customer <span className="text-emerald-600">Directory</span></h1>
           <p className={styles.subtitle}>Manage your customer database and service history.</p>
         </div>
         <div className="flex flex-wrap gap-3 md:gap-4 items-center">

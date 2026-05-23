@@ -68,7 +68,7 @@ export default function DashboardPage() {
        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 px-1 md:px-0">
          <div className="space-y-2">
            <h1 className="text-4xl font-bold text-emerald-950 tracking-tight">
-             Hi, {user?.name || 'User'}
+             Hi, <span className="text-emerald-600">{user?.name || 'User'}</span>
            </h1>
            <p className="text-slate-500 text-sm font-medium">View your business stats and latest activity.</p>
          </div>
