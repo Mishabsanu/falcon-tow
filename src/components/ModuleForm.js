@@ -1098,7 +1098,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                   onChange={formik.handleChange}
                                   onBlur={formik.handleBlur}
                                   readOnly={field.readOnly}
-                                  className={`block w-full ${field.type === 'password' ? 'pl-10 pr-10' : (field.name === 'pickup' || field.name === 'dropoff') ? 'pr-12' : 'px-1'} py-4 bg-transparent border-b-2 ${touched[field.name] && errors[field.name] ? 'border-red-300' : 'border-emerald-100'} focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400 ${field.readOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                  className={`block w-full ${field.type === 'password' ? 'pl-10 pr-10' : (field.name === 'pickup' || field.name === 'dropoff') ? 'pr-20' : 'px-1'} py-4 bg-transparent border-b-2 ${touched[field.name] && errors[field.name] ? 'border-red-300' : 'border-emerald-100'} focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400 ${field.readOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
                                   placeholder={`Enter ${field.label.toLowerCase()}...`}
                                 />
                                 {field.type === 'password' && (
@@ -1145,28 +1145,26 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                               const postcode = addr.postcode || '';
                                               const country = addr.country || '';
 
-                                              // Construct debug address with keys and values
-                                              const debugParts = [];
-                                              if (houseNumber) debugParts.push(`houseNumber: ${houseNumber}`);
-                                              if (road) debugParts.push(`road: ${road}`);
-                                              if (neighbourhood) debugParts.push(`neighbourhood: ${neighbourhood}`);
-                                              if (suburb) debugParts.push(`suburb: ${suburb}`);
-                                              if (quarter) debugParts.push(`quarter: ${quarter}`);
-                                              if (cityDistrict) debugParts.push(`cityDistrict: ${cityDistrict}`);
-                                              if (city) debugParts.push(`city: ${city}`);
-                                              if (town) debugParts.push(`town: ${town}`);
-                                              if (village) debugParts.push(`village: ${village}`);
-                                              if (district) debugParts.push(`district: ${district}`);
-                                              if (county) debugParts.push(`county: ${county}`);
-                                              if (stateDistrict) debugParts.push(`stateDistrict: ${stateDistrict}`);
-                                              if (state) debugParts.push(`state: ${state}`);
-                                              if (postcode) debugParts.push(`postcode: ${postcode}`);
-                                              if (country) debugParts.push(`country: ${country}`);
+                                              // Construct location address (excluding state, postcode, country)
+                                              const parts = [
+                                                houseNumber,
+                                                road,
+                                                neighbourhood,
+                                                suburb,
+                                                quarter,
+                                                cityDistrict,
+                                                city,
+                                                town,
+                                                village,
+                                                district,
+                                                county,
+                                                stateDistrict
+                                              ].filter(Boolean);
 
-                                              const formattedAddress = debugParts.join(', ') || data.display_name;
+                                              const formattedAddress = parts.join(', ') || data.display_name;
                                               setFieldValue(field.name, formattedAddress);
                                               
-                                              const displayNameHeader = data.name || houseNumber || road || city || 'Location';
+                                              const displayNameHeader = data.name || parts[0] || 'Location';
                                               toast.success(`Location locked: ${displayNameHeader}`, { id: resolveToastId });
                                             } else {
                                               setFieldValue(field.name, `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
@@ -1184,10 +1182,11 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
                                       );
                                     }}
-                                    className="absolute inset-y-0 right-0 pr-2 flex items-center text-slate-400 hover:text-emerald-600 transition-colors"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-2.5 rounded-lg bg-emerald-600 hover:bg-white text-white hover:text-emerald-600 transition-all duration-300 shadow-sm border border-emerald-600 hover:border-emerald-600 flex items-center justify-center gap-1 active:scale-95 group"
                                     title="Capture Current GPS Location"
                                   >
-                                    <MapPin size={18} className="hover:scale-110 active:scale-95 transition-transform" />
+                                    <MapPin size={14} className="group-hover:scale-110 transition-transform duration-200" />
+                                    <span className="text-[9px] font-black uppercase tracking-wider">GPS</span>
                                   </button>
                                 )}
                               </div>
