@@ -441,10 +441,10 @@ export default function Invoices() {
                 <td className={`amount ${styles.balanceText}`}>QAR {(Number(inv.total ?? 0) - Number(inv.paid ?? 0)).toLocaleString()}</td>
                 <td>
                   <span className={`badge ${
-                    inv?.status === 'Paid' ? 'badge-success' : 
+                    inv?.status === 'Closed' ? 'badge-success' : 
                     inv?.status === 'Partial' ? 'badge-warning' : 'badge-danger'
                   }`}>
-                    {inv?.status || 'Unpaid'}
+                    {inv?.status || 'Pending'}
                   </span>
                 </td>
                 <td>
@@ -502,10 +502,10 @@ export default function Invoices() {
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <span className={`badge ${
-                      inv?.status === 'Paid' ? 'badge-success' : 
+                      inv?.status === 'Closed' ? 'badge-success' : 
                       inv?.status === 'Partial' ? 'badge-warning' : 'badge-danger'
                     }`}>
-                      {inv?.status || 'Unpaid'}
+                      {inv?.status || 'Pending'}
                     </span>
                     {hiddenCharges > 0 ? (
                       <span className={`badge ${

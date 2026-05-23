@@ -33,7 +33,7 @@ const InvoiceSchema = new mongoose.Schema({
   total: { type: Number, required: true },
   netPayable: { type: Number, default: 0 },
   paid: { type: Number, default: 0 },
-  status: { type: String, enum: ['Paid', 'Partial', 'Unpaid'], default: 'Unpaid' },
+  status: { type: String, enum: ['Closed', 'Partial', 'Pending'], default: 'Pending' },
   commissionStatus: { type: String, enum: ['Paid', 'Partial', 'Unpaid'], default: 'Unpaid' },
   commissionPaid: { type: Number, default: 0 },
   invoicePayments: [{

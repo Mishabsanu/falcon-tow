@@ -99,9 +99,9 @@ export default function InvoiceReport({ id }) {
       const updatedPayments = [...currentPayments, newPayment];
       const totalPaid = updatedPayments.reduce((sum, p) => sum + p.amount, 0);
 
-      let newStatus = 'Unpaid';
+      let newStatus = 'Pending';
       if (totalPaid >= netExpected) {
-        newStatus = 'Paid';
+        newStatus = 'Closed';
       } else if (totalPaid > 0) {
         newStatus = 'Partial';
       }
@@ -134,9 +134,9 @@ export default function InvoiceReport({ id }) {
       const updatedPayments = currentPayments.filter((_, idx) => idx !== indexToDelete);
       const totalPaid = updatedPayments.reduce((sum, p) => sum + p.amount, 0);
 
-      let newStatus = 'Unpaid';
+      let newStatus = 'Pending';
       if (totalPaid >= netExpected) {
-        newStatus = 'Paid';
+        newStatus = 'Closed';
       } else if (totalPaid > 0) {
         newStatus = 'Partial';
       }

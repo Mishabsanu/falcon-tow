@@ -73,7 +73,7 @@ export const moduleData = {
       { name: 'paid', label: 'Total Paid (QAR)', type: 'number', defaultValue: 0, span: 4, section: 'Financial Details', required: false },
       { name: 'netPayable', label: 'Net Payable (QAR)', type: 'number', defaultValue: 0, hidden: true, required: false },
       { name: 'commissionStatus', label: 'Commission Settlement Status', type: 'select', options: ['Unpaid', 'Partial', 'Paid'], defaultValue: 'Unpaid', hidden: true },
-      { name: 'status', label: 'Payment Status', type: 'text', readOnly: true, defaultValue: 'Unpaid', hidden: true },
+      { name: 'status', label: 'Payment Status', type: 'text', readOnly: true, defaultValue: 'Pending', hidden: true },
       { name: 'commissionPaid', label: 'Commission Paid (QAR)', type: 'number', defaultValue: 0, hidden: true },
       { name: 'invoicePayments', label: 'Invoice Payments Log', type: 'array', hidden: true },
       { name: 'commissionPayments', label: 'Commission Payments Log', type: 'array', hidden: true },

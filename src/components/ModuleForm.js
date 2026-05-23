@@ -710,10 +710,10 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
 
     const total = Number(values.total || 0);
     const paid = Number(values.paid || 0);
-    let newStatus = 'Unpaid';
+    let newStatus = 'Pending';
 
     if (paid >= total && total > 0) {
-      newStatus = 'Paid';
+      newStatus = 'Closed';
     } else if (paid > 0) {
       newStatus = 'Partial';
     }
