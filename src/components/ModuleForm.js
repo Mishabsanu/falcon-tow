@@ -23,7 +23,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
 
     const vals = Object.fromEntries(config.fields.map((field) => {
       let val = record?.[field.name] ?? field.defaultValue ?? '';
-      
+
       // Format static dates for initial load
       if (field.type === 'date' && val) {
         const d = new Date(val);
@@ -64,7 +64,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
           validator = Yup.number()
             .typeError(`${field.label} must be a number`)
             .transform((value, originalValue) => originalValue === "" ? null : value);
-          
+
           if (field.required !== false) {
             validator = validator.required(`${field.label} is required`).min(0, `${field.label} cannot be negative`);
           } else {
@@ -104,8 +104,8 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
       if (mode === 'edit') {
         schemaShape.confirmPassword = changePassword
           ? Yup.string()
-              .required('Confirm password is required')
-              .oneOf([Yup.ref('password')], 'Passwords must match')
+            .required('Confirm password is required')
+            .oneOf([Yup.ref('password')], 'Passwords must match')
           : Yup.string().nullable();
       } else {
         schemaShape.confirmPassword = Yup.string()
@@ -198,10 +198,10 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
             const jobsToOpenIds = oldJobIds.filter(id => !newJobIds.includes(id));
 
             await Promise.all([
-              ...jobsToClose.map(job => 
+              ...jobsToClose.map(job =>
                 apiService.updateRecord('tows', job._id || job.towId, { status: 'Closed' })
               ),
-              ...jobsToOpenIds.map(id => 
+              ...jobsToOpenIds.map(id =>
                 apiService.updateRecord('tows', id, { status: 'Completed' })
               )
             ]);
@@ -262,7 +262,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
         const val = values[field.name]; // e.g. values.driver
         const idField = `${field.name}Id`;
         const valId = values[idField]; // e.g. values.driverId
-        
+
         const fieldOptions = options[field.name] || [];
         if (fieldOptions.length === 0) return;
 
@@ -282,8 +282,8 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
         // Case 2: Try to match by the ID field if it's a 24-char hex or employee ID
         if (valId) {
           const cleanId = String(valId).trim();
-          match = fieldOptions.find(opt => 
-            String(opt.value).toLowerCase() === cleanId.toLowerCase() || 
+          match = fieldOptions.find(opt =>
+            String(opt.value).toLowerCase() === cleanId.toLowerCase() ||
             String(opt._id).toLowerCase() === cleanId.toLowerCase() ||
             (opt.raw?.id && String(opt.raw.id).toLowerCase() === cleanId.toLowerCase())
           );
@@ -318,7 +318,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
             const raw = match.raw;
             const targetMobile = raw.phone || '';
             const targetAddress = raw.address || '';
-            
+
             if (values.customerMobile !== targetMobile) {
               nextValues.customerMobile = targetMobile;
               hasChanged = true;
@@ -377,8 +377,8 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
     const promises = config.fields.map(async (field) => {
       if (field.module) {
         try {
-          const result = await apiService.getRecords(field.module, { 
-            limit: 500, 
+          const result = await apiService.getRecords(field.module, {
+            limit: 500,
           });
           if (result.data) {
             let data = result.data;
@@ -446,7 +446,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
       try {
         const customerToken = String(values.customerId || '');
         const isUnlinkedCustomer = customerToken.startsWith('customer-name:');
-        const result = await apiService.getRecords('tows', { 
+        const result = await apiService.getRecords('tows', {
           status: 'Completed',
           limit: 100,
           extraParams: isUnlinkedCustomer
@@ -470,7 +470,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
             })
           );
           const validLinkedJobs = linkedJobs.filter(Boolean);
-          
+
           // Merge linked jobs into finalJobs without duplicates
           validLinkedJobs.forEach(linkedJob => {
             if (!finalJobs.some(j => j._id === linkedJob._id)) {
@@ -485,7 +485,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
         }
 
         setBillableJobs(finalJobs);
-        
+
         // Auto-select all jobs by default when fetching new billable jobs for a different customer
         if (mode !== 'edit' || (initialRecord && values.customerId !== initialRecord.customerId)) {
           setSelectedJobs(jobs);
@@ -812,7 +812,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
             const job = await apiService.getRecord('tows', jobIdParam);
             if (job) {
               const custId = job.customerId || (job.customer ? `customer-name:${encodeURIComponent(job.customer)}` : '');
-              
+
               setValues((prev) => ({
                 ...prev,
                 customer: job.customer || '',
@@ -820,7 +820,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                 customerMobile: job.customerPhone || job.phone || '',
                 customerAddress: job.customerAddress || job.address || ''
               }));
-              
+
               setSelectedJobs([job]);
             }
           } catch (error) {
@@ -988,10 +988,10 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                     if (field.module === 'vehicles' && selectedOpt.raw) {
                                       setFieldValue('vehicleName', selectedOpt.raw.name);
                                       setFieldValue('vehiclePlate', selectedOpt.raw.plate);
-                                      
+
                                       // Handle Tows/Quotes specific fields if they exist
                                       if (values.customerVehicle === undefined) {
-                                         // Only auto-fill if the towed vehicle is empty (rare case)
+                                        // Only auto-fill if the towed vehicle is empty (rare case)
                                       }
                                     }
 
@@ -1000,26 +1000,26 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                       // Handle multiple naming conventions for phone
                                       setFieldValue('customerMobile', raw.phone || '');
                                       setFieldValue('customerPhone', raw.phone || '');
-                                    setFieldValue('customerAddress', raw.address || '');
-                                    setFieldValue('customerName', raw.name || '');
-                                  }
+                                      setFieldValue('customerAddress', raw.address || '');
+                                      setFieldValue('customerName', raw.name || '');
+                                    }
 
-                                  if (field.name === 'jobId' || field.name === 'job') {
-                                    setFieldValue('towId', selectedOpt._id);
+                                    if (field.name === 'jobId' || field.name === 'job') {
+                                      setFieldValue('towId', selectedOpt._id);
+                                    }
                                   }
-                                }
-                              }}
-                              className={`block w-full px-1 py-4 bg-transparent border-b-2 ${touched[field.name] && errors[field.name] ? 'border-red-300' : 'border-emerald-100'} focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm appearance-none cursor-pointer`}
-                            >
-                              <option value="">Select {field.label}</option>
-                              {(options[field.name] || field.options || []).map((option, idx) => {
-                                const label = typeof option === 'object' ? option.label : option;
-                                const value = typeof option === 'object' ? option.value : option;
-                                return (
-                                  <option key={`${value}-${idx}`} value={value}>{label}</option>
-                                );
-                              })}
-                            </select>
+                                }}
+                                className={`block w-full px-1 py-4 bg-transparent border-b-2 ${touched[field.name] && errors[field.name] ? 'border-red-300' : 'border-emerald-100'} focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm appearance-none cursor-pointer`}
+                              >
+                                <option value="">Select {field.label}</option>
+                                {(options[field.name] || field.options || []).map((option, idx) => {
+                                  const label = typeof option === 'object' ? option.label : option;
+                                  const value = typeof option === 'object' ? option.value : option;
+                                  return (
+                                    <option key={`${value}-${idx}`} value={value}>{label}</option>
+                                  );
+                                })}
+                              </select>
                               {touched[field.name] && errors[field.name] && (
                                 <p className="text-[9px] font-bold text-red-500 ml-1 uppercase tracking-wider">{errors[field.name]}</p>
                               )}
@@ -1118,9 +1118,9 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                         toast.error("Geolocation is not supported by your browser");
                                         return;
                                       }
-                                      
+
                                       const resolveToastId = toast.loading(`Scanning satellite nodes to lock GPS coordinate...`);
-                                      
+
                                       navigator.geolocation.getCurrentPosition(
                                         async (position) => {
                                           const { latitude, longitude } = position.coords;
@@ -1128,8 +1128,46 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
                                             const data = await res.json();
                                             if (data && data.display_name) {
-                                              setFieldValue(field.name, data.display_name);
-                                              toast.success(`Location locked: ${data.name || data.display_name.split(',')[0]}`, { id: resolveToastId });
+                                              const addr = data.address || {};
+                                              const houseNumber = addr.house_number || '';
+                                              const road = addr.road || '';
+                                              const neighbourhood = addr.neighbourhood || '';
+                                              const suburb = addr.suburb || '';
+                                              const quarter = addr.quarter || '';
+                                              const city = addr.city || '';
+                                              const town = addr.town || '';
+                                              const village = addr.village || '';
+                                              const cityDistrict = addr.city_district || '';
+                                              const district = addr.district || '';
+                                              const county = addr.county || '';
+                                              const stateDistrict = addr.state_district || '';
+                                              const state = addr.state || '';
+                                              const postcode = addr.postcode || '';
+                                              const country = addr.country || '';
+
+                                              // Construct debug address with keys and values
+                                              const debugParts = [];
+                                              if (houseNumber) debugParts.push(`houseNumber: ${houseNumber}`);
+                                              if (road) debugParts.push(`road: ${road}`);
+                                              if (neighbourhood) debugParts.push(`neighbourhood: ${neighbourhood}`);
+                                              if (suburb) debugParts.push(`suburb: ${suburb}`);
+                                              if (quarter) debugParts.push(`quarter: ${quarter}`);
+                                              if (cityDistrict) debugParts.push(`cityDistrict: ${cityDistrict}`);
+                                              if (city) debugParts.push(`city: ${city}`);
+                                              if (town) debugParts.push(`town: ${town}`);
+                                              if (village) debugParts.push(`village: ${village}`);
+                                              if (district) debugParts.push(`district: ${district}`);
+                                              if (county) debugParts.push(`county: ${county}`);
+                                              if (stateDistrict) debugParts.push(`stateDistrict: ${stateDistrict}`);
+                                              if (state) debugParts.push(`state: ${state}`);
+                                              if (postcode) debugParts.push(`postcode: ${postcode}`);
+                                              if (country) debugParts.push(`country: ${country}`);
+
+                                              const formattedAddress = debugParts.join(', ') || data.display_name;
+                                              setFieldValue(field.name, formattedAddress);
+                                              
+                                              const displayNameHeader = data.name || houseNumber || road || city || 'Location';
+                                              toast.success(`Location locked: ${displayNameHeader}`, { id: resolveToastId });
                                             } else {
                                               setFieldValue(field.name, `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
                                               toast.success(`Coordinates locked: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`, { id: resolveToastId });
@@ -1199,8 +1237,8 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                           billableJobs.map((job) => {
                             const isSelected = selectedJobs.some(j => (j._id || j.towId) === (job._id || job.towId));
                             return (
-                              <div 
-                                key={job._id} 
+                              <div
+                                key={job._id}
                                 onClick={() => toggleJob(job)}
                                 className={`grid grid-cols-12 gap-4 items-center px-2 py-5 cursor-pointer transition-all duration-300 border-b-2 ${isSelected ? 'border-emerald-600 bg-emerald-50/30' : 'border-emerald-50 hover:border-emerald-200'}`}
                               >
@@ -1248,7 +1286,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                           </div>
                         )}
                       </div>
-                      
+
                     </div>
                   )}
                 </div>
@@ -1262,7 +1300,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                   <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-600">Security Credentials</span>
                   <div className="h-px flex-1 bg-emerald-50/50"></div>
                 </div>
-                
+
                 <div className="grid grid-cols-12 gap-4 sm:gap-8 md:gap-10">
                   <div className="col-span-12 md:col-span-4 space-y-4">
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">
