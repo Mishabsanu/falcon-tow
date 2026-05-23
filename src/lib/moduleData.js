@@ -47,6 +47,7 @@ export const moduleData = {
       { name: 'workerId', label: 'Worker Mongo ID', type: 'text', hidden: true, required: false },
       { name: 'vehicle', label: 'Associated Vehicle', type: 'select', module: 'vehicles', span: 6 },
       { name: 'vehicleId', label: 'Vehicle Mongo ID', type: 'text', hidden: true, required: false },
+      { name: 'expenseType', label: 'Expense Type', type: 'select', options: ['Operational', 'Worker Advance'], defaultValue: 'Operational', hidden: true },
       { name: 'createdBy', label: 'Registered By', type: 'text', readOnly: true, section: 'Administrative Audit', hidden: true },
     ],
     joins: [

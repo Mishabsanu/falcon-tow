@@ -27,9 +27,23 @@ export async function connectDB() {
       waitQueueTimeoutMS: 10000,
     };
 
-    cached.promise = mongoose.connect(uri, opts).then((mongoose) => {
+    cached.promise = mongoose.connect(uri, opts).then(async (mongooseInstance) => {
       console.log('>>> [MONGODB_STATUS] Mongoose connection established');
-      return mongoose;
+      try {
+        const db = mongooseInstance.connection.db;
+        if (db) {
+          const result = await db.collection('expenses').updateMany(
+            { expenseType: { $exists: false } },
+            { $set: { expenseType: 'Operational' } }
+          );
+          if (result.modifiedCount > 0) {
+            console.log(`>>> [MIGRATION] Set default expenseType: 'Operational' for ${result.modifiedCount} expenses.`);
+          }
+        }
+      } catch (err) {
+        console.error('>>> [MIGRATION_ERROR] Failed to run expenseType migration:', err);
+      }
+      return mongooseInstance;
     });
   }
   cached.conn = await cached.promise;
