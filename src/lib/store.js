@@ -364,7 +364,12 @@ export async function importRecords(moduleKey, rows) {
   const collection = await getCollection(moduleKey);
 
   if (!collection || !rows.length) {
-    return [];
+    return {
+      successCount: 0,
+      errorCount: 0,
+      errors: [],
+      imported: []
+    };
   }
 
   // Dynamically map labels to field names from moduleData
@@ -391,7 +396,12 @@ export async function importRecords(moduleKey, rows) {
 
   const finalMap = { ...fallbackMap, ...dynamicMap };
 
-  const operations = await Promise.all(rows.map(async (row) => {
+  const failedRows = [];
+  const validOperations = [];
+
+  await Promise.all(rows.map(async (row, idx) => {
+    const rowErrors = [];
+
     // Normalize keys and trim string values
     const normalizedRow = {};
     Object.entries(row).forEach(([key, value]) => {
@@ -450,7 +460,7 @@ export async function importRecords(moduleKey, rows) {
       const db = await getDb();
       
       // Helper to find document by name, plate, phone or logical system ID
-      const findDoc = async (collection, value) => {
+      const findDoc = async (collName, value) => {
         if (!value) return null;
         const cleanVal = String(value).trim();
         const regexVal = { $regex: `^${escapeRegExp(cleanVal)}$`, $options: 'i' };
@@ -462,16 +472,16 @@ export async function importRecords(moduleKey, rows) {
         ];
 
         // Add module-specific searchable fields
-        if (collection === 'vehicles') orQuery.push({ plate: regexVal });
-        if (collection === 'customers') orQuery.push({ phone: regexVal });
-        if (collection === 'users') orQuery.push({ username: regexVal });
+        if (collName === 'vehicles') orQuery.push({ plate: regexVal });
+        if (collName === 'customers') orQuery.push({ phone: regexVal });
+        if (collName === 'users') orQuery.push({ username: regexVal });
 
         // If value is a 24-char hex, try matching native _id
         if (/^[0-9a-fA-F]{24}$/.test(cleanVal)) {
           try { orQuery.push({ _id: new ObjectId(cleanVal) }); } catch(e) {}
         }
 
-        let doc = await db.collection(collection).findOne({ $or: orQuery });
+        let doc = await db.collection(collName).findOne({ $or: orQuery });
 
         // Try fallback split match for "Name - ID" or "Name - Plate" format
         if (!doc && cleanVal.includes(' - ')) {
@@ -482,7 +492,7 @@ export async function importRecords(moduleKey, rows) {
           const regexFirst = { $regex: `^${escapeRegExp(first)}$`, $options: 'i' };
           const regexLast = { $regex: `^${escapeRegExp(last)}$`, $options: 'i' };
 
-          doc = await db.collection(collection).findOne({ 
+          doc = await db.collection(collName).findOne({ 
             $or: [
               { id: regexFirst }, { id: regexLast },
               { name: regexFirst }, { plate: regexLast }
@@ -504,6 +514,8 @@ export async function importRecords(moduleKey, rows) {
             record.workerId = workerDoc._id;
             record.worker = workerDoc.name;
           }
+        } else {
+          rowErrors.push(`Worker '${workerVal}' does not exist in database.`);
         }
       }
 
@@ -521,6 +533,8 @@ export async function importRecords(moduleKey, rows) {
             if (!record.customerVehicle) record.customerVehicle = vehicleDoc.name;
             if (!record.customerPlate) record.customerPlate = vehicleDoc.plate;
           }
+        } else {
+          rowErrors.push(`Vehicle '${vehicleVal}' does not exist in database.`);
         }
       }
 
@@ -592,20 +606,30 @@ export async function importRecords(moduleKey, rows) {
             if (!record.customer) record.customer = towDoc.customer;
             if (!record.customerId) record.customerId = towDoc.customerId;
             if (!record.total) record.total = Number(towDoc.amount || 0);
+          } else {
+            rowErrors.push(`Tow Job ID '${towVal}' does not exist in database.`);
           }
         }
       }
 
-      // 5. Global Date Casting (Ensure all date strings are BSON Date objects)
-      ['date', 'createdAt', 'updatedAt'].forEach(field => {
-        if (record[field] && typeof record[field] === 'string') {
-          const parsed = new Date(record[field]);
-          if (!isNaN(parsed.getTime())) record[field] = parsed;
-        }
-      });
+      // 5. Global Date Casting (Ensure all date strings are BSON Date objects) & validation
+      if (config?.fields) {
+        config.fields.forEach(f => {
+          if (f.type === 'date' && record[f.name]) {
+            const dateStr = record[f.name];
+            if (dateStr instanceof Date) return;
+            const parsed = new Date(dateStr);
+            if (isNaN(parsed.getTime())) {
+              rowErrors.push(`Invalid date format for '${f.label}': '${dateStr}'`);
+            } else {
+              record[f.name] = parsed;
+            }
+          }
+        });
+      }
 
       // 6. Business Logic: Auto-calculate Tow Shares
-      if (moduleKey === 'tows' && record.amount) {
+      if (moduleKey === 'tows' && record.amount && rowErrors.length === 0) {
         const amt = Number(record.amount || 0);
         const commission = Number(record.serviceCommission || 0);
         const actualPrice = Math.max(0, amt - commission);
@@ -613,18 +637,33 @@ export async function importRecords(moduleKey, rows) {
         record.companyShare = Math.round(actualPrice * 0.9 * 100) / 100;
       }
     }
-    
-    return {
-      updateOne: {
-        filter: { id: record.id },
-        update: { $set: record },
-        upsert: true
-      }
-    };
+
+    if (rowErrors.length > 0) {
+      failedRows.push({
+        rowNumber: idx + 2, // Excel/CSV rows are 1-based, plus row 1 is header
+        rowData: row,
+        errors: rowErrors
+      });
+    } else {
+      validOperations.push({
+        updateOne: {
+          filter: { id: record.id },
+          update: { $set: record },
+          upsert: true
+        }
+      });
+    }
   }));
 
-  await collection.bulkWrite(operations);
+  if (validOperations.length > 0) {
+    await collection.bulkWrite(validOperations);
+  }
 
-  // Return the first few for confirmation
-  return rows.slice(0, 50).map((row, idx) => ({ ...row, id: operations[idx].updateOne.update.$set.id }));
+  // Return detailed validation report
+  return {
+    successCount: validOperations.length,
+    errorCount: failedRows.length,
+    errors: failedRows,
+    imported: validOperations.slice(0, 50).map(op => op.updateOne.update.$set)
+  };
 }

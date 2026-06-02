@@ -10,11 +10,18 @@ export async function POST(request, context) {
   const rows = contentType.includes('application/json')
     ? await request.json()
     : parseCsv(await request.text());
-  const imported = await importRecords(moduleKey, Array.isArray(rows) ? rows : rows.data ?? []);
+  const result = await importRecords(moduleKey, Array.isArray(rows) ? rows : rows.data ?? []);
 
-  if (!imported) {
+  if (!result) {
     return NextResponse.json({ error: 'Module not found' }, { status: 404 });
   }
 
-  return NextResponse.json({ data: imported, count: imported.length }, { status: 201 });
+  return NextResponse.json({
+    success: true,
+    successCount: result.successCount,
+    errorCount: result.errorCount,
+    errors: result.errors,
+    data: result.imported,
+    count: result.successCount
+  }, { status: 201 });
 }
