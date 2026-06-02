@@ -188,6 +188,48 @@ export default function Tows() {
         )}
       </div>
 
+      {!isWorker && topCompanies.length > 0 && (
+        <div className="mb-10 space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="flex items-center gap-3 border-b border-emerald-50 pb-4">
+            <div className="h-8 w-8 rounded-lg bg-emerald-100/80 flex items-center justify-center text-emerald-600 animate-pulse">
+              <FileText size={16} />
+            </div>
+            <div>
+              <h3 className="text-xs font-black uppercase tracking-wider text-emerald-950">Pending Invoices</h3>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Most completed jobs ready to be billed</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {topCompanies.map((company) => (
+              <div key={company.name} className="flex items-center justify-between p-5 bg-white hover:bg-emerald-50/30 rounded-2xl border border-emerald-100/50 hover:border-emerald-300 transition-all duration-300 group shadow-sm">
+                <div className="flex flex-col gap-1 min-w-0">
+                  <span className="text-xs font-black text-emerald-950 uppercase tracking-tight truncate block pr-1" title={company.name}>
+                    {company.name}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 bg-emerald-100/50 text-emerald-800 rounded-md text-[9px] font-black uppercase tracking-tight shrink-0">
+                      {company.count} {company.count === 1 ? 'Tow' : 'Tows'}
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-600 truncate">
+                      QAR {company.totalAmount.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                
+                <Link 
+                  href={`/dashboard/invoices/new?customerId=${company.customerId}&customerName=${encodeURIComponent(company.name)}`}
+                  className="h-8 w-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center transition-all shadow-md hover:shadow-emerald-600/20 active:scale-95 shrink-0 ml-2"
+                  title={`Invoice ${company.name}`}
+                >
+                  <Plus size={16} />
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-6 mb-8">
         <div className="relative flex-1 group">
           <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
@@ -409,62 +451,14 @@ export default function Tows() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-        <div className={!isWorker && topCompanies.length > 0 ? "xl:col-span-3 space-y-6" : "xl:col-span-4 space-y-6"}>
-          <TowTable 
-            tows={towJobs}
-            loading={loading}
-            pagination={pagination}
-            onPageChange={(p) => setPagination(prev => ({ ...prev, page: p }))}
-            onDelete={handleDelete}
-            isWorker={isWorker}
-          />
-        </div>
-        
-        {!isWorker && topCompanies.length > 0 && (
-          <div className="xl:col-span-1">
-            <div className="bg-white border border-emerald-100 rounded-[2rem] p-6 shadow-2xl shadow-emerald-900/5 animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
-              <div className="flex items-center gap-3 border-b border-emerald-50 pb-4">
-                <div className="h-8 w-8 rounded-lg bg-emerald-100/80 flex items-center justify-center text-emerald-600 animate-pulse">
-                  <FileText size={16} />
-                </div>
-                <div>
-                  <h3 className="text-xs font-black uppercase tracking-wider text-emerald-950">Pending Invoices</h3>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Most completed jobs</p>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                {topCompanies.map((company) => (
-                  <div key={company.name} className="flex items-center justify-between p-4 bg-emerald-50/20 hover:bg-emerald-50/60 rounded-2xl border border-emerald-100/50 hover:border-emerald-200 transition-all duration-300 group">
-                    <div className="flex flex-col gap-1 min-w-0">
-                      <span className="text-xs font-black text-emerald-950 uppercase tracking-tight truncate block pr-2" title={company.name}>
-                        {company.name}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 bg-emerald-100/50 text-emerald-800 rounded-md text-[9px] font-black uppercase tracking-tight shrink-0">
-                          {company.count} {company.count === 1 ? 'Tow' : 'Tows'}
-                        </span>
-                        <span className="text-[10px] font-bold text-emerald-600 truncate">
-                          QAR {company.totalAmount.toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <Link 
-                      href={`/dashboard/invoices/new?customerId=${company.customerId}&customerName=${encodeURIComponent(company.name)}`}
-                      className="h-8 w-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center transition-all shadow-md hover:shadow-emerald-600/20 active:scale-95 shrink-0"
-                      title={`Invoice ${company.name}`}
-                    >
-                      <Plus size={16} />
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      <TowTable 
+        tows={towJobs}
+        loading={loading}
+        pagination={pagination}
+        onPageChange={(p) => setPagination(prev => ({ ...prev, page: p }))}
+        onDelete={handleDelete}
+        isWorker={isWorker}
+      />
     </div>
   );
 }
