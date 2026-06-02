@@ -806,6 +806,9 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const jobIdParam = urlParams.get('jobId');
+      const customerIdParam = urlParams.get('customerId');
+      const customerNameParam = urlParams.get('customerName');
+
       if (jobIdParam) {
         async function loadJobAndCustomer() {
           try {
@@ -828,6 +831,37 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
           }
         }
         loadJobAndCustomer();
+      } else if (customerIdParam || customerNameParam) {
+        async function loadCustomer() {
+          try {
+            let name = customerNameParam || '';
+            let mobile = '';
+            let address = '';
+            const custId = customerIdParam || (name ? `customer-name:${encodeURIComponent(name)}` : '');
+
+            if (customerIdParam && !customerIdParam.startsWith('customer-name:') && /^[0-9a-fA-F]{24}$/.test(customerIdParam)) {
+              const customerRecord = await apiService.getRecord('customers', customerIdParam);
+              if (customerRecord) {
+                name = customerRecord.name;
+                mobile = customerRecord.phone || '';
+                address = customerRecord.address || '';
+              }
+            } else if (customerIdParam?.startsWith('customer-name:')) {
+              name = decodeURIComponent(customerIdParam.replace('customer-name:', ''));
+            }
+
+            setValues((prev) => ({
+              ...prev,
+              customer: name,
+              customerId: custId,
+              customerMobile: mobile,
+              customerAddress: address
+            }));
+          } catch (error) {
+            console.error('Failed to load customer from URL param:', error);
+          }
+        }
+        loadCustomer();
       }
     }
   }, [moduleKey, mode]);

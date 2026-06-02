@@ -88,15 +88,6 @@ export default function TowTable({ tows, loading, pagination, onPageChange, onDe
       </td>
       <td>
         <div className={styles.actionCell}>
-          {!isWorker && tow.status === 'Completed' && (
-            <Link 
-              href={`/dashboard/invoices/new?jobId=${tow.id}`} 
-              className={styles.invoiceBtn} 
-              title="Create Invoice"
-            >
-              <FileText size={16} />
-            </Link>
-          )}
           <Link href={`/dashboard/tows/${tow.id}`} className={styles.viewBtn} title="View"><Eye size={16} /></Link>
           {!isWorker && <Link href={`/dashboard/tows/${tow.id}/edit`} className={styles.moreBtn} title="Edit"><Edit3 size={16} /></Link>}
           {!isWorker && (
@@ -163,9 +154,6 @@ export default function TowTable({ tows, loading, pagination, onPageChange, onDe
              </button>
            )}
         </div>
-        {!isWorker && tow.status === 'Completed' && (
-           <Link href={`/dashboard/invoices/new?jobId=${tow.id}`} className="btn-primary px-4 py-2 text-[10px]">Create Invoice</Link>
-        )}
       </div>
     </div>
   );

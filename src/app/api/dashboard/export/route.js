@@ -44,15 +44,48 @@ export async function GET(req) {
       return true;
     });
 
+    // Format Date utility
+    const formatDate = (val) => {
+      if (!val) return "";
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return String(val);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     // Transform data for clean export
     const exportData = data.map(item => {
       const clean = { ...item };
-      delete clean._id;
-      delete clean.driverId;
-      delete clean.workerId;
-      delete clean.customerId;
-      delete clean.vehicleId;
-      delete clean.towId;
+      
+      // Specifically delete system metadata, internal IDs, and relational subdocuments
+      const excludeKeys = [
+        '_id', '__v', 'createdById', 'createdAt',
+        'driverId', 'workerId', 'customerId', 'vehicleId', 'towId',
+        'workerData', 'vehicleData', 'customerData', 'driverData',
+        'towDetails', 'jobs', 'password', 'confirmPassword',
+        'invoicePayments', 'commissionPayments'
+      ];
+      
+      excludeKeys.forEach(k => delete clean[k]);
+
+      // Format Date fields and strip remaining nested objects/arrays to prevent [object Object]
+      Object.keys(clean).forEach(key => {
+        const val = clean[key];
+        const isDateKey = key.toLowerCase().includes('date');
+        
+        if (isDateKey && val) {
+          clean[key] = formatDate(val);
+        } else if (val instanceof Date) {
+          clean[key] = formatDate(val);
+        } else if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)) {
+          clean[key] = formatDate(val);
+        } else if (typeof val === 'object' && val !== null) {
+          delete clean[key];
+        }
+      });
+
       return clean;
     });
 

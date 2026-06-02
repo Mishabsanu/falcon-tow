@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Filter, Truck, Activity, User, UserCircle, CreditCard, Calendar, X } from 'lucide-react';
+import { Plus, Search, Filter, Truck, Activity, User, UserCircle, CreditCard, Calendar, X, FileText } from 'lucide-react';
 import { towService } from '@/modules/tows/services/towService';
 import TowTable from '@/modules/tows/components/TowTable';
 import SummaryCard from '@/modules/common/components/SummaryCard';
@@ -19,6 +19,7 @@ export default function Tows() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [summary, setSummary] = useState({ global: 0, total: 0, totalAmount: 0, statusCounts: {} });
+  const [topCompanies, setTopCompanies] = useState([]);
 
   // New Filters
   const [filters, setFilters] = useState({
@@ -64,6 +65,35 @@ export default function Tows() {
 
   const isWorker = user?.role === 'Worker';
 
+  const fetchTopCompanies = useCallback(async () => {
+    try {
+      const res = await apiService.getRecords('tows', { status: 'Completed', limit: 1000 });
+      const completedTows = res.data || [];
+      const companyCounts = {};
+      completedTows.forEach(tow => {
+        const name = tow.customer?.trim();
+        if (!name || name === 'Unknown' || name.toLowerCase() === 'walk-in') return;
+        
+        if (!companyCounts[name]) {
+          companyCounts[name] = {
+            name: name,
+            customerId: tow.customerId || `customer-name:${encodeURIComponent(name)}`,
+            count: 0,
+            totalAmount: 0
+          };
+        }
+        companyCounts[name].count += 1;
+        companyCounts[name].totalAmount += Number(tow.amount || 0);
+      });
+      const sorted = Object.values(companyCounts)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+      setTopCompanies(sorted);
+    } catch (error) {
+      console.error('Failed to fetch top companies for invoicing:', error);
+    }
+  }, []);
+
   const fetchTows = useCallback(async () => {
     setLoading(true);
     try {
@@ -85,12 +115,16 @@ export default function Tows() {
       setTowJobs(result.data || []);
       if (result.pagination) setPagination(result.pagination);
       if (result.summary) setSummary(result.summary);
+
+      if (!isWorker) {
+        fetchTopCompanies();
+      }
     } catch (error) {
       toast.error('Failed to sync tow service data');
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, pagination.page, pagination.limit, status, filters]);
+  }, [searchTerm, pagination.page, pagination.limit, status, filters, isWorker, fetchTopCompanies]);
 
   useEffect(() => {
     const timer = setTimeout(fetchTows, 300);
@@ -375,14 +409,62 @@ export default function Tows() {
         </div>
       )}
 
-      <TowTable 
-        tows={towJobs}
-        loading={loading}
-        pagination={pagination}
-        onPageChange={(p) => setPagination(prev => ({ ...prev, page: p }))}
-        onDelete={handleDelete}
-        isWorker={isWorker}
-      />
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+        <div className={!isWorker && topCompanies.length > 0 ? "xl:col-span-3 space-y-6" : "xl:col-span-4 space-y-6"}>
+          <TowTable 
+            tows={towJobs}
+            loading={loading}
+            pagination={pagination}
+            onPageChange={(p) => setPagination(prev => ({ ...prev, page: p }))}
+            onDelete={handleDelete}
+            isWorker={isWorker}
+          />
+        </div>
+        
+        {!isWorker && topCompanies.length > 0 && (
+          <div className="xl:col-span-1">
+            <div className="bg-white border border-emerald-100 rounded-[2rem] p-6 shadow-2xl shadow-emerald-900/5 animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
+              <div className="flex items-center gap-3 border-b border-emerald-50 pb-4">
+                <div className="h-8 w-8 rounded-lg bg-emerald-100/80 flex items-center justify-center text-emerald-600 animate-pulse">
+                  <FileText size={16} />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-emerald-950">Pending Invoices</h3>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Most completed jobs</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                {topCompanies.map((company) => (
+                  <div key={company.name} className="flex items-center justify-between p-4 bg-emerald-50/20 hover:bg-emerald-50/60 rounded-2xl border border-emerald-100/50 hover:border-emerald-200 transition-all duration-300 group">
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <span className="text-xs font-black text-emerald-950 uppercase tracking-tight truncate block pr-2" title={company.name}>
+                        {company.name}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-emerald-100/50 text-emerald-800 rounded-md text-[9px] font-black uppercase tracking-tight shrink-0">
+                          {company.count} {company.count === 1 ? 'Tow' : 'Tows'}
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-600 truncate">
+                          QAR {company.totalAmount.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <Link 
+                      href={`/dashboard/invoices/new?customerId=${company.customerId}&customerName=${encodeURIComponent(company.name)}`}
+                      className="h-8 w-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center transition-all shadow-md hover:shadow-emerald-600/20 active:scale-95 shrink-0"
+                      title={`Invoice ${company.name}`}
+                    >
+                      <Plus size={16} />
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

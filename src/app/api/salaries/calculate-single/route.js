@@ -107,7 +107,7 @@ export async function GET(request) {
           totalActualPrice,
           totalCommissions,
           totalCommission,
-          cashDeduction90: totalActualPrice * 0.90, // We track what the company should have received
+          cashDeduction90: totalCashCollected * 0.90,
           totalExpensesAmount
         }
       }
