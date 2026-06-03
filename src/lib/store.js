@@ -417,21 +417,21 @@ export async function importRecords(moduleKey, rows) {
       const db = await getDb();
       if (moduleKey === 'customers' && normalizedRow.phone) {
         const existing = await db.collection('customers').findOne({
-          phone: { $regex: `^${escapeRegExp(normalizedRow.phone)}$`, $options: 'i' }
+          phone: { $regex: `^\\s*${escapeRegExp(normalizedRow.phone)}\\s*$`, $options: 'i' }
         });
         if (existing) existingId = existing.id;
       } else if (moduleKey === 'vehicles' && normalizedRow.plate) {
         const existing = await db.collection('vehicles').findOne({
-          plate: { $regex: `^${escapeRegExp(normalizedRow.plate)}$`, $options: 'i' }
+          plate: { $regex: `^\\s*${escapeRegExp(normalizedRow.plate)}\\s*$`, $options: 'i' }
         });
         if (existing) existingId = existing.id;
       } else if (moduleKey === 'users' && (normalizedRow.email || normalizedRow.phone)) {
         const orConditions = [];
         if (normalizedRow.email) {
-          orConditions.push({ email: { $regex: `^${escapeRegExp(normalizedRow.email)}$`, $options: 'i' } });
+          orConditions.push({ email: { $regex: `^\\s*${escapeRegExp(normalizedRow.email)}\\s*$`, $options: 'i' } });
         }
         if (normalizedRow.phone) {
-          orConditions.push({ phone: { $regex: `^${escapeRegExp(normalizedRow.phone)}$`, $options: 'i' } });
+          orConditions.push({ phone: { $regex: `^\\s*${escapeRegExp(normalizedRow.phone)}\\s*$`, $options: 'i' } });
         }
         const existing = await db.collection('users').findOne({ $or: orConditions });
         if (existing) existingId = existing.id;
@@ -463,7 +463,7 @@ export async function importRecords(moduleKey, rows) {
       const findDoc = async (collName, value) => {
         if (!value) return null;
         const cleanVal = String(value).trim();
-        const regexVal = { $regex: `^${escapeRegExp(cleanVal)}$`, $options: 'i' };
+        const regexVal = { $regex: `^\\s*${escapeRegExp(cleanVal)}\\s*$`, $options: 'i' };
         
         // Build a robust OR query to find the record
         const orQuery = [
@@ -489,8 +489,8 @@ export async function importRecords(moduleKey, rows) {
           const first = parts[0];
           const last = parts[parts.length - 1];
 
-          const regexFirst = { $regex: `^${escapeRegExp(first)}$`, $options: 'i' };
-          const regexLast = { $regex: `^${escapeRegExp(last)}$`, $options: 'i' };
+          const regexFirst = { $regex: `^\\s*${escapeRegExp(first)}\\s*$`, $options: 'i' };
+          const regexLast = { $regex: `^\\s*${escapeRegExp(last)}\\s*$`, $options: 'i' };
 
           doc = await db.collection(collName).findOne({ 
             $or: [
@@ -554,7 +554,7 @@ export async function importRecords(moduleKey, rows) {
 
             if (!customerDoc) {
               customerDoc = await db.collection('customers').findOne({
-                name: { $regex: `^${escapeRegExp(customerName)}$`, $options: 'i' }
+                name: { $regex: `^\\s*${escapeRegExp(customerName)}\\s*$`, $options: 'i' }
               });
             }
 

@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server';
 import { aggregateRecords } from '@/lib/store';
+import { ObjectId } from 'mongodb';
+
+function escapeRegExp(val) {
+  return String(val).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 export const runtime = 'nodejs';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const worker = searchParams.get('worker'); // This can be name or ID
+  const workerRaw = searchParams.get('worker');
+  const worker = workerRaw ? workerRaw.trim() : '';
   const month = parseInt(searchParams.get('month'));
   const year = parseInt(searchParams.get('year'));
 
@@ -29,16 +35,38 @@ export async function GET(request) {
       }
     };
 
+    const workerRegexPattern = `^\\s*${escapeRegExp(worker)}\\s*$`;
+    let workerIdObj = null;
+    if (/^[0-9a-fA-F]{24}$/.test(worker)) {
+      try {
+        workerIdObj = new ObjectId(worker);
+      } catch (e) {}
+    }
+
+    const driverMatchConditions = [
+      { driver: { $regex: workerRegexPattern, $options: 'i' } }
+    ];
+    if (workerIdObj) {
+      driverMatchConditions.push({ driverId: workerIdObj });
+    } else {
+      driverMatchConditions.push({ driverId: worker });
+    }
+
+    const workerMatchConditions = [
+      { worker: { $regex: workerRegexPattern, $options: 'i' } }
+    ];
+    if (workerIdObj) {
+      workerMatchConditions.push({ workerId: workerIdObj });
+    } else {
+      workerMatchConditions.push({ workerId: worker });
+    }
+
     // Aggregate Tows
     const tows = await aggregateRecords('tows', [
       matchStage,
       {
         $match: {
-          $or: [
-            { driver: worker }, 
-            { driver: { $regex: worker, $options: 'i' } },
-            { driverId: worker }
-          ],
+          $or: driverMatchConditions,
           status: 'Completed'
         }
       },
@@ -62,11 +90,7 @@ export async function GET(request) {
       matchStage,
       {
         $match: {
-          $or: [
-            { worker: worker },
-            { worker: { $regex: worker, $options: 'i' } },
-            { workerId: worker }
-          ]
+          $or: workerMatchConditions
         }
       },
       filterStage,

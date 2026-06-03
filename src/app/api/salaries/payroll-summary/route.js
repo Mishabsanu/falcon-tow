@@ -91,9 +91,19 @@ export async function GET(request) {
 
     // 4. Combine data
     const payrollData = workers.map(worker => {
-      // Find matching stats by name or id
-      const towStats = towsSummary.find(t => t._id === worker.name || t._id === worker.id) || { totalTows: 0, cashCollected: 0, creditRevenue: 0 };
-      const expenseStats = expensesSummary.find(e => e._id === worker.name || e._id === worker.id) || { totalExpenses: 0 };
+      const workerNameClean = (worker.name || '').trim().toLowerCase();
+      const workerIdClean = (worker.id || '').trim().toLowerCase();
+
+      // Find matching stats by name or id (trimmed and case-insensitive)
+      const towStats = towsSummary.find(t => {
+        const tidClean = (t._id || '').trim().toLowerCase();
+        return tidClean === workerNameClean || tidClean === workerIdClean;
+      }) || { totalTows: 0, cashCollected: 0, creditRevenue: 0 };
+
+      const expenseStats = expensesSummary.find(e => {
+        const eidClean = (e._id || '').trim().toLowerCase();
+        return eidClean === workerNameClean || eidClean === workerIdClean;
+      }) || { totalExpenses: 0 };
       
       const baseSalary = Number(worker.salary || 0);
       const cashCollected = towStats.cashCollected;

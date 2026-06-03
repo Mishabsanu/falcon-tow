@@ -11,32 +11,35 @@ export async function POST(request) {
   try {
     const { username: identifier, password } = await request.json();
 
+    const cleanIdentifier = typeof identifier === 'string' ? identifier.trim() : '';
+    const cleanPassword = typeof password === 'string' ? password.trim() : '';
+
+    if (!cleanIdentifier) {
+      return NextResponse.json({ error: 'Employee ID or Email is required' }, { status: 400 });
+    }
+
     // Fetch users from the 'users' collection
     const result = await listRecords('users', { limit: 1000 });
-
 
     if (!result || !result.data || result.data.length === 0) {
       return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
     }
 
-    // Match strictly by email or employee ID, ensuring we pick the record with a password
+    // Match strictly by email or employee ID, trimming database values as well
     const user = result.data.find(u =>
-      (u.email?.toLowerCase() === identifier.toLowerCase() ||
-        u.id?.toLowerCase() === identifier.toLowerCase()) &&
-      u.password
+      u.email?.toLowerCase().trim() === cleanIdentifier.toLowerCase() ||
+      u.id?.toLowerCase().trim() === cleanIdentifier.toLowerCase()
     );
 
-
-
     if (!user) {
-
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      return NextResponse.json({ error: 'Employee ID or Email not found' }, { status: 401 });
     }
 
+    if (!user.password) {
+      return NextResponse.json({ error: 'User does not have a password configured' }, { status: 401 });
+    }
 
-
-    const isMatch = await bcrypt.compare(password, user.password);
-
+    const isMatch = await bcrypt.compare(cleanPassword, user.password);
 
     if (isMatch) {
 
