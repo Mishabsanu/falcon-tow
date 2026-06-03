@@ -206,7 +206,7 @@ export default function PayrollOverview() {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                          <span className="block text-[11px] font-black text-rose-500">-QAR {p.retention.toLocaleString()}</span>
-                         <span className="text-[8px] font-bold text-slate-400 uppercase">(90% Cash)</span>
+                         <span className="text-[8px] font-bold text-slate-400 uppercase">(Hand Cash)</span>
                       </div>
                       <div className="flex items-center gap-2">
                          <span className="block text-[11px] font-black text-rose-400">-QAR {p.totalExpenses.toLocaleString()}</span>

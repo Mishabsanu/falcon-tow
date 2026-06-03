@@ -186,8 +186,8 @@ export default function SalarySlipView({ id, hideToolbar = false }) {
               <tr>
                 <td>03</td>
                 <td>
-                  <div className={styles.itemDesc}>Cash Advance / Revenue Deduction</div>
-                  <div className={styles.itemSub}>90% Cash reconciliation adjustment</div>
+                  <div className={styles.itemDesc}>Hand Cash</div>
+                  <div className={styles.itemSub}>Cash collected by worker</div>
                 </td>
                 <td className={styles.itemAmount} style={{ color: '#dc2626' }}>-{currency(salary.cashDeduction90)}</td>
               </tr>

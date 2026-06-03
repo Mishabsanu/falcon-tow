@@ -263,7 +263,7 @@ export default function SalaryForm({ mode, id }) {
                   />
                </div>
                <div className="col-span-12 md:col-span-3 space-y-4">
-                  <label className="block text-[10px] font-bold text-rose-500 uppercase tracking-widest ml-1">90% Ded (Cash)</label>
+                  <label className="block text-[10px] font-bold text-rose-500 uppercase tracking-widest ml-1">Hand Cash</label>
                   <input
                     type="text"
                     value={values.cashDeduction90}
