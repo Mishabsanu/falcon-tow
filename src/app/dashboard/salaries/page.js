@@ -48,7 +48,7 @@ const exportToPDF = () => {
 const exportToCSV = (data) => {
   if (!data || !data.length) return;
   
-  const headers = ['Ref', 'Worker', 'Month', 'Year', 'Base Salary', 'Commission', 'Cash Deduction', 'Expenses', 'Net Amount', 'Status'];
+  const headers = ['Ref', 'Worker', 'Month', 'Year', 'Base Salary', 'Commission', 'Hand Cash', 'Expenses', 'Net Amount', 'Status'];
   const csvContent = [
     headers.join(','),
     ...data.map(sal => [
