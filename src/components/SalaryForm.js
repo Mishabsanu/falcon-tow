@@ -31,7 +31,12 @@ export default function SalaryForm({ mode, id }) {
       workerId: '',
       baseSalary: '0',
       cashCollected: '0',
+      creditRevenue: '0',
       retention: '0',
+      credit10: '0',
+      credit90: '0',
+      cash10: '0',
+      cash90: '0',
       cashDeduction90: '0',
       expenses: '0',
       amount: '0',
@@ -102,7 +107,12 @@ export default function SalaryForm({ mode, id }) {
         ...values,
         baseSalary: baseSalary.toString(),
         cashCollected: stats.cashCollected.toString(),
+        creditRevenue: stats.creditRevenue.toString(),
         retention: stats.totalCommission.toString(),
+        credit10: stats.credit10.toString(),
+        credit90: stats.credit90.toString(),
+        cash10: stats.cash10.toString(),
+        cash90: stats.cash90.toString(),
         cashDeduction90: stats.cashDeduction90.toString(),
         expenses: stats.totalExpensesAmount.toString(),
         amount: netSalary.toString()
@@ -244,41 +254,94 @@ export default function SalaryForm({ mode, id }) {
             </div>
 
             <div className="grid grid-cols-12 gap-8 md:gap-10">
-               <div className="col-span-12 md:col-span-3 space-y-4">
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Base Salary</label>
-                  <input
-                    type="text"
-                    value={values.baseSalary}
-                    readOnly
-                    className="block w-full px-1 py-4 bg-transparent border-b-2 border-emerald-50 opacity-50 cursor-not-allowed outline-none text-emerald-950 font-bold text-sm"
-                  />
+               {/* Column 1: Core Parameters */}
+               <div className="col-span-12 md:col-span-4 space-y-6">
+                  <div className="space-y-4">
+                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Base Salary</label>
+                     <input
+                       type="text"
+                       value={values.baseSalary}
+                       readOnly
+                       className="block w-full px-1 py-4 bg-transparent border-b-2 border-emerald-50 opacity-50 cursor-not-allowed outline-none text-emerald-950 font-bold text-sm"
+                     />
+                  </div>
+                  <div className="space-y-4">
+                     <label className="block text-[10px] font-bold text-rose-400 uppercase tracking-widest ml-1">Expenses</label>
+                     <input
+                       type="text"
+                       value={values.expenses}
+                       readOnly
+                       className="block w-full px-1 py-4 bg-transparent border-b-2 border-rose-50 opacity-80 cursor-not-allowed outline-none text-rose-400 font-bold text-sm"
+                     />
+                  </div>
                </div>
-               <div className="col-span-12 md:col-span-3 space-y-4">
-                  <label className="block text-[10px] font-bold text-emerald-600 uppercase tracking-widest ml-1">Commission (10%)</label>
-                  <input
-                    type="text"
-                    value={values.retention}
-                    readOnly
-                    className="block w-full px-1 py-4 bg-transparent border-b-2 border-emerald-100 opacity-80 cursor-not-allowed outline-none text-emerald-600 font-bold text-sm"
-                  />
+
+               {/* Column 2: Credit Payment Splits */}
+               <div className="col-span-12 md:col-span-4 p-6 bg-emerald-50/15 rounded-2xl border border-emerald-100/30 space-y-6">
+                  <span className="block text-[9px] font-black uppercase tracking-wider text-emerald-700/60">Credit Transactions</span>
+                  <div className="space-y-4">
+                     <label className="block text-[10px] font-bold text-emerald-700 uppercase tracking-widest ml-1">Credit Revenue</label>
+                     <input
+                       type="text"
+                       value={values.creditRevenue}
+                       readOnly
+                       className="block w-full px-1 py-3 bg-transparent border-b-2 border-emerald-100 opacity-85 cursor-not-allowed outline-none text-emerald-800 font-bold text-sm"
+                     />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                        <label className="block text-[9px] font-black text-emerald-600 uppercase tracking-wider ml-1">Credit 10% (Driver)</label>
+                        <input
+                          type="text"
+                          value={values.credit10}
+                          readOnly
+                          className="block w-full px-1 py-2 bg-transparent border-b border-emerald-100 opacity-85 cursor-not-allowed outline-none text-emerald-600 font-bold text-xs"
+                        />
+                     </div>
+                     <div className="space-y-2">
+                        <label className="block text-[9px] font-black text-slate-500 uppercase tracking-wider ml-1">Credit 90% (Company)</label>
+                        <input
+                          type="text"
+                          value={values.credit90}
+                          readOnly
+                          className="block w-full px-1 py-2 bg-transparent border-b border-emerald-100 opacity-80 cursor-not-allowed outline-none text-slate-600 font-bold text-xs"
+                        />
+                     </div>
+                  </div>
                </div>
-               <div className="col-span-12 md:col-span-3 space-y-4">
-                  <label className="block text-[10px] font-bold text-rose-500 uppercase tracking-widest ml-1">Hand Cash</label>
-                  <input
-                    type="text"
-                    value={values.cashDeduction90}
-                    readOnly
-                    className="block w-full px-1 py-4 bg-transparent border-b-2 border-rose-100 opacity-80 cursor-not-allowed outline-none text-rose-500 font-bold text-sm"
-                  />
-               </div>
-               <div className="col-span-12 md:col-span-3 space-y-4">
-                  <label className="block text-[10px] font-bold text-rose-400 uppercase tracking-widest ml-1">Expenses</label>
-                  <input
-                    type="text"
-                    value={values.expenses}
-                    readOnly
-                    className="block w-full px-1 py-4 bg-transparent border-b-2 border-rose-50 opacity-80 cursor-not-allowed outline-none text-rose-400 font-bold text-sm"
-                  />
+
+               {/* Column 3: Cash Payment Splits */}
+               <div className="col-span-12 md:col-span-4 p-6 bg-rose-50/15 rounded-2xl border border-rose-100/30 space-y-6">
+                  <span className="block text-[9px] font-black uppercase tracking-wider text-rose-700/60">Cash Transactions</span>
+                  <div className="space-y-4">
+                     <label className="block text-[10px] font-bold text-rose-700 uppercase tracking-widest ml-1">Cash Revenue</label>
+                     <input
+                       type="text"
+                       value={values.cashCollected}
+                       readOnly
+                       className="block w-full px-1 py-3 bg-transparent border-b-2 border-rose-100 opacity-85 cursor-not-allowed outline-none text-rose-800 font-bold text-sm"
+                     />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                        <label className="block text-[9px] font-black text-rose-600 uppercase tracking-wider ml-1">Cash 10% (Driver)</label>
+                        <input
+                          type="text"
+                          value={values.cash10}
+                          readOnly
+                          className="block w-full px-1 py-2 bg-transparent border-b border-rose-100 opacity-85 cursor-not-allowed outline-none text-rose-600 font-bold text-xs"
+                        />
+                     </div>
+                     <div className="space-y-2">
+                        <label className="block text-[9px] font-black text-rose-500 uppercase tracking-wider ml-1">Cash 90% (Hand Cash)</label>
+                        <input
+                          type="text"
+                          value={values.cash90}
+                          readOnly
+                          className="block w-full px-1 py-2 bg-transparent border-b border-rose-100 opacity-85 cursor-not-allowed outline-none text-rose-500 font-bold text-xs"
+                        />
+                     </div>
+                  </div>
                </div>
             </div>
           </div>

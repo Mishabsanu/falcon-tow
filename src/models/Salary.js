@@ -10,7 +10,12 @@ const SalarySchema = new mongoose.Schema({
   
   baseSalary: { type: Number, default: 0 },
   cashCollected: { type: Number, default: 0 },
+  creditRevenue: { type: Number, default: 0 },
   retention: { type: Number, default: 0 },
+  credit10: { type: Number, default: 0 },
+  credit90: { type: Number, default: 0 },
+  cash10: { type: Number, default: 0 },
+  cash90: { type: Number, default: 0 },
   totalCommissions: { type: Number, default: 0 }, // Hidden Charges/Owner Commission
   cashDeduction90: { type: Number, default: 0 },
   expenses: { type: Number, default: 0 },

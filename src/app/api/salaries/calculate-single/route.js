@@ -106,18 +106,20 @@ export async function GET(request) {
       }
     ]);
 
-    const totalCashCollected = tows
-      .filter(t => t.paymentMethod === 'Cash')
-      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
-    
+    const creditTows = tows.filter(t => t.paymentMethod !== 'Cash');
+    const cashTows = tows.filter(t => t.paymentMethod === 'Cash');
+
+    const totalCreditRevenue = creditTows.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    const totalCashCollected = cashTows.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+    const credit10 = Math.round(totalCreditRevenue * 0.10 * 100) / 100;
+    const credit90 = Math.round(totalCreditRevenue * 0.90 * 100) / 100;
+    const cash10 = Math.round(totalCashCollected * 0.10 * 100) / 100;
+    const cash90 = Math.round(totalCashCollected * 0.90 * 100) / 100;
+
     const totalActualPrice = tows.reduce((sum, t) => sum + (Number(t.amount || 0) - Number(t.serviceCommission || 0)), 0);
     const totalCommissions = tows.reduce((sum, t) => sum + Number(t.serviceCommission || 0), 0);
-    
-    const totalCommission = totalActualPrice * 0.10;
-    const cashDeduction90 = totalCashCollected - (totalCommission); // Worker keeps their 10% from cash if available
-    // OR simply:
-    // const cashDeduction90 = (totalCashCollected - totalCommissions) * 0.90 + totalCommissions; 
-    // Wait, let's keep it simple as per user's split logic.
+    const totalCommission = credit10 + cash10;
     
     const totalExpensesAmount = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
@@ -128,10 +130,15 @@ export async function GET(request) {
         expenses,
         stats: {
           cashCollected: totalCashCollected,
+          creditRevenue: totalCreditRevenue,
+          credit10,
+          credit90,
+          cash10,
+          cash90,
           totalActualPrice,
           totalCommissions,
           totalCommission,
-          cashDeduction90: totalCashCollected * 0.90,
+          cashDeduction90: cash90,
           totalExpensesAmount
         }
       }
