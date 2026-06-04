@@ -266,6 +266,15 @@ export default function SalaryForm({ mode, id }) {
                      />
                   </div>
                   <div className="space-y-4">
+                     <label className="block text-[10px] font-bold text-emerald-600 uppercase tracking-widest ml-1">Total Commission (10%)</label>
+                     <input
+                       type="text"
+                       value={values.retention}
+                       readOnly
+                       className="block w-full px-1 py-4 bg-transparent border-b-2 border-emerald-100 opacity-80 cursor-not-allowed outline-none text-emerald-600 font-bold text-sm"
+                     />
+                  </div>
+                  <div className="space-y-4">
                      <label className="block text-[10px] font-bold text-rose-400 uppercase tracking-widest ml-1">Expenses</label>
                      <input
                        type="text"
