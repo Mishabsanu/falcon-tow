@@ -160,6 +160,8 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
         .test('not-equal-pickup-photo', 'Drop-off proof cannot be the same image as pickup proof', (value, context) => {
           if (!value) return true;
           const pickupPhoto = context?.parent?.pickupPhoto;
+          const placeholderUrl = 'https://res.cloudinary.com/dwkom79iv/image/upload/v1714578144/uploading_placeholder.png';
+          if (value === placeholderUrl || pickupPhoto === placeholderUrl) return true;
           return !pickupPhoto || pickupPhoto !== value;
         })
         .test('time-elapsed-photo', 'A tow job must run for at least 10 minutes before drop-off proof can be submitted.', (value) => {
@@ -182,6 +184,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
     validationSchema,
     enableReinitialize: true,
     onSubmit: async (values) => {
+      let uploadToastId = null;
       try {
         const payload = { ...values };
         delete payload.confirmPassword;
@@ -190,33 +193,49 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
         if (moduleKey === 'tows' && payload.status === 'In Progress' && payload.dropoff && payload.dropoffPhoto) {
           payload.status = 'Completed';
         }
+
         const fileFields = config.fields.filter(f => f.type === 'file' && payload[f.name]?.startsWith('data:image'));
 
-        // Prepare initial payload (images are set to placeholders for background processing)
-        const initialPayload = { ...payload };
-        fileFields.forEach(f => {
-          initialPayload[f.name] = 'https://res.cloudinary.com/dwkom79iv/image/upload/v1714578144/uploading_placeholder.png';
-        });
+        if (fileFields.length > 0) {
+          uploadToastId = toast.loading('Uploading images to secure cloud storage...');
+          await Promise.all(fileFields.map(async (field) => {
+            const res = await fetch('/api/upload', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ image: payload[field.name] })
+            });
+            if (!res.ok) {
+              const errData = await res.json().catch(() => ({}));
+              throw new Error(errData.error || `Failed to upload ${field.label}`);
+            }
+            const data = await res.json();
+            if (data.success && data.url) {
+              payload[field.name] = data.url;
+            } else {
+              throw new Error(data.error || `Failed to upload ${field.label}`);
+            }
+          }));
+        }
 
         // Add audit info (Captured from active session)
         const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user')) : null;
-        initialPayload.createdBy = user?.name || 'System';
-        initialPayload.createdById = user?._id || null; // Store native ObjectId for lookups
+        payload.createdBy = user?.name || 'System';
+        payload.createdById = user?._id || null; // Store native ObjectId for lookups
 
         // 0. Clean module-based labels before storage (User Requirement: Separate Storage)
         config.fields.forEach(field => {
-          if (field.module && initialPayload[field.name]) {
+          if (field.module && payload[field.name]) {
             // Use helper fields if they were populated by the onChange handler
             if (field.module === 'customers' && values.customerName) {
-              initialPayload[field.name] = values.customerName;
+              payload[field.name] = values.customerName;
             } else if (field.module === 'vehicles' && values.vehicleName) {
-              initialPayload[field.name] = values.vehicleName;
+              payload[field.name] = values.vehicleName;
             } else {
               // Fallback to option searching if helper fields are missing
-              const val = initialPayload[field.name];
+              const val = payload[field.name];
               const opt = (options[field.name] || []).find(o => o.value === val);
               if (opt && opt.raw) {
-                initialPayload[field.name] = opt.raw.name || opt.raw.id || val;
+                payload[field.name] = opt.raw.name || opt.raw.id || val;
               }
             }
           }
@@ -224,11 +243,11 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
 
         // 0.1 Handle Multi-Job Invoices
         if (moduleKey === 'invoices') {
-          if (typeof initialPayload.customerId === 'string' && initialPayload.customerId.startsWith('customer-name:')) {
-            initialPayload.customerId = undefined;
+          if (typeof payload.customerId === 'string' && payload.customerId.startsWith('customer-name:')) {
+            payload.customerId = undefined;
           }
 
-          initialPayload.towDetails = selectedJobs.map(j => ({
+          payload.towDetails = selectedJobs.map(j => ({
             towId: j._id || j.towId,
             jobId: j.id || j.jobId,
             date: j.date,
@@ -242,12 +261,10 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
           }));
         }
 
-        // 1. Create/Update record immediately
+        // 1. Create/Update record
         const result = mode === 'edit'
-          ? await apiService.updateRecord(moduleKey, id, initialPayload)
-          : await apiService.createRecord(moduleKey, initialPayload);
-
-        const recordId = result?._id || id;
+          ? await apiService.updateRecord(moduleKey, id, payload)
+          : await apiService.createRecord(moduleKey, payload);
 
         // 1.1 Synchronize tow jobs' statuses (Closed vs. Completed)
         if (moduleKey === 'invoices') {
@@ -276,7 +293,9 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
           }
         }
 
-        // 2. IMMEDIATE REDIRECTION (NO WAIT)
+        if (uploadToastId) {
+          toast.dismiss(uploadToastId);
+        }
         toast.success(`${config.title} ${mode === 'edit' ? 'updated' : 'created'} successfully.`);
         if (onSuccess) {
           onSuccess(result);
@@ -284,29 +303,10 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
           router.replace(config.listPath);
         }
 
-        // 3. Deferred Background Upload (Wait 500ms to allow navigation to start)
-        if (fileFields.length > 0) {
-          setTimeout(() => {
-            fileFields.forEach(async (field) => {
-              try {
-                const res = await fetch('/api/upload', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ image: payload[field.name] })
-                });
-                const data = await res.json();
-                if (data.success) {
-                  await apiService.updateRecord(moduleKey, recordId, { [field.name]: data.url });
-                  console.log(`[BACKGROUND_SYNC] ${field.label} updated for ${recordId}`);
-                }
-              } catch (err) {
-                console.error(`[BACKGROUND_FAILURE] ${field.label}:`, err);
-              }
-            });
-          }, 500);
-        }
-
       } catch (error) {
+        if (uploadToastId) {
+          toast.dismiss(uploadToastId);
+        }
         console.error('Submission error:', error);
         const errorMsg = error.message || 'System integrity check failed.';
         toast.error(`Unable to save: ${errorMsg}`);

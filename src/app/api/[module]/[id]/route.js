@@ -147,7 +147,11 @@ export async function PUT(request, context) {
         // Validation 3: Photo duplicate check
         const newPickupPhoto = payload.pickupPhoto || existingRecord.pickupPhoto;
         const newDropoffPhoto = payload.dropoffPhoto || existingRecord.dropoffPhoto;
-        if (newPickupPhoto && newDropoffPhoto && newPickupPhoto === newDropoffPhoto) {
+        const placeholderUrl = 'https://res.cloudinary.com/dwkom79iv/image/upload/v1714578144/uploading_placeholder.png';
+        if (newPickupPhoto && newDropoffPhoto && 
+            newPickupPhoto !== placeholderUrl && 
+            newDropoffPhoto !== placeholderUrl && 
+            newPickupPhoto === newDropoffPhoto) {
           return NextResponse.json({
             error: 'Validation Error: Pickup proof and drop-off proof cannot be the same image.'
           }, { status: 400 });
