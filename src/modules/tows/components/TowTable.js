@@ -89,7 +89,7 @@ export default function TowTable({ tows, loading, pagination, onPageChange, onDe
       <td>
         <div className={styles.actionCell}>
           <Link href={`/dashboard/tows/${tow.id}`} className={styles.viewBtn} title="View"><Eye size={16} /></Link>
-          {!isWorker && <Link href={`/dashboard/tows/${tow.id}/edit`} className={styles.moreBtn} title="Edit"><Edit3 size={16} /></Link>}
+          <Link href={`/dashboard/tows/${tow.id}/edit`} className={styles.moreBtn} title="Edit"><Edit3 size={16} /></Link>
           {!isWorker && (
             <button className={styles.moreBtn} title="Delete" onClick={() => onDelete(tow.id || tow._id)}>
               <Trash2 size={16} />
@@ -147,7 +147,7 @@ export default function TowTable({ tows, loading, pagination, onPageChange, onDe
       <div className="flex items-center justify-between pt-2">
         <div className="flex items-center gap-2">
            <Link href={`/dashboard/tows/${tow.id}`} className="p-3 bg-emerald-50 text-emerald-600 rounded-xl"><Eye size={18} /></Link>
-           {!isWorker && <Link href={`/dashboard/tows/${tow.id}/edit`} className="p-3 bg-emerald-50 text-emerald-600 rounded-xl"><Edit3 size={18} /></Link>}
+           <Link href={`/dashboard/tows/${tow.id}/edit`} className="p-3 bg-emerald-50 text-emerald-600 rounded-xl"><Edit3 size={18} /></Link>
            {!isWorker && (
              <button onClick={() => onDelete(tow.id || tow._id)} className="p-3 bg-rose-50 text-rose-600 rounded-xl">
                <Trash2 size={18} />

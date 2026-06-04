@@ -120,17 +120,22 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
 
     if (moduleKey === 'tows') {
       schemaShape.dropoff = Yup.string().nullable()
-        .when(['status', 'dropoffPhoto'], {
-          is: (status, dropoffPhoto) => status === 'Completed' || !!dropoffPhoto,
+        .when('status', {
+          is: (status) => status === 'Completed',
           then: (schema) => schema.required('Drop-off Address is required'),
           otherwise: (schema) => schema.nullable()
         })
-        .test('not-equal-pickup', 'Drop-off address cannot be the same as pickup address', function(value) {
+        .test('required-if-photo-present', 'Drop-off Address is required if Drop-off Photo is provided', (value, context) => {
+          const dropoffPhoto = context?.parent?.dropoffPhoto;
+          if (dropoffPhoto && !value) return false;
+          return true;
+        })
+        .test('not-equal-pickup', 'Drop-off address cannot be the same as pickup address', (value, context) => {
           if (!value) return true;
-          const { pickup } = this.parent;
+          const pickup = context?.parent?.pickup;
           return !pickup || pickup.trim().toLowerCase() !== value.trim().toLowerCase();
         })
-        .test('time-elapsed', 'A tow job must run for at least 10 minutes before drop-off details can be submitted.', function(value) {
+        .test('time-elapsed', 'A tow job must run for at least 10 minutes before drop-off details can be submitted.', (value) => {
           if (!value) return true;
           if (mode === 'edit' && isWorker && initialRecord?.createdAt) {
             const createdTime = new Date(initialRecord.createdAt).getTime();
@@ -142,17 +147,22 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
         });
 
       schemaShape.dropoffPhoto = Yup.string().nullable()
-        .when(['status', 'dropoff'], {
-          is: (status, dropoff) => status === 'Completed' || !!dropoff,
+        .when('status', {
+          is: (status) => status === 'Completed',
           then: (schema) => schema.required('Drop-off Proof (Photo) is required'),
           otherwise: (schema) => schema.nullable()
         })
-        .test('not-equal-pickup-photo', 'Drop-off proof cannot be the same image as pickup proof', function(value) {
+        .test('required-if-address-present', 'Drop-off Proof (Photo) is required if Drop-off Address is provided', (value, context) => {
+          const dropoff = context?.parent?.dropoff;
+          if (dropoff && !value) return false;
+          return true;
+        })
+        .test('not-equal-pickup-photo', 'Drop-off proof cannot be the same image as pickup proof', (value, context) => {
           if (!value) return true;
-          const { pickupPhoto } = this.parent;
+          const pickupPhoto = context?.parent?.pickupPhoto;
           return !pickupPhoto || pickupPhoto !== value;
         })
-        .test('time-elapsed-photo', 'A tow job must run for at least 10 minutes before drop-off proof can be submitted.', function(value) {
+        .test('time-elapsed-photo', 'A tow job must run for at least 10 minutes before drop-off proof can be submitted.', (value) => {
           if (!value) return true;
           if (mode === 'edit' && isWorker && initialRecord?.createdAt) {
             const createdTime = new Date(initialRecord.createdAt).getTime();
