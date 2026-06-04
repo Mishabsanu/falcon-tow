@@ -67,6 +67,25 @@ export default function TowJobView({ id }) {
     }
   };
 
+  const handleDownloadFile = async (url, filename) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Failed to download image directly:', error);
+      // Fallback: Open in new tab if fetch fails (e.g. CORS block)
+      window.open(url, '_blank');
+    }
+  };
+
   const amountInWords = (num) => {
     const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
     const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
@@ -140,7 +159,7 @@ export default function TowJobView({ id }) {
       </div>
 
       {/* Tab 1: Document View */}
-      <div id="invoice-paper" className={`${styles.paper} ${styles.invoicePaper} ${activeTab !== 'document' ? 'hidden' : ''}`}>
+      <div id="invoice-paper" className={`${styles.paper} ${styles.invoicePaper}`} style={activeTab !== 'document' ? { display: 'none' } : {}}>
         <header className={styles.paperHeader}>
           <div className={styles.headerBrand}>
             <div className={styles.logoSection}>
@@ -269,15 +288,27 @@ export default function TowJobView({ id }) {
             <div className="p-6 flex-1 flex flex-col justify-between gap-6">
               {job.pickupPhoto ? (
                 <>
-                  <div className="relative aspect-video rounded-xl overflow-hidden border border-slate-100 group">
+                  <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-slate-100 group">
                     <img src={job.pickupPhoto} alt="Pickup Proof" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-emerald-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                       <a href={job.pickupPhoto} target="_blank" rel="noopener noreferrer" className="p-3 bg-white text-emerald-950 rounded-xl shadow-lg hover:scale-105 transition-transform font-bold text-[10px] uppercase tracking-widest">View Full Size</a>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Pickup Address</span>
-                    <p className="text-xs font-bold text-emerald-950 leading-relaxed">{job.pickup || 'Address not registered'}</p>
+                  <div className="space-y-4">
+                    <div className="space-y-1">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Pickup Address</span>
+                      <p className="text-xs font-bold text-emerald-950 leading-relaxed">{job.pickup || 'Address not registered'}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-100/50">
+                      <div className="space-y-1">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Customer Vehicle</span>
+                        <p className="text-xs font-bold text-emerald-950 leading-relaxed">{job.customerVehicle || job.vehicle || 'N/A'}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Plate Number</span>
+                        <p className="text-xs font-bold text-emerald-950 leading-relaxed">{job.customerPlate || job.vehiclePlate || 'N/A'}</p>
+                      </div>
+                    </div>
                   </div>
                   <div className="flex gap-3 mt-auto pt-4 border-t border-emerald-50/50">
                     <a 
@@ -288,13 +319,12 @@ export default function TowJobView({ id }) {
                     >
                       View Image
                     </a>
-                    <a 
-                      href={job.pickupPhoto} 
-                      download={`PickupProof_${job.id}.jpg`}
-                      className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-emerald-50/30 text-emerald-700 border border-emerald-200 py-3.5 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all text-center justify-center"
+                    <button 
+                      onClick={() => handleDownloadFile(job.pickupPhoto, `PickupProof_${job.id}.jpg`)}
+                      className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-emerald-50/30 text-emerald-700 border border-emerald-200 py-3.5 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all text-center justify-center cursor-pointer"
                     >
                       Download File
-                    </a>
+                    </button>
                   </div>
                 </>
               ) : (
@@ -318,15 +348,27 @@ export default function TowJobView({ id }) {
             <div className="p-6 flex-1 flex flex-col justify-between gap-6">
               {job.dropoffPhoto ? (
                 <>
-                  <div className="relative aspect-video rounded-xl overflow-hidden border border-slate-100 group">
+                  <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-slate-100 group">
                     <img src={job.dropoffPhoto} alt="Drop-off Proof" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-emerald-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                       <a href={job.dropoffPhoto} target="_blank" rel="noopener noreferrer" className="p-3 bg-white text-emerald-950 rounded-xl shadow-lg hover:scale-105 transition-transform font-bold text-[10px] uppercase tracking-widest">View Full Size</a>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Drop-off Address</span>
-                    <p className="text-xs font-bold text-emerald-950 leading-relaxed">{job.dropoff || 'Address not registered'}</p>
+                  <div className="space-y-4">
+                    <div className="space-y-1">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Drop-off Address</span>
+                      <p className="text-xs font-bold text-emerald-950 leading-relaxed">{job.dropoff || 'Address not registered'}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-100/50">
+                      <div className="space-y-1">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Customer Vehicle</span>
+                        <p className="text-xs font-bold text-emerald-950 leading-relaxed">{job.customerVehicle || job.vehicle || 'N/A'}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Plate Number</span>
+                        <p className="text-xs font-bold text-emerald-950 leading-relaxed">{job.customerPlate || job.vehiclePlate || 'N/A'}</p>
+                      </div>
+                    </div>
                   </div>
                   <div className="flex gap-3 mt-auto pt-4 border-t border-emerald-50/50">
                     <a 
@@ -337,13 +379,12 @@ export default function TowJobView({ id }) {
                     >
                       View Image
                     </a>
-                    <a 
-                      href={job.dropoffPhoto} 
-                      download={`DropoffProof_${job.id}.jpg`}
-                      className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-emerald-50/30 text-emerald-700 border border-emerald-200 py-3.5 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all text-center justify-center"
+                    <button 
+                      onClick={() => handleDownloadFile(job.dropoffPhoto, `DropoffProof_${job.id}.jpg`)}
+                      className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-emerald-50/30 text-emerald-700 border border-emerald-200 py-3.5 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all text-center justify-center cursor-pointer"
                     >
                       Download File
-                    </a>
+                    </button>
                   </div>
                 </>
               ) : (
