@@ -101,7 +101,7 @@ export default function SalaryForm({ mode, id }) {
       const workerObj = workers.find(w => w.name === values.worker || w.id === values.worker);
       const baseSalary = Number(workerObj?.salary || 0);
 
-      const netSalary = baseSalary + stats.totalCommission + stats.totalExpensesAmount - stats.cashDeduction90;
+      const netSalary = baseSalary + stats.totalCommission + stats.totalExpensesAmount - stats.cashCollected;
 
       setValues({
         ...values,
@@ -113,7 +113,7 @@ export default function SalaryForm({ mode, id }) {
         credit90: stats.credit90.toString(),
         cash10: stats.cash10.toString(),
         cash90: stats.cash90.toString(),
-        cashDeduction90: stats.cashDeduction90.toString(),
+        cashDeduction90: stats.cashCollected.toString(),
         expenses: stats.totalExpensesAmount.toString(),
         amount: netSalary.toString()
       });

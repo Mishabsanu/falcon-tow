@@ -4,7 +4,7 @@ import { calculateSalarySettlement } from '@/modules/salaries/logic/salaryBusine
 import { calculateTowShares } from '@/modules/tows/logic/towBusinessLogic';
 import { apiService } from '@/services/apiService';
 import { useFormik } from 'formik';
-import { Activity, ArrowLeft, Check, Eye, EyeOff, FileText, Lock, Plus, Save, Square, MapPin } from 'lucide-react';
+import { Activity, ArrowLeft, Check, Eye, EyeOff, FileText, Lock, Plus, Save, Square, MapPin, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { toast } from 'sonner';
@@ -41,6 +41,10 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
 
     if (moduleKey === 'users') {
       vals.confirmPassword = '';
+    }
+
+    if (moduleKey === 'tows' && mode !== 'edit') {
+      vals.status = 'In Progress';
     }
 
     return vals;
@@ -114,8 +118,54 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
       }
     }
 
+    if (moduleKey === 'tows') {
+      schemaShape.dropoff = Yup.string().nullable()
+        .when(['status', 'dropoffPhoto'], {
+          is: (status, dropoffPhoto) => status === 'Completed' || !!dropoffPhoto,
+          then: (schema) => schema.required('Drop-off Address is required'),
+          otherwise: (schema) => schema.nullable()
+        })
+        .test('not-equal-pickup', 'Drop-off address cannot be the same as pickup address', function(value) {
+          if (!value) return true;
+          const { pickup } = this.parent;
+          return !pickup || pickup.trim().toLowerCase() !== value.trim().toLowerCase();
+        })
+        .test('time-elapsed', 'A tow job must run for at least 10 minutes before drop-off details can be submitted.', function(value) {
+          if (!value) return true;
+          if (mode === 'edit' && isWorker && initialRecord?.createdAt) {
+            const createdTime = new Date(initialRecord.createdAt).getTime();
+            const now = Date.now();
+            const diffMinutes = (now - createdTime) / 60000;
+            return diffMinutes >= 10;
+          }
+          return true;
+        });
+
+      schemaShape.dropoffPhoto = Yup.string().nullable()
+        .when(['status', 'dropoff'], {
+          is: (status, dropoff) => status === 'Completed' || !!dropoff,
+          then: (schema) => schema.required('Drop-off Proof (Photo) is required'),
+          otherwise: (schema) => schema.nullable()
+        })
+        .test('not-equal-pickup-photo', 'Drop-off proof cannot be the same image as pickup proof', function(value) {
+          if (!value) return true;
+          const { pickupPhoto } = this.parent;
+          return !pickupPhoto || pickupPhoto !== value;
+        })
+        .test('time-elapsed-photo', 'A tow job must run for at least 10 minutes before drop-off proof can be submitted.', function(value) {
+          if (!value) return true;
+          if (mode === 'edit' && isWorker && initialRecord?.createdAt) {
+            const createdTime = new Date(initialRecord.createdAt).getTime();
+            const now = Date.now();
+            const diffMinutes = (now - createdTime) / 60000;
+            return diffMinutes >= 10;
+          }
+          return true;
+        });
+    }
+
     return Yup.object().shape(schemaShape);
-  }, [config.fields, changePassword, mode]);
+  }, [config.fields, changePassword, mode, initialRecord, isWorker]);
 
   const formik = useFormik({
     initialValues,
@@ -125,6 +175,11 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
       try {
         const payload = { ...values };
         delete payload.confirmPassword;
+
+        // Auto-Complete Tow Jobs if drop-off details are provided
+        if (moduleKey === 'tows' && payload.status === 'In Progress' && payload.dropoff && payload.dropoffPhoto) {
+          payload.status = 'Completed';
+        }
         const fileFields = config.fields.filter(f => f.type === 'file' && payload[f.name]?.startsWith('data:image'));
 
         // Prepare initial payload (images are set to placeholders for background processing)
@@ -787,7 +842,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
           cashCollected: settlement.cashAmount.toString(),
           creditRevenue: settlement.creditAmount.toString(),
           retention: settlement.workerCommission.toString(), // 10% Total Commission
-          cashDeduction90: (settlement.cashAmount * 0.9).toString(),
+          cashDeduction90: settlement.cashAmount.toString(),
           expenses: settlement.expenses.toString(),
           amount: settlement.netPayout.toString() // Final Payout
         });
@@ -935,6 +990,11 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                   if (values.paymentMethod !== 'Cash') return;
                 }
 
+                // Hide dropoff and dropoffPhoto during creation phase
+                if (moduleKey === 'tows' && mode !== 'edit' && (field.name === 'dropoff' || field.name === 'dropoffPhoto')) {
+                  return;
+                }
+
                 if (field.section !== currentSection.title) {
                   if (currentSection.fields.length > 0 || currentSection.title) {
                     sections.push(currentSection);
@@ -981,13 +1041,19 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
 
 
 
+                      const isFieldReadOnly = field.readOnly || 
+                        (moduleKey === 'tows' && isWorker && (
+                          (mode === 'edit' && ['Completed', 'Closed'].includes(values.status)) ||
+                          (mode === 'edit' && values.status === 'In Progress' && (field.name === 'pickup' || field.name === 'pickupPhoto'))
+                        ));
+
                       return (
                         <div key={field.name} className={`space-y-4 ${colSpan}`}>
                           <div className="flex items-center justify-between">
                             <label htmlFor={field.name} className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">
                               {field.label} {field.required !== false && <span className="text-red-500 ml-1 text-xs">*</span>}
                             </label>
-                            {field.module && field.allowQuickAdd && (
+                            {field.module && field.allowQuickAdd && !isFieldReadOnly && (
                               <button
                                 type="button"
                                 className="flex items-center gap-1.5 text-[9px] font-bold uppercase text-emerald-600 hover:text-emerald-700 transition-colors"
@@ -1005,7 +1071,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                               <select
                                 id={field.name}
                                 name={field.name}
-                                disabled={isWorker && ((moduleKey === 'tows' && field.name === 'driver') || (moduleKey === 'expenses' && field.name === 'worker'))}
+                                disabled={isFieldReadOnly || (isWorker && ((moduleKey === 'tows' && field.name === 'driver') || (moduleKey === 'expenses' && field.name === 'worker')))}
                                 value={values[field.name]}
                                 onChange={(event) => {
                                   const val = event.target.value;
@@ -1069,9 +1135,9 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                 onChange={formik.handleChange}
                                 onBlur={formik.handleBlur}
                                 placeholder={`Enter ${field.label.toLowerCase()} information...`}
-                                readOnly={field.readOnly}
+                                readOnly={isFieldReadOnly}
                                 rows={4}
-                                className={`block w-full px-1 py-4 bg-transparent border-b-2 ${touched[field.name] && errors[field.name] ? 'border-red-300' : 'border-emerald-100'} focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400 resize-none`}
+                                className={`block w-full px-1 py-4 bg-transparent border-b-2 ${touched[field.name] && errors[field.name] ? 'border-red-300' : 'border-emerald-100'} focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400 resize-none ${isFieldReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
                               />
                               {touched[field.name] && errors[field.name] && (
                                 <p className="text-[9px] font-bold text-red-500 ml-1 uppercase tracking-wider">{errors[field.name]}</p>
@@ -1081,8 +1147,9 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                             <div className="flex items-center gap-4 p-4 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
                               <button
                                 type="button"
-                                onClick={() => setFieldValue(field.name, !values[field.name])}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${values[field.name] ? 'bg-emerald-600' : 'bg-slate-200'}`}
+                                disabled={isFieldReadOnly}
+                                onClick={() => { if (!isFieldReadOnly) setFieldValue(field.name, !values[field.name]); }}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${values[field.name] ? 'bg-emerald-600' : 'bg-slate-200'} ${isFieldReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
                               >
                                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${values[field.name] ? 'translate-x-6' : 'translate-x-1'}`} />
                               </button>
@@ -1092,26 +1159,63 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                             <div className="space-y-4">
                               <input
                                 type="file"
-                                id={field.name}
+                                id={`${field.name}-file`}
                                 accept="image/*"
                                 className="hidden"
+                                disabled={isFieldReadOnly}
                                 onChange={(e) => handleFileChange(field.name, e.target.files[0])}
                               />
-                              <label
-                                htmlFor={field.name}
-                                className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-emerald-200 rounded-2xl bg-emerald-50/20 hover:bg-emerald-50/50 transition-all cursor-pointer group"
-                              >
-                                {values[field.name] ? (
-                                  <img src={values[field.name]} alt="Preview" className="w-full h-full object-cover rounded-2xl" />
-                                ) : (
-                                  <div className="flex flex-col items-center gap-3">
+                              <input
+                                type="file"
+                                id={`${field.name}-camera`}
+                                accept="image/*"
+                                capture="environment"
+                                className="hidden"
+                                disabled={isFieldReadOnly}
+                                onChange={(e) => handleFileChange(field.name, e.target.files[0])}
+                              />
+                              {values[field.name] ? (
+                                <div className="relative w-full h-48 rounded-2xl overflow-hidden border border-emerald-100 shadow-sm group">
+                                  <img src={values[field.name]} alt="Preview" className="w-full h-full object-cover" />
+                                  {!isFieldReadOnly && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setFieldValue(field.name, '')}
+                                      className="absolute top-3 right-3 p-2 bg-rose-600 text-white rounded-xl hover:bg-rose-700 shadow-md transition-all scale-0 group-hover:scale-100"
+                                      title="Remove image"
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className={`grid grid-cols-2 gap-4 ${isFieldReadOnly ? 'opacity-50 pointer-events-none' : ''}`}>
+                                  <button
+                                    type="button"
+                                    disabled={isFieldReadOnly}
+                                    onClick={() => document.getElementById(`${field.name}-camera`)?.click()}
+                                    className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-emerald-200 rounded-2xl bg-emerald-50/10 hover:bg-emerald-50/30 hover:border-emerald-500 transition-all group"
+                                  >
                                     <div className="p-4 bg-white rounded-2xl shadow-sm text-emerald-600 group-hover:scale-110 transition-transform">
-                                      <Plus size={24} />
+                                      <Plus size={20} />
                                     </div>
-                                    <p className="text-[10px] font-bold text-emerald-800/40 uppercase tracking-widest">Upload Attachment</p>
-                                  </div>
-                                )}
-                              </label>
+                                    <span className="text-[10px] font-black text-emerald-950 uppercase tracking-widest mt-3">Take Live Photo</span>
+                                    <span className="text-[8px] font-bold text-slate-400 uppercase mt-1">Open Camera</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={isFieldReadOnly}
+                                    onClick={() => document.getElementById(`${field.name}-file`)?.click()}
+                                    className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-emerald-200 rounded-2xl bg-emerald-50/10 hover:bg-emerald-50/30 hover:border-emerald-500 transition-all group"
+                                  >
+                                    <div className="p-4 bg-white rounded-2xl shadow-sm text-emerald-600 group-hover:scale-110 transition-transform">
+                                      <Plus size={20} />
+                                    </div>
+                                    <span className="text-[10px] font-black text-emerald-950 uppercase tracking-widest mt-3">Choose from Gallery</span>
+                                    <span className="text-[8px] font-bold text-slate-400 uppercase mt-1">Browse Files</span>
+                                  </button>
+                                </div>
+                              )}
                               {touched[field.name] && errors[field.name] && (
                                 <p className="text-[9px] font-bold text-red-500 mt-1 ml-1 uppercase tracking-wider">{errors[field.name]}</p>
                               )}
@@ -1131,8 +1235,8 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                   value={values[field.name] || ''}
                                   onChange={formik.handleChange}
                                   onBlur={formik.handleBlur}
-                                  readOnly={field.readOnly}
-                                  className={`block w-full ${field.type === 'password' ? 'pl-10 pr-10' : (field.name === 'pickup' || field.name === 'dropoff') ? 'pr-20' : 'px-1'} py-4 bg-transparent border-b-2 ${touched[field.name] && errors[field.name] ? 'border-red-300' : 'border-emerald-100'} focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400 ${field.readOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                  readOnly={isFieldReadOnly}
+                                  className={`block w-full ${field.type === 'password' ? 'pl-10 pr-10' : (field.name === 'pickup' || field.name === 'dropoff') ? 'pr-20' : 'px-1'} py-4 bg-transparent border-b-2 ${touched[field.name] && errors[field.name] ? 'border-red-300' : 'border-emerald-100'} focus:border-emerald-600 transition-all outline-none text-emerald-950 font-bold text-sm placeholder:text-slate-400 ${isFieldReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
                                   placeholder={`Enter ${field.label.toLowerCase()}...`}
                                 />
                                 {field.type === 'password' && (
@@ -1144,7 +1248,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                                     {showPasswords[field.name] ? <EyeOff size={18} /> : <Eye size={18} />}
                                   </button>
                                 )}
-                                {(field.name === 'pickup' || field.name === 'dropoff') && (
+                                {(field.name === 'pickup' || field.name === 'dropoff') && !isFieldReadOnly && (
                                   <button
                                     type="button"
                                     onClick={async () => {

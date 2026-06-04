@@ -112,12 +112,11 @@ export async function GET(request) {
       // Formula: 
       // 1. Worker is entitled to Base Salary + 10% Commission on ALL revenue.
       // 2. Worker already has 100% of Cash Collected.
-      // 3. We subtract 90% of Cash Collected (so they keep 10%).
-      // 4. we add 10% of Credit Revenue.
+      // 3. We subtract 100% of Cash Collected (as Hand Cash deduction).
       const commission = (cashCollected + creditRevenue) * 0.10;
-      const retention = cashCollected * 0.90;
+      const retention = cashCollected;
       
-      const netSalary = baseSalary + (creditRevenue * 0.10) - (cashCollected * 0.90) - expenseStats.totalExpenses;
+      const netSalary = baseSalary + commission - cashCollected - expenseStats.totalExpenses;
 
       return {
         id: worker.id,

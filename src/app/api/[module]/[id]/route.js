@@ -10,6 +10,11 @@ import Invoice from '@/models/Invoice';
 import Expense from '@/models/Expense';
 import Quotation from '@/models/Quotation';
 import bcrypt from 'bcryptjs';
+import { jwtVerify } from 'jose';
+
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'falcon_secret_key_luxury'
+);
 
 const models = {
   users: User,
@@ -90,6 +95,63 @@ export async function PUT(request, context) {
       } else {
         // Remove password from payload if it's empty to prevent overwriting with null/empty
         delete payload.password;
+      }
+    }
+
+    if (moduleKey === 'tows') {
+      let userRole = 'Worker';
+      try {
+        const token = request.cookies.get('token')?.value;
+        if (token) {
+          const { payload: jwtPayload } = await jwtVerify(token, JWT_SECRET);
+          userRole = jwtPayload.role || 'Worker';
+        }
+      } catch (err) {
+        console.error('[API_AUTH_WARN] Failed to verify JWT token in PUT API:', err.message);
+      }
+
+      const normalizedRole = userRole.charAt(0).toUpperCase() + userRole.slice(1).toLowerCase();
+
+      // Find the existing record first
+      const queryFind = { $or: [{ id: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }] };
+      const existingRecord = await Model.findOne(queryFind);
+      if (!existingRecord) {
+        return NextResponse.json({ error: 'Record not found' }, { status: 404 });
+      }
+
+      // Check if dropping/completing details are being filled or status changed to Completed
+      const isCompleting = payload.status === 'Completed' || payload.dropoff || payload.dropoffPhoto;
+
+      if (isCompleting && normalizedRole === 'Worker') {
+        // Validation 1: Time Elapsed (must wait at least 10 minutes from creation)
+        if (existingRecord.createdAt) {
+          const createdTime = new Date(existingRecord.createdAt).getTime();
+          const now = Date.now();
+          const diffMinutes = (now - createdTime) / 60000;
+          if (diffMinutes < 10) {
+            return NextResponse.json({
+              error: 'Safety Lock: A tow job must run for at least 10 minutes before drop-off details can be submitted.'
+            }, { status: 400 });
+          }
+        }
+
+        // Validation 2: Location Similarity check
+        const newPickup = payload.pickup || existingRecord.pickup;
+        const newDropoff = payload.dropoff || existingRecord.dropoff;
+        if (newPickup && newDropoff && newPickup.trim().toLowerCase() === newDropoff.trim().toLowerCase()) {
+          return NextResponse.json({
+            error: 'Validation Error: Pickup and drop-off locations cannot be identical.'
+          }, { status: 400 });
+        }
+
+        // Validation 3: Photo duplicate check
+        const newPickupPhoto = payload.pickupPhoto || existingRecord.pickupPhoto;
+        const newDropoffPhoto = payload.dropoffPhoto || existingRecord.dropoffPhoto;
+        if (newPickupPhoto && newDropoffPhoto && newPickupPhoto === newDropoffPhoto) {
+          return NextResponse.json({
+            error: 'Validation Error: Pickup proof and drop-off proof cannot be the same image.'
+          }, { status: 400 });
+        }
       }
     }
 
