@@ -44,11 +44,11 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
     }
 
     if (moduleKey === 'tows' && mode !== 'edit') {
-      vals.status = 'In Progress';
+      vals.status = isWorker ? 'In Progress' : 'Completed';
     }
 
     return vals;
-  }, [config.fields, id, mode, moduleKey]);
+  }, [config.fields, id, mode, moduleKey, isWorker]);
 
   const [options, setOptions] = useState({});
   const [quickAdd, setQuickAdd] = useState(null);
@@ -1000,8 +1000,8 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                   if (values.paymentMethod !== 'Cash') return;
                 }
 
-                // Hide dropoff and dropoffPhoto during creation phase
-                if (moduleKey === 'tows' && mode !== 'edit' && (field.name === 'dropoff' || field.name === 'dropoffPhoto')) {
+                // Hide dropoff and dropoffPhoto during creation phase ONLY for workers
+                if (moduleKey === 'tows' && mode !== 'edit' && isWorker && (field.name === 'dropoff' || field.name === 'dropoffPhoto')) {
                   return;
                 }
 
