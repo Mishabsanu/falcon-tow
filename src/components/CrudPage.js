@@ -64,17 +64,24 @@ export default function CrudPage({ moduleKey }) {
     return () => clearTimeout(timer);
   }, [fetchData]);
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this record? This action is irreversible.')) return;
-
-    const toastId = toast.loading('Initiating purge protocol...');
-    try {
-      await apiService.deleteRecord(moduleKey, id);
-      toast.success('Record purged successfully from the node.', { id: toastId });
-      fetchData();
-    } catch (error) {
-      toast.error('Purge failed: Access denied or network interruption.', { id: toastId });
-    }
+  const handleDelete = (id) => {
+    toast('Are you sure you want to delete this record?', {
+      description: 'This action is irreversible.',
+      action: {
+        label: 'Delete',
+        onClick: async () => {
+          const toastId = toast.loading('Initiating purge protocol...');
+          try {
+            await apiService.deleteRecord(moduleKey, id);
+            toast.success('Record purged successfully.', { id: toastId });
+            fetchData();
+          } catch (error) {
+            toast.error('Purge failed: Access denied or network interruption.', { id: toastId });
+          }
+        }
+      },
+      cancel: { label: 'Cancel', onClick: () => {} }
+    });
   };
 
   return (

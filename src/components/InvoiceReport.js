@@ -126,34 +126,41 @@ export default function InvoiceReport({ id }) {
     }
   };
 
-  const handleDeleteCompanyPayment = async (indexToDelete) => {
-    if (!confirm('Are you sure you want to delete this payment entry?')) return;
+  const handleDeleteCompanyPayment = (indexToDelete) => {
+    toast('Are you sure you want to delete this payment entry?', {
+      description: 'This action cannot be undone.',
+      action: {
+        label: 'Delete',
+        onClick: async () => {
+          try {
+            const currentPayments = invoice.invoicePayments || [];
+            const updatedPayments = currentPayments.filter((_, idx) => idx !== indexToDelete);
+            const totalPaid = updatedPayments.reduce((sum, p) => sum + p.amount, 0);
 
-    try {
-      const currentPayments = invoice.invoicePayments || [];
-      const updatedPayments = currentPayments.filter((_, idx) => idx !== indexToDelete);
-      const totalPaid = updatedPayments.reduce((sum, p) => sum + p.amount, 0);
+            let newStatus = 'Pending';
+            if (totalPaid >= netExpected) {
+              newStatus = 'Closed';
+            } else if (totalPaid > 0) {
+              newStatus = 'Partial';
+            }
 
-      let newStatus = 'Pending';
-      if (totalPaid >= netExpected) {
-        newStatus = 'Closed';
-      } else if (totalPaid > 0) {
-        newStatus = 'Partial';
-      }
+            const payload = {
+              invoicePayments: updatedPayments,
+              paid: totalPaid,
+              status: newStatus
+            };
 
-      const payload = {
-        invoicePayments: updatedPayments,
-        paid: totalPaid,
-        status: newStatus
-      };
-
-      await apiService.updateRecord('invoices', invoice._id || invoice.id, payload);
-      toast.success('Payment entry deleted successfully');
-      await loadData();
-    } catch (err) {
-      console.error('Failed to delete payment entry:', err);
-      toast.error('Failed to delete payment entry');
-    }
+            await apiService.updateRecord('invoices', invoice._id || invoice.id, payload);
+            toast.success('Payment entry deleted successfully');
+            await loadData();
+          } catch (err) {
+            console.error('Failed to delete payment entry:', err);
+            toast.error('Failed to delete payment entry');
+          }
+        }
+      },
+      cancel: { label: 'Cancel' }
+    });
   };
 
   // Commission Payments Handlers
@@ -207,34 +214,41 @@ export default function InvoiceReport({ id }) {
     }
   };
 
-  const handleDeleteCommissionPayment = async (indexToDelete) => {
-    if (!confirm('Are you sure you want to delete this commission settlement?')) return;
+  const handleDeleteCommissionPayment = (indexToDelete) => {
+    toast('Are you sure you want to delete this commission settlement?', {
+      description: 'This action cannot be undone.',
+      action: {
+        label: 'Delete',
+        onClick: async () => {
+          try {
+            const currentPayments = invoice.commissionPayments || [];
+            const updatedPayments = currentPayments.filter((_, idx) => idx !== indexToDelete);
+            const totalPaid = updatedPayments.reduce((sum, p) => sum + p.amount, 0);
 
-    try {
-      const currentPayments = invoice.commissionPayments || [];
-      const updatedPayments = currentPayments.filter((_, idx) => idx !== indexToDelete);
-      const totalPaid = updatedPayments.reduce((sum, p) => sum + p.amount, 0);
+            let newStatus = 'Unpaid';
+            if (totalPaid >= totalHiddenCharges) {
+              newStatus = 'Paid';
+            } else if (totalPaid > 0) {
+              newStatus = 'Partial';
+            }
 
-      let newStatus = 'Unpaid';
-      if (totalPaid >= totalHiddenCharges) {
-        newStatus = 'Paid';
-      } else if (totalPaid > 0) {
-        newStatus = 'Partial';
-      }
+            const payload = {
+              commissionPayments: updatedPayments,
+              commissionPaid: totalPaid,
+              commissionStatus: newStatus
+            };
 
-      const payload = {
-        commissionPayments: updatedPayments,
-        commissionPaid: totalPaid,
-        commissionStatus: newStatus
-      };
-
-      await apiService.updateRecord('invoices', invoice._id || invoice.id, payload);
-      toast.success('Commission settlement deleted');
-      await loadData();
-    } catch (err) {
-      console.error('Failed to delete commission payment:', err);
-      toast.error('Failed to delete commission settlement');
-    }
+            await apiService.updateRecord('invoices', invoice._id || invoice.id, payload);
+            toast.success('Commission settlement deleted');
+            await loadData();
+          } catch (err) {
+            console.error('Failed to delete commission payment:', err);
+            toast.error('Failed to delete commission settlement');
+          }
+        }
+      },
+      cancel: { label: 'Cancel' }
+    });
   };
 
   if (loading) {

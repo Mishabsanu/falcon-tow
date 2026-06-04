@@ -1,9 +1,10 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { Calendar, Download, ChevronRight, FileText, Filter, Printer, Users } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Calendar, Download, ChevronRight, FileText, Filter, Printer, Users, Trash2 } from 'lucide-react';
 import { apiService } from '@/services/apiService';
 import SalarySlipView from './SalarySlipView';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 const months = [
   'January', 'February', 'March', 'April', 'May', 'June', 
@@ -39,30 +40,52 @@ export default function WorkerSalaryDashboard({ user, adminMode = false }) {
     }
   }, [adminMode]);
 
-  useEffect(() => {
-    async function fetchSalaries() {
-      const targetId = adminMode ? selectedWorkerId : (user?._id || user?.id);
-      if (!targetId) return;
+  const fetchSalaries = useCallback(async () => {
+    const targetId = adminMode ? selectedWorkerId : (user?._id || user?.id);
+    if (!targetId) return;
+    
+    setLoading(true);
+    try {
+      const result = await apiService.getRecords('salaries', { 
+        extraParams: { workerId: targetId },
+        limit: 100 
+      });
+      const data = result.data || [];
+      setSalaries(data);
       
-      setLoading(true);
-      try {
-        const result = await apiService.getRecords('salaries', { 
-          extraParams: { workerId: targetId },
-          limit: 100 
-        });
-        setSalaries(result.data || []);
-        
-        const current = (result.data || []).find(s => s.month === selectedMonth && s.year === selectedYear);
-        if (current) setActiveSalary(current);
-        else setActiveSalary(null);
-      } catch (error) {
-        console.error('Failed to fetch salaries:', error);
-      } finally {
-        setLoading(false);
-      }
+      const current = data.find(s => s.month === selectedMonth && s.year === selectedYear);
+      if (current) setActiveSalary(current);
+      else setActiveSalary(null);
+    } catch (error) {
+      console.error('Failed to fetch salaries:', error);
+    } finally {
+      setLoading(false);
     }
-    fetchSalaries();
   }, [selectedMonth, selectedYear, user, selectedWorkerId, adminMode]);
+
+  useEffect(() => {
+    fetchSalaries();
+  }, [fetchSalaries]);
+
+  const handleDeleteActiveSalary = () => {
+    if (!activeSalary) return;
+    toast('Are you sure you want to delete this salary record?', {
+      description: 'This action is irreversible.',
+      action: {
+        label: 'Delete',
+        onClick: async () => {
+          try {
+            await apiService.deleteRecord('salaries', activeSalary.id || activeSalary._id);
+            toast.success('Salary record deleted successfully');
+            fetchSalaries();
+          } catch (error) {
+            toast.error(error.message || 'Failed to delete salary record');
+          }
+        }
+      },
+      cancel: { label: 'Cancel', onClick: () => {} }
+    });
+  };
 
   const handleMonthSelect = (month) => {
     setSelectedMonth(month);
@@ -168,6 +191,15 @@ export default function WorkerSalaryDashboard({ user, adminMode = false }) {
                   </div>
                </div>
                <div className="flex items-center gap-2 w-full sm:w-auto">
+                {adminMode && (
+                  <button 
+                    onClick={handleDeleteActiveSalary}
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-100 transition-all active:scale-95 shadow-sm"
+                  >
+                      <Trash2 size={14} />
+                      Delete Record
+                  </button>
+                )}
                 <button 
                   onClick={() => window.print()}
                   className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 border border-emerald-100 text-emerald-900 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-50 transition-all active:scale-95 shadow-sm"

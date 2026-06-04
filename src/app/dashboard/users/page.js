@@ -55,16 +55,23 @@ export default function Users() {
     setPagination(prev => ({ ...prev, page: newPage }));
   };
 
-  const handleDelete = async (id) => {
-    if (confirm('Are you sure you want to remove this user?')) {
-      try {
-        await apiService.deleteRecord('users', id);
-        toast.success('User removed successfully');
-        fetchUsers();
-      } catch (error) {
-        toast.error('Failed to delete user');
-      }
-    }
+  const handleDelete = (id) => {
+    toast('Are you sure you want to remove this user?', {
+      description: 'This action is irreversible.',
+      action: {
+        label: 'Remove',
+        onClick: async () => {
+          try {
+            await apiService.deleteRecord('users', id);
+            toast.success('User removed successfully');
+            fetchUsers();
+          } catch (error) {
+            toast.error('Failed to delete user');
+          }
+        }
+      },
+      cancel: { label: 'Cancel', onClick: () => {} }
+    });
   };
 
 

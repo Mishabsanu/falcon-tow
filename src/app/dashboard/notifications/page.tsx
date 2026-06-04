@@ -68,14 +68,23 @@ export default function NotificationsPage() {
      }
   };
 
-  const deleteNotification = async (id: string) => {
-    try {
-      await fetch(`/api/notifications?id=${id}`, { method: "DELETE" });
-      setNotifications(notifications.filter(n => n._id !== id));
-      toast.success("Notification deleted successfully");
-    } catch (error) {
-      toast.error("Purge failed");
-    }
+  const deleteNotification = (id: string) => {
+    toast("Are you sure you want to permanently delete this notification?", {
+      description: "This action cannot be undone.",
+      action: {
+        label: "Delete",
+        onClick: async () => {
+          try {
+            await fetch(`/api/notifications?id=${id}`, { method: "DELETE" });
+            setNotifications(notifications.filter(n => n._id !== id));
+            toast.success("Notification deleted successfully");
+          } catch (error) {
+            toast.error("Purge failed");
+          }
+        }
+      },
+      cancel: { label: "Cancel", onClick: () => {} }
+    });
   };
 
   const filteredNotifications = useMemo(() => {

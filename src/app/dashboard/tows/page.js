@@ -131,17 +131,24 @@ export default function Tows() {
     return () => clearTimeout(timer);
   }, [fetchTows]);
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     if (isWorker) return;
-    if (confirm('Are you sure you want to delete this job?')) {
-      try {
-        await towService.deleteTow(id);
-        toast.success('Job deleted');
-        fetchTows();
-      } catch (error) {
-        toast.error(error.message || 'Failed to delete');
-      }
-    }
+    toast('Are you sure you want to delete this job?', {
+      description: 'This action is irreversible.',
+      action: {
+        label: 'Delete',
+        onClick: async () => {
+          try {
+            await towService.deleteTow(id);
+            toast.success('Job deleted successfully');
+            fetchTows();
+          } catch (error) {
+            toast.error(error.message || 'Failed to delete');
+          }
+        }
+      },
+      cancel: { label: 'Cancel', onClick: () => {} }
+    });
   };
 
 

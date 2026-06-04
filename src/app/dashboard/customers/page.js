@@ -76,16 +76,23 @@ export default function Customers() {
     setPagination(prev => ({ ...prev, page: newPage }));
   };
 
-  const handleDelete = async (id) => {
-    if (confirm('Permanently purge this customer record from the directory?')) {
-      try {
-        await apiService.deleteRecord('customers', id);
-        toast.success('Customer directory entry purged successfully');
-        fetchCustomers();
-      } catch (error) {
-        toast.error(error.message || 'Purge operation failed');
-      }
-    }
+  const handleDelete = (id) => {
+    toast('Permanently purge this customer record?', {
+      description: 'This action is irreversible.',
+      action: {
+        label: 'Purge',
+        onClick: async () => {
+          try {
+            await apiService.deleteRecord('customers', id);
+            toast.success('Customer directory entry purged successfully');
+            fetchCustomers();
+          } catch (error) {
+            toast.error(error.message || 'Purge operation failed');
+          }
+        }
+      },
+      cancel: { label: 'Cancel', onClick: () => {} }
+    });
   };
 
 

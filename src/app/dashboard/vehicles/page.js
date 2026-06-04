@@ -57,16 +57,23 @@ export default function Vehicles() {
     setPagination(prev => ({ ...prev, page: newPage }));
   };
 
-  const handleDelete = async (id) => {
-    if (confirm('Are you sure you want to decommission this vehicle?')) {
-      try {
-        await apiService.deleteRecord('vehicles', id);
-        toast.success('Vehicle decommissioned successfully');
-        fetchVehicles();
-      } catch (error) {
-        toast.error('Failed to delete vehicle');
-      }
-    }
+  const handleDelete = (id) => {
+    toast('Are you sure you want to decommission this vehicle?', {
+      description: 'This action is irreversible.',
+      action: {
+        label: 'Decommission',
+        onClick: async () => {
+          try {
+            await apiService.deleteRecord('vehicles', id);
+            toast.success('Vehicle decommissioned successfully');
+            fetchVehicles();
+          } catch (error) {
+            toast.error('Failed to delete vehicle');
+          }
+        }
+      },
+      cancel: { label: 'Cancel', onClick: () => {} }
+    });
   };
 
 

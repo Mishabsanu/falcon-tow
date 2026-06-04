@@ -116,17 +116,24 @@ export default function Expenses() {
     setPagination(prev => ({ ...prev, page: newPage }));
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     if (isWorker) return;
-    if (confirm('Permanently purge this expense record from the ledger?')) {
-      try {
-        await apiService.deleteRecord('expenses', id);
-        toast.success('Expense record purged successfully');
-        fetchExpenses();
-      } catch (error) {
-        toast.error(error.message || 'Purge operation failed');
-      }
-    }
+    toast('Permanently purge this expense record?', {
+      description: 'This action is irreversible.',
+      action: {
+        label: 'Purge',
+        onClick: async () => {
+          try {
+            await apiService.deleteRecord('expenses', id);
+            toast.success('Expense record purged successfully');
+            fetchExpenses();
+          } catch (error) {
+            toast.error(error.message || 'Purge operation failed');
+          }
+        }
+      },
+      cancel: { label: 'Cancel', onClick: () => {} }
+    });
   };
 
 

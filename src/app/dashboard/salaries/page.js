@@ -150,17 +150,24 @@ export default function Salaries() {
     return () => clearTimeout(timer);
   }, [fetchSalaries]);
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     if (isWorker) return; // Extra safety
-    if (confirm('Permanently purge this salary record?')) {
-      try {
-        await apiService.deleteRecord('salaries', id);
-        toast.success('Salary record purged successfully');
-        fetchSalaries();
-      } catch (error) {
-        toast.error(error.message || 'Purge operation failed');
-      }
-    }
+    toast('Permanently purge this salary record?', {
+      description: 'This action is irreversible.',
+      action: {
+        label: 'Purge',
+        onClick: async () => {
+          try {
+            await apiService.deleteRecord('salaries', id);
+            toast.success('Salary record purged successfully');
+            fetchSalaries();
+          } catch (error) {
+            toast.error(error.message || 'Purge operation failed');
+          }
+        }
+      },
+      cancel: { label: 'Cancel', onClick: () => {} }
+    });
   };
 
   const handlePageChange = (newPage) => {

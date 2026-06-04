@@ -113,17 +113,24 @@ export default function Quotations() {
     return () => clearTimeout(timer);
   }, [fetchQuotations]);
 
-  const handleDelete = async (id) => {
-    if (confirm('Are you sure you want to delete this quote? This action is irreversible.')) {
-      const toastId = toast.loading('Purging quotation from pipeline...');
-      try {
-        await apiService.deleteRecord('quotations', id);
-        toast.success('Quotation purged successfully.', { id: toastId });
-        fetchQuotations();
-      } catch (error) {
-        toast.error('Failed to purge quotation.', { id: toastId });
-      }
-    }
+  const handleDelete = (id) => {
+    toast('Are you sure you want to delete this quote?', {
+      description: 'This action is irreversible.',
+      action: {
+        label: 'Delete',
+        onClick: async () => {
+          const toastId = toast.loading('Purging quotation from pipeline...');
+          try {
+            await apiService.deleteRecord('quotations', id);
+            toast.success('Quotation purged successfully.', { id: toastId });
+            fetchQuotations();
+          } catch (error) {
+            toast.error('Failed to purge quotation.', { id: toastId });
+          }
+        }
+      },
+      cancel: { label: 'Cancel', onClick: () => {} }
+    });
   };
 
   const [isApproving, setIsApproving] = useState(null);
@@ -146,20 +153,28 @@ export default function Quotations() {
           }
         }
       },
-      cancel: { label: 'Cancel' }
+      cancel: { label: 'Cancel', onClick: () => {} }
     });
   };
 
-  const handleStatusUpdate = async (id, status, label) => {
-    if (!confirm(`Are you sure you want to mark this quote as ${label}?`)) return;
-    try {
-      const q = quotations.find(item => item.id === id);
-      await apiService.updateRecord('quotations', id, { ...q, status });
-      toast.success(`Quotation marked as ${label}`);
-      fetchQuotations();
-    } catch (error) {
-      toast.error(`Failed to update status to ${label}`);
-    }
+  const handleStatusUpdate = (id, status, label) => {
+    toast(`Mark this quote as ${label}?`, {
+      description: `Are you sure you want to change the status?`,
+      action: {
+        label: 'Confirm',
+        onClick: async () => {
+          try {
+            const q = quotations.find(item => item.id === id);
+            await apiService.updateRecord('quotations', id, { ...q, status });
+            toast.success(`Quotation marked as ${label}`);
+            fetchQuotations();
+          } catch (error) {
+            toast.error(`Failed to update status to ${label}`);
+          }
+        }
+      },
+      cancel: { label: 'Cancel', onClick: () => {} }
+    });
   };
 
   const handlePageChange = (newPage) => {

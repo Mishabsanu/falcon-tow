@@ -113,16 +113,23 @@ export default function Invoices() {
     return () => clearTimeout(timer);
   }, [fetchInvoices]);
 
-  const handleDelete = async (id) => {
-    if (confirm('Are you sure you want to delete this invoice?')) {
-      try {
-        await apiService.deleteRecord('invoices', id);
-        toast.success('Invoice deleted');
-        fetchInvoices();
-      } catch (error) {
-        toast.error(error.message || 'Failed to delete');
-      }
-    }
+  const handleDelete = (id) => {
+    toast('Are you sure you want to delete this invoice?', {
+      description: 'This action is irreversible.',
+      action: {
+        label: 'Delete',
+        onClick: async () => {
+          try {
+            await apiService.deleteRecord('invoices', id);
+            toast.success('Invoice deleted successfully');
+            fetchInvoices();
+          } catch (error) {
+            toast.error(error.message || 'Failed to delete');
+          }
+        }
+      },
+      cancel: { label: 'Cancel', onClick: () => {} }
+    });
   };
 
   const handlePageChange = (newPage) => {
