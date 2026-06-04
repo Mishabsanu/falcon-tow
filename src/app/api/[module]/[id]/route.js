@@ -105,9 +105,20 @@ export async function PUT(request, context) {
         if (token) {
           const { payload: jwtPayload } = await jwtVerify(token, JWT_SECRET);
           userRole = jwtPayload.role || 'Worker';
+        } else {
+          // Fallback to role cookie if token is missing
+          const roleCookie = request.cookies.get('role')?.value;
+          if (roleCookie) {
+            userRole = roleCookie;
+          }
         }
       } catch (err) {
         console.error('[API_AUTH_WARN] Failed to verify JWT token in PUT API:', err.message);
+        // Fallback to role cookie on error
+        const roleCookie = request.cookies.get('role')?.value;
+        if (roleCookie) {
+          userRole = roleCookie;
+        }
       }
 
       const normalizedRole = userRole.charAt(0).toUpperCase() + userRole.slice(1).toLowerCase();
