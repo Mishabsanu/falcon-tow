@@ -40,6 +40,7 @@ export default function SalaryForm({ mode, id }) {
       cashDeduction90: '0',
       expenses: '0',
       amount: '0',
+      profit: '0',
       status: 'Pending'
     },
     validationSchema,
@@ -71,7 +72,16 @@ export default function SalaryForm({ mode, id }) {
           const sRes = await fetch(`/api/salaries/${id}`);
           const sData = await sRes.json();
           if (sData.data) {
-             setValues(sData.data);
+             const data = sData.data;
+             if (data.profit === undefined || data.profit === null) {
+               const base = Number(data.baseSalary || 0);
+               const comm = Number(data.retention || 0);
+               const exp = Number(data.expenses || 0);
+               const cred = Number(data.creditRevenue || 0);
+               const cash = Number(data.cashCollected || 0);
+               data.profit = (cred + cash - base - comm - exp).toString();
+             }
+             setValues(data);
           }
         }
       } catch (error) {
@@ -102,6 +112,7 @@ export default function SalaryForm({ mode, id }) {
       const baseSalary = Number(workerObj?.salary || 0);
 
       const netSalary = baseSalary + stats.totalCommission + stats.totalExpensesAmount - stats.cashCollected;
+      const profit = stats.creditRevenue + stats.cashCollected - baseSalary - stats.totalCommission - stats.totalExpensesAmount;
 
       setValues({
         ...values,
@@ -115,7 +126,8 @@ export default function SalaryForm({ mode, id }) {
         cash90: stats.cash90.toString(),
         cashDeduction90: stats.cashCollected.toString(),
         expenses: stats.totalExpensesAmount.toString(),
-        amount: netSalary.toString()
+        amount: netSalary.toString(),
+        profit: profit.toString()
       });
 
       toast.success('Calculations synchronized with history.');
@@ -363,7 +375,7 @@ export default function SalaryForm({ mode, id }) {
             </div>
 
             <div className="grid grid-cols-12 gap-8 md:gap-10">
-               <div className="col-span-12 md:col-span-6 space-y-4">
+               <div className="col-span-12 md:col-span-4 space-y-4">
                   <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Final Net Payable (QAR)</label>
                   <input
                     type="text"
@@ -372,7 +384,16 @@ export default function SalaryForm({ mode, id }) {
                     className="block w-full px-1 py-4 bg-transparent border-b-2 border-emerald-950 outline-none text-emerald-950 font-black text-2xl"
                   />
                </div>
-               <div className="col-span-12 md:col-span-6 space-y-4">
+               <div className="col-span-12 md:col-span-4 space-y-4">
+                  <label className="block text-[10px] font-bold text-emerald-600 uppercase tracking-widest ml-1">Profit (QAR)</label>
+                  <input
+                    type="text"
+                    value={Number(values.profit || 0).toLocaleString()}
+                    readOnly
+                    className="block w-full px-1 py-4 bg-transparent border-b-2 border-emerald-100 outline-none text-emerald-700 font-black text-2xl"
+                  />
+               </div>
+               <div className="col-span-12 md:col-span-4 space-y-4">
                   <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Payment Status</label>
                   <select
                     name="status"

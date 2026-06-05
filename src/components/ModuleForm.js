@@ -634,6 +634,14 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
       try {
         const result = await apiService.getRecord(moduleKey, id);
         if (result) {
+          if (moduleKey === 'salaries' && (result.profit === undefined || result.profit === null)) {
+            const base = Number(result.baseSalary || 0);
+            const comm = Number(result.retention || 0);
+            const exp = Number(result.expenses || 0);
+            const cred = Number(result.creditRevenue || 0);
+            const cash = Number(result.cashCollected || 0);
+            result.profit = cred + cash - base - comm - exp;
+          }
           setInitialRecord(result);
           formik.setValues((prev) => {
             const nextVals = {
@@ -846,6 +854,8 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
           expenses: totalExpenses
         });
 
+        const calculatedProfit = settlement.creditAmount + settlement.cashAmount - settlement.baseSalary - settlement.workerCommission - settlement.expenses;
+
         setValues({
           ...values,
           baseSalary: settlement.baseSalary.toString(),
@@ -854,7 +864,8 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
           retention: settlement.workerCommission.toString(), // 10% Total Commission
           cashDeduction90: settlement.cashAmount.toString(),
           expenses: settlement.expenses.toString(),
-          amount: settlement.netPayout.toString() // Final Payout
+          amount: settlement.netPayout.toString(), // Final Payout
+          profit: calculatedProfit.toString()
         });
 
       } catch (error) {

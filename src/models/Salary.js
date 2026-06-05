@@ -20,6 +20,7 @@ const SalarySchema = new mongoose.Schema({
   cashDeduction90: { type: Number, default: 0 },
   expenses: { type: Number, default: 0 },
   amount: { type: Number, default: 0 },
+  profit: { type: Number, default: 0 },
   
   status: { type: String, enum: ['Paid', 'Pending'], default: 'Pending' },
   createdBy: { type: String },

@@ -173,6 +173,7 @@ export const moduleData = {
       { name: 'cashDeduction90', label: 'Hand Cash', type: 'number', readOnly: true, defaultValue: 0 },
       { name: 'expenses', label: 'Advance Deductions (QAR)', type: 'number', readOnly: true, defaultValue: 0 },
       { name: 'amount', label: 'Net Payable Amount (QAR)', type: 'number', readOnly: true, defaultValue: 0 },
+      { name: 'profit', label: 'Profit (QAR)', type: 'number', readOnly: true, defaultValue: 0 },
       { name: 'status', label: 'Payment Status', type: 'select', options: ['Paid', 'Pending'], hidden: true, defaultValue: 'Pending' },
     ],
     joins: [

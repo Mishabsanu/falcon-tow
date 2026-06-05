@@ -209,6 +209,16 @@ export default function SalarySlipView({ id, hideToolbar = false }) {
               <span className={styles.totalLabel}>Gross Settlement</span>
               <span className={styles.totalValue}>{currency(Number(salary.baseSalary || 0) + Number(salary.retention || 0))}</span>
             </div>
+            <div className={styles.totalRow}>
+              <span className={styles.totalLabel}>Calculated Profit</span>
+              <span className={styles.totalValue}>
+                {currency(
+                  salary.profit !== undefined && salary.profit !== null
+                    ? salary.profit
+                    : (Number(salary.creditRevenue || 0) + Number(salary.cashCollected || 0) - Number(salary.baseSalary || 0) - Number(salary.retention || 0) - Number(salary.expenses || 0))
+                )}
+              </span>
+            </div>
             <div className={styles.grandTotalRow}>
               <span className={styles.grandLabel}>Net Payable</span>
               <span className={styles.grandValue}>{currency(salary.amount)}</span>
