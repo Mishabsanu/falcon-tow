@@ -134,18 +134,6 @@ export async function PUT(request, context) {
       const isCompleting = payload.status === 'Completed' || payload.dropoff || payload.dropoffPhoto;
 
       if (isCompleting && normalizedRole === 'Worker') {
-        // Validation 1: Time Elapsed (must wait at least 10 minutes from creation)
-        if (existingRecord.createdAt) {
-          const createdTime = new Date(existingRecord.createdAt).getTime();
-          const now = Date.now();
-          const diffMinutes = (now - createdTime) / 60000;
-          if (diffMinutes < 10) {
-            return NextResponse.json({
-              error: 'Safety Lock: A tow job must run for at least 10 minutes before drop-off details can be submitted.'
-            }, { status: 400 });
-          }
-        }
-
         // Validation 2: Location Similarity check
         const newPickup = payload.pickup || existingRecord.pickup;
         const newDropoff = payload.dropoff || existingRecord.dropoff;
