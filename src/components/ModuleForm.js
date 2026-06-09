@@ -134,16 +134,6 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
           if (!value) return true;
           const pickup = context?.parent?.pickup;
           return !pickup || pickup.trim().toLowerCase() !== value.trim().toLowerCase();
-        })
-        .test('time-elapsed', 'A tow job must run for at least 10 minutes before drop-off details can be submitted.', (value) => {
-          if (!value) return true;
-          if (mode === 'edit' && isWorker && initialRecord?.createdAt) {
-            const createdTime = new Date(initialRecord.createdAt).getTime();
-            const now = Date.now();
-            const diffMinutes = (now - createdTime) / 60000;
-            return diffMinutes >= 10;
-          }
-          return true;
         });
 
       schemaShape.dropoffPhoto = Yup.string().nullable()
@@ -163,16 +153,6 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
           const placeholderUrl = 'https://res.cloudinary.com/dwkom79iv/image/upload/v1714578144/uploading_placeholder.png';
           if (value === placeholderUrl || pickupPhoto === placeholderUrl) return true;
           return !pickupPhoto || pickupPhoto !== value;
-        })
-        .test('time-elapsed-photo', 'A tow job must run for at least 10 minutes before drop-off proof can be submitted.', (value) => {
-          if (!value) return true;
-          if (mode === 'edit' && isWorker && initialRecord?.createdAt) {
-            const createdTime = new Date(initialRecord.createdAt).getTime();
-            const now = Date.now();
-            const diffMinutes = (now - createdTime) / 60000;
-            return diffMinutes >= 10;
-          }
-          return true;
         });
     }
 
@@ -688,9 +668,50 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
   const handleFileChange = (fieldName, file) => {
     if (!file) return;
 
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file.');
+      return;
+    }
+
     const reader = new FileReader();
     reader.onloadend = () => {
-      setFieldValue(fieldName, reader.result);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Compress the image to JPEG with 0.7 quality to ensure small file size
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+        setFieldValue(fieldName, compressedBase64);
+      };
+      img.onerror = () => {
+        // Fallback to original base64 if loading image fail
+        setFieldValue(fieldName, reader.result);
+      };
+      img.src = reader.result;
+    };
+    reader.onerror = () => {
+      toast.error('Failed to read the selected file.');
     };
     reader.readAsDataURL(file);
   };
@@ -1197,7 +1218,7 @@ function ModuleFormContent({ moduleKey, mode, id, onSuccess, isModal = false }) 
                               />
                               {values[field.name] ? (
                                 <div className="relative w-full h-48 rounded-2xl overflow-hidden border border-emerald-100 shadow-sm group">
-                                  <img src={values[field.name]} alt="Preview" className="w-full h-full object-cover" />
+                                  <img src={values[field.name]} alt="Preview" className="w-full h-full object-contain bg-slate-900" />
                                   {!isFieldReadOnly && (
                                     <button
                                       type="button"

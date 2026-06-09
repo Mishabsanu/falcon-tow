@@ -196,7 +196,8 @@ export default function ReportsPage() {
               { id: 'invoices', label: 'Invoices & Billing', desc: 'Financial audit of all billed services and payment statuses.', icon: Wallet, color: 'text-emerald-600', bg: 'bg-emerald-50' },
               { id: 'tows', label: 'Tow Service Logs', desc: 'Comprehensive history of operational tow jobs and driver logs.', icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
               { id: 'expenses', label: 'Company Expenses', desc: 'Breakdown of operational costs, vehicle maintenance, and overhead.', icon: AlertTriangle, color: 'text-rose-600', bg: 'bg-rose-50' },
-              { id: 'salaries', label: 'Payroll History', desc: 'Detailed tracking of employee commissions and monthly settlements.', icon: Users2, color: 'text-emerald-700', bg: 'bg-emerald-100/50' }
+              { id: 'salaries', label: 'Payroll History', desc: 'Detailed tracking of employee commissions and monthly settlements.', icon: Users2, color: 'text-emerald-700', bg: 'bg-emerald-100/50' },
+              { id: 'worker-daily', label: 'Worker Daily Summary', desc: 'Combined daily log of tow jobs, expenses, and vehicle usage.', icon: Users, color: 'text-amber-600', bg: 'bg-amber-50' }
             ].map((item) => (
               <button
                 key={item.id}
@@ -242,6 +243,7 @@ export default function ReportsPage() {
                       {selectedModule === 'tows' && 'Operational History'}
                       {selectedModule === 'expenses' && 'Cost Analysis Active'}
                       {selectedModule === 'salaries' && 'Payroll Compliance'}
+                      {selectedModule === 'worker-daily' && 'Worker Operational Performance'}
                     </span>
                   </div>
                 </div>
@@ -260,6 +262,7 @@ export default function ReportsPage() {
                     <option value="tows">Tow Jobs</option>
                     <option value="expenses">Expenses</option>
                     <option value="salaries">Salaries</option>
+                    <option value="worker-daily">Worker Daily Summary</option>
                   </select>
                 </div>
 

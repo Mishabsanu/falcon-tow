@@ -15,8 +15,149 @@ export async function GET(req) {
       return NextResponse.json({ success: false, message: "Module is required" }, { status: 400 });
     }
 
-    const result = await listRecords(moduleKey, { limit: 10000 });
-    let data = result?.data || [];
+    let data = [];
+    if (moduleKey === "worker-daily") {
+      const towsResult = await listRecords("tows", { limit: 10000 });
+      const expensesResult = await listRecords("expenses", { limit: 10000 });
+
+      let tows = towsResult?.data || [];
+      let expenses = expensesResult?.data || [];
+
+      const getFormattedDateStr = (val) => {
+        if (!val) return "";
+        const d = new Date(val);
+        if (isNaN(d.getTime())) return String(val);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      const cleanVehicleName = (v) => {
+        if (!v) return '';
+        return v.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').trim();
+      };
+
+      // Filter Tows
+      tows = tows.filter(item => {
+        const itemDateStr = getFormattedDateStr(item.date);
+        if (start && itemDateStr < start) return false;
+        if (end && itemDateStr > end) return false;
+
+        if (worker && worker !== 'All') {
+          const itemWorker = item.worker || item.driver;
+          if (itemWorker !== worker && item.workerId !== worker && item.driverId !== worker) return false;
+        }
+
+        if (vehicle && vehicle !== 'All') {
+          const itemVehicleClean = cleanVehicleName(item.vehicle);
+          const vehicleClean = cleanVehicleName(vehicle);
+          if (itemVehicleClean !== vehicleClean && item.vehicleId !== vehicle) return false;
+        }
+
+        return true;
+      });
+
+      // Filter Expenses
+      expenses = expenses.filter(item => {
+        const itemDateStr = getFormattedDateStr(item.date);
+        if (start && itemDateStr < start) return false;
+        if (end && itemDateStr > end) return false;
+
+        if (worker && worker !== 'All') {
+          const itemWorker = item.worker || item.driver;
+          if (itemWorker !== worker && item.workerId !== worker && item.driverId !== worker) return false;
+        }
+
+        if (vehicle && vehicle !== 'All') {
+          const itemVehicleClean = cleanVehicleName(item.vehicle);
+          const vehicleClean = cleanVehicleName(vehicle);
+          if (itemVehicleClean !== vehicleClean && item.vehicleId !== vehicle) return false;
+        }
+
+        return true;
+      });
+
+      const groups = {};
+
+      tows.forEach(t => {
+        const dateStr = getFormattedDateStr(t.date);
+        const workerName = t.driver || 'Unassigned';
+        const vehicleName = cleanVehicleName(t.vehicle) || 'Unassigned';
+        const key = `${dateStr}__${workerName}__${vehicleName}`;
+
+        if (!groups[key]) {
+          groups[key] = {
+            date: dateStr,
+            worker: workerName,
+            vehicle: vehicleName,
+            towsCount: 0,
+            towRevenue: 0,
+            expensesCount: 0,
+            totalExpenses: 0,
+            towJobs: [],
+            expenseList: []
+          };
+        }
+
+        groups[key].towsCount++;
+        groups[key].towRevenue += Number(t.amount || 0);
+        groups[key].towJobs.push(t.id);
+      });
+
+      expenses.forEach(e => {
+        const dateStr = getFormattedDateStr(e.date);
+        const workerName = e.worker || 'Unassigned';
+        const vehicleName = cleanVehicleName(e.vehicle) || 'Unassigned';
+        const key = `${dateStr}__${workerName}__${vehicleName}`;
+
+        if (!groups[key]) {
+          groups[key] = {
+            date: dateStr,
+            worker: workerName,
+            vehicle: vehicleName,
+            towsCount: 0,
+            towRevenue: 0,
+            expensesCount: 0,
+            totalExpenses: 0,
+            towJobs: [],
+            expenseList: []
+          };
+        }
+
+        groups[key].expensesCount++;
+        groups[key].totalExpenses += Number(e.amount || 0);
+        groups[key].expenseList.push(`${e.description} (QAR ${e.amount})`);
+      });
+
+      let reportData = Object.values(groups).map(g => ({
+        'Date': g.date,
+        'Worker': g.worker,
+        'Vehicle': g.vehicle,
+        'Tows Completed': g.towsCount,
+        'Tow Revenue (QAR)': g.towRevenue,
+        'Expenses Logged': g.expensesCount,
+        'Total Expenses (QAR)': g.totalExpenses,
+        'Net Balance (QAR)': g.towRevenue - g.totalExpenses,
+        'Tow Jobs': g.towJobs.join('; '),
+        'Expenses': g.expenseList.join('; ')
+      }));
+
+      reportData.sort((a, b) => {
+        if (a['Date'] !== b['Date']) {
+          return a['Date'].localeCompare(b['Date']);
+        }
+        return a['Worker'].localeCompare(b['Worker']);
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: reportData
+      });
+    } else {
+      const result = await listRecords(moduleKey, { limit: 10000 });
+      data = result?.data || [];
+    }
 
     // Apply filtering
     data = data.filter(item => {

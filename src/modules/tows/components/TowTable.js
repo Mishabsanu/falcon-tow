@@ -6,11 +6,11 @@ import styles from '@/app/dashboard/tows/page.module.css';
 export default function TowTable({ tows, loading, pagination, onPageChange, onDelete, isWorker }) {
   const headers = [
     { label: "Job ID" },
+    { label: "Service Date" },
     { label: "Fleet Asset" },
     { label: "Customer" },
     { label: "Towed Vehicle" },
     { label: "Route" },
-    { label: "Service Date" },
     { label: "Charges" },
     { label: "Status" },
     { label: "Created By" },
@@ -27,6 +27,12 @@ export default function TowTable({ tows, loading, pagination, onPageChange, onDe
     <tr key={tow._id || tow.id}>
       <td>
         <span className={styles.towId}>{tow?.id || 'N/A'}</span>
+      </td>
+      <td>
+        <div className={styles.dateCell}>
+          <CalendarDays size={16} />
+          <span>{tow?.date ? new Date(tow.date).toLocaleDateString() : 'N/A'}</span>
+        </div>
       </td>
       <td>
         <div className={styles.jobCell}>
@@ -65,12 +71,6 @@ export default function TowTable({ tows, loading, pagination, onPageChange, onDe
         <div className={styles.routeCell}>
           <MapPin size={16} />
           <span>{tow?.pickup || 'Unknown'} to {tow?.dropoff || 'Unknown'}</span>
-        </div>
-      </td>
-      <td>
-        <div className={styles.dateCell}>
-          <CalendarDays size={16} />
-          <span>{tow?.date ? new Date(tow.date).toLocaleDateString() : 'N/A'}</span>
         </div>
       </td>
       <td className={styles.amountText}>QAR {Number(tow.amount ?? 0).toLocaleString()}</td>

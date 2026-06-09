@@ -289,7 +289,7 @@ export default function TowJobView({ id }) {
               {job.pickupPhoto ? (
                 <>
                   <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-slate-100 group">
-                    <img src={job.pickupPhoto} alt="Pickup Proof" className="w-full h-full object-cover" />
+                    <img src={job.pickupPhoto} alt="Pickup Proof" className="w-full h-full object-contain bg-slate-900" />
                     <div className="absolute inset-0 bg-emerald-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                       <a href={job.pickupPhoto} target="_blank" rel="noopener noreferrer" className="p-3 bg-white text-emerald-950 rounded-xl shadow-lg hover:scale-105 transition-transform font-bold text-[10px] uppercase tracking-widest">View Full Size</a>
                     </div>
@@ -349,7 +349,7 @@ export default function TowJobView({ id }) {
               {job.dropoffPhoto ? (
                 <>
                   <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-slate-100 group">
-                    <img src={job.dropoffPhoto} alt="Drop-off Proof" className="w-full h-full object-cover" />
+                    <img src={job.dropoffPhoto} alt="Drop-off Proof" className="w-full h-full object-contain bg-slate-900" />
                     <div className="absolute inset-0 bg-emerald-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                       <a href={job.dropoffPhoto} target="_blank" rel="noopener noreferrer" className="p-3 bg-white text-emerald-950 rounded-xl shadow-lg hover:scale-105 transition-transform font-bold text-[10px] uppercase tracking-widest">View Full Size</a>
                     </div>
